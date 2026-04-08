@@ -1,0 +1,59 @@
+spring:
+  datasource:
+    #type: org.springframework.jdbc.datasource.DriverManagerDataSource
+    url: jdbc:postgresql://localhost:5432/therapeutica_db
+    username: therapeutica_user
+    password: FloareAlbastra
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 1
+      minimum-idle: 1
+      idle-timeout: 60000
+      max-lifetime: 120000
+      auto-commit: true
+      leak-detection-threshold: 60000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: false
+#    properties:
+#      hibernate:
+#        dialect: org.hibernate.dialect.PostgreSQLDialect
+#        jdbc:
+#          lob:
+#            non_contextual_creation: true
+#          time_zone: UTC
+#          batch_size: 20
+#        order_inserts: true
+#        order_updates: true
+#        id:
+#          new_generator_mappings: true
+#        temp:
+#          use_jdbc_metadata_defaults: false
+#          schema_management_tool: none
+
+supabase:
+  url: https://npjknuqvkvulwfpqdzyc.supabase.co
+  key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wamtudXF2a3Z1bHdmcHFkenljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NDAwMDksImV4cCI6MjA3ODUxNjAwOX0.txe7f47FP7AzhDNOQ52kcgHBVa7m9OcjwkAWAFwuA0w
+
+error:
+  handling:
+    http-status-in-json-response: true
+    exception-logging: NO_LOGGING
+    full-stacktrace-http-statuses: 5xx
+    log-levels:
+      5xx: ERROR
+
+springdoc:
+  pathsToMatch: /api/**
+
+external:
+  services:
+    python-ocr:
+      url: "http://localhost:8000/process-pdf"
+    python-semantic:
+      url: "http://localhost:8000/standardize-results"

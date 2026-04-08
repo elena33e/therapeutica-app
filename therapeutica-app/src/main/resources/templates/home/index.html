@@ -1,0 +1,17 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        layout:decorate="~{layout}">
+    <head>
+        <title>[[#{home.index.headline}]]</title>
+    </head>
+    <body>
+        <div layout:fragment="content">
+            <h1 class="grow text-3xl md:text-4xl font-medium mb-8">[[#{home.index.headline}]]</h1>
+            <p class="mb-4">[(#{home.index.text})]</p>
+            <p class="mb-12">
+                <span>[[#{home.index.swagger.text}]]</span>
+                <a th:href="@{/swagger-ui.html}" target="_blank" class="underline">[[#{home.index.swagger.link}]]</a>.
+            </p>
+        </div>
+    </body>
+</html>

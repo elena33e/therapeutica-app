@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${chestionar.nume} + ' - Vizualizare Structură'">Vizualizare</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="container mx-auto px-4 py-8">
+
+        <div class="bg-slate-800 text-white rounded-xl p-6 mb-8 shadow-lg border-b-4 border-emerald-500">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-slate-400 text-sm">Previzualizare chestionar</span>
+                    </div>
+                    <h1 class="text-3xl font-bold" th:text="${chestionar.nume}">Nume Chestionar</h1>
+                    <p class="text-slate-300 mt-2" th:text="${chestionar.descriere}">Descriere</p>
+                </div>
+                <div class="shrink-0">
+                    <a th:href="@{/chestionare/medic/lista-chestionare}"
+                       class="inline-flex items-center text-sm bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Înapoi la listă
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div th:each="categorie : ${categorii}" class="mb-10">
+            <div class="bg-white rounded-xl p-6 mb-6 shadow-sm border-l-4 border-emerald-500 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800" th:text="${categorie.nume}">Nume Categorie</h2>
+                        <p class="text-sm text-slate-500 italic">Această secțiune evaluează indicatorii clinici pentru disfuncția specifică.</p>
+                    </div>
+                </div>
+
+                <div th:each="intrebare, iter : ${intrebariPeCategorii[categorie.id]}"
+                     class="p-4 mb-4 bg-slate-50 rounded-lg border-l-4 border-slate-200">
+                    <div class="flex items-start gap-3">
+                        <div class="shrink-0 w-7 h-7 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center text-xs font-bold">
+                            <span th:text="${iter.index + 1}">1</span>
+                        </div>
+                        <div class="grow">
+                            <div class="flex justify-between items-start gap-4">
+                                <h3 class="font-medium text-slate-800 leading-snug" th:text="${intrebare.textIntrebare}">Text</h3>
+                                <span class="text-[10px] bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded uppercase font-semibold whitespace-nowrap"
+                                      th:text="${intrebare.tipIntrebare}">TIP</span>
+                            </div>
+
+                            <div th:switch="${intrebare.tipIntrebare.name()}" class="mt-4">
+
+                                <div th:case="'SCOR_0_3'" class="flex gap-2.5 flex-wrap">
+                                    <div th:each="i : ${#numbers.sequence(0, 3)}"
+                                         class="w-10 h-10 rounded-full border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-semibold text-sm">
+                                        <span th:text="${i}"></span>
+                                    </div>
+                                </div>
+
+                                <div th:case="'SCOR_1_5'" class="flex gap-2.5 flex-wrap">
+                                    <div th:each="i : ${#numbers.sequence(1, 5)}"
+                                         class="w-10 h-10 rounded-full border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-semibold text-sm">
+                                        <span th:text="${i}"></span>
+                                    </div>
+                                </div>
+
+                                <div th:case="'DA_NU'" class="flex gap-4">
+                                    <div class="w-16 h-10 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">DA</div>
+                                    <div class="w-16 h-10 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">NU</div>
+                                </div>
+
+                                <div th:case="'TEXT_LIBER'" class="w-full h-16 bg-white border border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-400 text-xs italic">
+                                    Câmp de text liber (Input Pacient)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 flex justify-end items-center gap-6 shadow-sm">
+            <span class="text-sm text-slate-500 italic">V-ați asigurat de structura chestionarului?</span>
+            <a th:href="@{/chestionare/medic/atribuie-chestionar/{id}(id=${chestionar.id})}"
+               class="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200 active:scale-95">
+                <i class="fas fa-user-plus mr-2"></i>Atribuie Pacient
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

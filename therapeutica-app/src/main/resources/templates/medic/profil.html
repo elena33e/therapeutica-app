@@ -1,0 +1,162 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Profil Medic</title>
+</head>
+<body class="bg-gray-50">
+<div layout:fragment="content">
+    <div class="container mx-auto max-w-4xl px-4 py-8">
+
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
+                    <span th:if="${mode == 'view'}">Profilul meu</span>
+                    <span th:if="${mode == 'edit'}">Editare Profil Medic</span>
+                </h1>
+                <p class="text-gray-500 mt-2">
+                    <span th:if="${mode == 'view'}">Gestionează informațiile tale profesionale</span>
+                    <span th:if="${mode == 'edit'}">Modifică informațiile tale personale și profesionale</span>
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a th:if="${mode == 'view'}"
+                   th:href="@{'/medic/profil/' + ${medicId} + '/editare'}"
+                   class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl transition duration-300 shadow-md hover:shadow-lg flex items-center gap-2">
+                    <i class="fas fa-edit"></i>
+                    <span>Editare profil</span>
+                </a>
+
+                <div th:if="${mode == 'edit'}" class="flex gap-3">
+                    <a th:href="@{'/medic/profil/' + ${medicId}}"
+                       class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-5 rounded-xl transition duration-300">
+                        Anulare
+                    </a>
+                    <button type="submit" form="profilForm"
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-5 rounded-xl transition duration-300 shadow-md hover:shadow-lg flex items-center gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>Salvează</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${successMessage}" class="mb-6 animate-pulse">
+            <div class="bg-green-50 border-l-4 border-green-500 text-green-800 px-4 py-4 rounded-r-xl flex items-center shadow-sm">
+                <i class="fas fa-check-circle text-xl mr-3 text-green-500"></i>
+                <span class="font-medium" th:text="${successMessage}"></span>
+            </div>
+        </div>
+
+        <form th:if="${mode == 'edit'}"
+              id="profilForm"
+              th:action="@{'/medic/profil/' + ${medicId} + '/salvare'}"
+              method="post"
+              class="space-y-6">
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 transition-all">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                    <span class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i class="fas fa-user"></i></span>
+                    Informații Personale
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2 ml-1">Nume *</label>
+                        <input type="text" name="nume" th:value="${utilizator.nume}" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
+                               th:classappend="${numeError != null} ? 'border-red-500 ring-4 ring-red-50 reversed'">
+                        <p th:if="${numeError}" class="text-red-500 text-xs mt-2 font-medium" th:text="${numeError}"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2 ml-1">Prenume *</label>
+                        <input type="text" name="prenume" th:value="${utilizator.prenume}" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
+                               th:classappend="${prenumeError != null} ? 'border-red-500 ring-4 ring-red-50'">
+                        <p th:if="${prenumeError}" class="text-red-500 text-xs mt-2 font-medium" th:text="${prenumeError}"></p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 text-sm font-bold mb-2 ml-1">Email *</label>
+                        <input type="email" name="email" th:value="${utilizator.email}" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
+                               th:classappend="${emailError != null} ? 'border-red-500 ring-4 ring-red-50'">
+                        <p th:if="${emailError}" class="text-red-500 text-xs mt-2 font-medium" th:text="${emailError}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 transition-all">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                    <span class="p-2 bg-green-50 text-green-600 rounded-lg"><i class="fas fa-user-md"></i></span>
+                    Informații Profesionale
+                </h2>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2 ml-1">Specializare</label>
+                    <input type="text" name="specializare" th:value="${medic?.specializare}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 outline-none transition-all duration-200"
+                           placeholder="Ex: Cardiologie">
+                </div>
+            </div>
+        </form>
+
+        <div th:if="${mode == 'view'}" class="space-y-6">
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow duration-300">
+                <h2 class="text-xl font-bold text-gray-800 mb-8 border-b border-gray-50 pb-4 flex items-center gap-3">
+                    <i class="fas fa-id-card text-blue-500"></i> Date Identitate
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
+                    <div class="group">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Nume Complet</p>
+                        <p class="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors" th:text="${utilizator.prenume + ' ' + utilizator.nume}"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Email</p>
+                        <p class="text-lg font-medium text-gray-700" th:text="${utilizator.email}"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Rol Sistem</p>
+                        <span class="inline-flex items-center px-3 py-1 bg-indigo-50 text-indigo-700 text-sm font-bold rounded-lg border border-indigo-100">
+                            <i class="fas fa-shield-alt mr-2 text-xs"></i>
+                            <span th:text="${utilizator.rol}"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow duration-300">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 border-b border-gray-50 pb-4 flex items-center gap-3">
+                    <i class="fas fa-stethoscope text-green-500"></i> Detalii Activitate
+                </h2>
+
+                <div th:if="${medic?.specializare != null && !medic.specializare.isEmpty()}">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Specializare Principală</p>
+                    <p class="text-2xl font-black text-gray-800" th:text="${medic.specializare}"></p>
+                </div>
+
+                <div th:if="${medic == null || medic.specializare == null || medic.specializare.isEmpty()}"
+                     class="py-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-100 text-amber-600 rounded-full mb-4">
+                        <i class="fas fa-user-plus text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">Profil Incomplet</h3>
+                    <p class="text-gray-500 mb-6 max-w-xs mx-auto text-sm leading-relaxed">Nu ați adăugat încă o specializare profesională.</p>
+                    <a th:href="@{'/medic/profil/' + ${medicId} + '/editare'}"
+                       class="text-blue-600 hover:text-blue-800 font-bold flex items-center justify-center gap-2 transition-colors">
+                        <i class="fas fa-plus-circle"></i> Completează acum
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script th:src="@{/js/medic-profil.js}" defer></script>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Fragment sidebar care alege în funcție de rol -->
+<div th:fragment="sidebar">
+    <!-- PACIENT -->
+    <div th:if="${session != null and session.userId != null and session.userRole == 'PACIENT'}">
+        <div th:replace="~{fragments/sidebars/sidebar-pacient}"></div>
+    </div>
+
+    <!-- MEDIC -->
+    <div th:if="${session != null and session.userId != null and session.userRole == 'MEDIC'}">
+        <div th:replace="~{fragments/sidebars/sidebar-medic}"></div>
+    </div>
+
+    <!-- ADMIN -->
+    <div th:if="${session != null and session.userId != null and session.userRole == 'ADMIN'}">
+        <div th:replace="~{fragments/sidebars/sidebar-admin}"></div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Dosar Medical | Therapeutica</title>
+</head>
+<body>
+<div layout:fragment="content" class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Dosar Medical</h1>
+                <p class="text-gray-500 mt-1">Gestionează analizele și documentele tale medicale într-un mod centralizat.</p>
+            </div>
+            <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-purple-200 transition-all duration-300 flex items-center space-x-2 font-semibold active:scale-95">
+                <i class="fas fa-plus"></i>
+                <span>Adaugă fișier nou</span>
+            </button>
+        </div>
+
+        <div th:if="${success}" class="animate-fade-in-down bg-green-50 border-l-4 border-green-500 text-green-800 px-5 py-4 rounded-r-xl mb-6 shadow-sm flex items-center">
+            <i class="fas fa-check-circle mr-3 text-green-500 text-xl"></i>
+            <span class="font-medium" th:text="${success}"></span>
+        </div>
+
+        <div th:if="${error}" class="animate-fade-in-down bg-red-50 border-l-4 border-red-500 text-red-800 px-5 py-4 rounded-r-xl mb-6 shadow-sm flex items-center">
+            <i class="fas fa-exclamation-circle mr-3 text-red-500 text-xl"></i>
+            <span class="font-medium" th:text="${error}"></span>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div class="overflow-x-auto">
+                <table class="min-w-full border-collapse text-left">
+                    <thead class="bg-gray-50/50 border-b border-gray-100">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Document</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Data Încărcare</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Acțiuni</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                    <tr th:each="doc : ${documente}" class="group hover:bg-purple-50/30 transition-all duration-200">
+                        <td class="px-6 py-5">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-red-50 rounded-lg mr-4 group-hover:bg-red-100 transition-colors">
+                                    <i class="fas fa-file-pdf text-red-500 text-xl"></i>
+                                </div>
+                                <span class="text-sm font-semibold text-gray-800" th:text="${doc.numeFisier}">analize.pdf</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-5 text-sm text-gray-500 font-medium"
+                            th:text="${#temporals.format(doc.dataIncarcare, 'dd MMM yyyy · HH:mm')}">12 Feb 2026</td>
+
+                        <td class="px-6 py-5">
+                                <span th:if="${doc.status.name() == 'INCARCAT'}"
+                                      class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i class="fas fa-circle-notch fa-spin mr-2"></i> Procesare OCR
+                                </span>
+
+                            <span th:if="${doc.status.name() == 'PROCESAT'}"
+                                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                    <i class="fas fa-magic mr-2"></i> Revizuire necesară
+                                </span>
+
+                            <span th:if="${doc.status.name() == 'VALIDAT' or doc.status.name() == 'STANDARDIZAT'}"
+                                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                                    <i class="fas fa-check-double mr-2"></i> Verificat
+                                </span>
+
+                            <span th:if="${doc.status.name() == 'EROARE'}"
+                                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i> Eroare sistem
+                                </span>
+                        </td>
+
+                        <td class="px-6 py-5 text-right space-x-1">
+                            <a th:if="${doc.status.name() == 'PROCESAT'}"
+                               th:href="@{/analize/valideaza/{id}(id=${doc.id})}"
+                               class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                                <i class="fas fa-clipboard-check mr-1.5"></i> Validează
+                            </a>
+
+                            <th:block th:if="${doc.status.name() == 'VALIDAT' or doc.status.name() == 'STANDARDIZAT'}">
+                                <a th:href="@{/analize/vizualizeaza/{id}(id=${doc.id})}"
+                                   class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-200 transition-colors">
+                                    <i class="fas fa-eye mr-1.5 text-gray-500"></i> Vezi
+                                </a>
+                                <a th:href="@{/analize/valideaza/{id}(id=${doc.id})}"
+                                   class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
+                                   title="Editează datele">
+                                    <i class="fas fa-pen mr-1.5 text-gray-400"></i> Edit
+                                </a>
+                            </th:block>
+
+                            <div class="inline-flex ml-2 border-l border-gray-100 pl-2 space-x-1">
+                                <a th:href="@{'/analize/download/' + ${doc.id}}"
+                                   class="p-2 text-gray-400 hover:text-blue-500 transition-colors" title="Download">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <form th:action="@{/analize/sterge/{id}(id=${doc.id})}"
+                                      method="post" class="inline"
+                                      onsubmit="return confirm('Ești sigur că vrei să elimini acest document?')">
+                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(documente)}">
+                        <td colspan="4" class="px-6 py-20 text-center">
+                            <div class="max-w-xs mx-auto">
+                                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-folder-open text-gray-200 text-4xl"></i>
+                                </div>
+                                <p class="text-gray-500 font-semibold italic">Încă nu ai documente în dosar.</p>
+                                <p class="text-gray-400 text-xs mt-1">Încarcă prima ta analiză folosind butonul de mai sus.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="uploadModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 transition-all duration-300">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl animate-modal-pop">
+                <div class="flex justify-between items-center mb-8 border-b border-gray-50 pb-4">
+                    <h3 class="text-2xl font-black text-gray-800 tracking-tight">Încarcă fișier</h3>
+                    <button onclick="document.getElementById('uploadModal').classList.add('hidden')" class="text-gray-300 hover:text-gray-500 transition-colors p-2">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <form id="uploadForm" th:action="@{/analize/incarca}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="pacientId" th:value="${pacientId}">
+
+                    <div class="mb-8">
+                        <label class="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">Selectează documentul</label>
+                        <div class="relative group">
+                            <input id="file-upload" name="file" type="file" required
+                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            <div class="px-6 py-10 border-2 border-gray-200 border-dashed rounded-2xl group-hover:border-purple-500 group-hover:bg-purple-50 transition-all text-center">
+                                <i class="fas fa-cloud-upload-alt text-gray-300 group-hover:text-purple-500 text-4xl mb-4 transition-colors"></i>
+                                <p class="text-sm font-semibold text-gray-600 group-hover:text-purple-700 transition-colors">Apasă aici sau trage fișierul</p>
+                                <p class="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-widest">PDF, PNG, JPG (MAX 10MB)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="document.getElementById('uploadModal').classList.add('hidden')"
+                                class="flex-1 px-4 py-3 bg-gray-50 text-gray-500 rounded-xl hover:bg-gray-100 transition-colors font-bold text-sm">
+                            Anulează
+                        </button>
+                        <button type="submit" id="submitBtn"
+                                class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 shadow-lg shadow-purple-100 font-bold text-sm transition-all active:scale-95">
+                            Procesează fișierul
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script>
+        // Corecție: Script-ul acum găsește formularul prin id-ul "uploadForm"
+        const uploadForm = document.getElementById('uploadForm');
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(e) {
+                const btn = document.getElementById('submitBtn');
+                const modal = document.getElementById('uploadModal');
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Se trimite...';
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                setTimeout(() => {
+                    modal.classList.add('opacity-0');
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('opacity-0');
+                    }, 300);
+                }, 1000);
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

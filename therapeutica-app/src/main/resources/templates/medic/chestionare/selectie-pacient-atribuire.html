@@ -1,0 +1,83 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Selectie Pacient - Atribuire CDSS</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mx-auto px-4 py-8">
+
+        <div class="mb-6">
+            <a th:href="@{/chestionare/medic/lista-chestionare}" class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                <i class="fas fa-chevron-left mr-2"></i> Înapoi la lista de chestionare
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-extrabold text-gray-900">Atribuire Chestionar</h1>
+                <p class="text-gray-500 mt-1">
+                    Selectați pacientul căruia doriți să îi atribuiți protocolul:
+                    <span class="text-blue-600 font-bold" th:text="${chestionar.nume}">Nume Chestionar</span>
+                </p>
+            </div>
+            <div class="px-4 py-2 bg-blue-50 rounded-xl border border-blue-100">
+                <span class="text-xs font-bold text-blue-700 uppercase tracking-widest">Protocol Selectat</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Pacient</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Detalii Contact</th>
+                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acțiune</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                <tr th:each="p : ${pacienti}" class="hover:bg-blue-50/30 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold border border-slate-200">
+                                <span th:text="${#strings.substring(p.user.nume,0,1)}">P</span>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-bold text-gray-900" th:text="${p.user.nume} + ' ' + ${p.user.prenume}">Nume Pacient</div>
+                                <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-tighter">Status: Monitorizat</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-600">
+                            <i class="far fa-envelope mr-1.5 text-gray-400"></i>
+                            <span th:text="${p.user.email}">email@exemplu.com</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <form th:action="@{/medic/pacienti/{pId}/atribuire(pId=${p.id})}" method="post">
+                            <input type="hidden" name="chestionareIds" th:value="${chestionar.id}">
+
+                            <button type="submit"
+                                    class="inline-flex items-center px-5 py-2.5 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 shadow-sm transition-all active:scale-95">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Confirmă Atribuirea
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div th:if="${#lists.isEmpty(pacienti)}" class="text-center py-20 bg-gray-50">
+                <i class="fas fa-users-slash text-gray-300 text-5xl mb-4"></i>
+                <h3 class="text-gray-900 font-bold text-lg">Nu aveți pacienți în listă</h3>
+                <p class="text-gray-500 max-w-xs mx-auto mt-2 text-sm">Adăugați pacienți în sistem înainte de a le atribui chestionare.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

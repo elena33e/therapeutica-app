@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Atribuire chestionar nou</title>
+
+</head>
+<body>
+
+<div layout:fragment="content" class="container mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a th:href="@{'/medic/dashboard/' + ${userId}}"
+                   class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-home mr-2"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <a th:href="@{/medic/pacienti}"
+                       class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600">
+                        Pacienții mei
+                    </a>
+                </div>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <a th:href="@{'/medic/pacienti/' + ${pacient.id}}"
+                       class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600">
+                        <span th:text="${pacientNume}"></span>
+                        <span th:text="${pacientPrenume}"></span>
+                    </a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="ml-1 text-sm font-medium text-blue-600 md:ml-2">
+                        Atribuie chestionar nou
+                    </span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Atribuie chestionar nou</h1>
+        <p class="text-gray-600 mt-2">
+            Pasul final: selectați chestionar(e)le pe care doriți să le atribuiți pacientului
+            <span class="font-medium text-blue-600">
+                <span th:text="${pacientNume}"></span>
+                <span th:text="${pacientPrenume}"></span>
+            </span>
+        </p>
+    </div>
+
+    <!-- Mesaje de eroare -->
+    <div th:if="${error}" class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <span th:text="${error}"></span>
+    </div>
+
+    <!-- Formular pentru atribuire -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Coloana stânga: Lista chestionare disponibile -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-blue-50">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-clipboard-list text-blue-600 mr-2"></i>
+                        Chestionare disponibile
+                        <span class="ml-2 text-sm font-normal text-gray-500"
+                              th:text="'(' + ${chestionareDisponibile != null ? chestionareDisponibile.size() : 0} + ' chestionare)'">
+                        </span>
+                    </h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Bifați unul sau mai multe chestionare pe care doriți să le atribuiți
+                    </p>
+                </div>
+
+                <form th:action="@{'/medic/pacienti/' + ${pacient.id} + '/atribuire'}"
+                      method="post"
+                      th:object="${requestDTO}"
+                      id="atribuireForm">
+
+                    <!-- Câmpuri ascunse -->
+                    <input type="hidden" th:field="*{pacientId}" th:value="${pacient.id}">
+                    <input type="hidden" th:field="*{medicId}" th:value="${medic.userId}">
+
+                    <div class="p-6">
+                        <div th:if="${chestionareDisponibile != null and !chestionareDisponibile.isEmpty()}">
+                            <div class="space-y-4">
+                                <div th:each="chestionar, iterStat : ${chestionareDisponibile}"
+                                     class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition duration-200">
+                                    <div class="flex items-start">
+                                        <div class="flex items-center h-5 mr-4">
+                                            <input type="checkbox"
+                                                   th:id="'chestionar_' + ${chestionar.id}"
+                                                   th:value="${chestionar.id}"
+                                                   th:field="*{chestionareIds}"
+                                                   class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                        </div>
+                                        <div class="flex-1">
+                                            <label th:for="'chestionar_' + ${chestionar.id}"
+                                                   class="cursor-pointer">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 class="font-bold text-lg text-gray-800 mb-1">
+                                                            <span th:text="${chestionar.nume}"></span>
+                                                        </h3>
+                                                        <p class="text-sm text-gray-600 mb-2"
+                                                           th:if="${chestionar.descriere}">
+                                                            <span th:text="${chestionar.descriere}"></span>
+                                                        </p>
+                                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                                            <span class="flex items-center">
+                                                                <i class="fas fa-clock mr-1"></i>
+                                                                <span>Durata estimată: 10-15 min</span>
+                                                            </span>
+                                                            <span class="flex items-center">
+                                                                <i class="fas fa-question-circle mr-1"></i>
+                                                                <span>~20 întrebări</span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                                                        Medical
+                                                    </span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Detalii chestionar (expandabile) -->
+                                    <div class="mt-3 pt-3 border-t border-gray-100">
+                                        <button type="button"
+                                                th:onclick="'toggleDetails(\'details-' + ${iterStat.index} + '\')'"
+                                                class="...">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Detalii chestionar
+                                        </button>
+                                        <div th:id="'details-' + ${iterStat.index}" class="hidden mt-2 text-sm text-gray-600">
+                                        </div>
+                                        <div id="details-${iterStat.index}" class="hidden mt-2 text-sm text-gray-600">
+                                            <p class="mb-2" th:if="${chestionar.instructiuni}">
+                                                <span class="font-medium">Instrucțiuni:</span>
+                                                <span th:text="${chestionar.instructiuni}"></span>
+                                            </p>
+                                            <div class="bg-gray-50 p-3 rounded">
+                                                <p class="font-medium text-gray-700 mb-1">Ce evaluează acest chestionar:</p>
+                                                <ul class="list-disc pl-5 space-y-1">
+                                                    <li>Starea generală de sănătate</li>
+                                                    <li>Simptome și reacții</li>
+                                                    <li>Istoric medical relevant</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mesaj dacă nu există chestionare disponibile -->
+                        <div th:if="${chestionareDisponibile == null or chestionareDisponibile.isEmpty()}"
+                             class="text-center py-12">
+                            <i class="fas fa-clipboard-check text-5xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-semibold text-gray-700 mb-2">
+                                Nu există chestionare disponibile
+                            </h3>
+                            <p class="text-gray-600 mb-4">
+                                Pacientul are deja toate chestionarele atribuite.
+                            </p>
+                            <a th:href="@{'/medic/pacienti/' + ${pacient.id}}"
+                               class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                                <i class="fas fa-arrow-left mr-2"></i>
+                                Înapoi la detalii pacient
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Coloana dreapta: Panou informații și confirmare -->
+        <div class="lg:col-span-1">
+            <!-- Card pacient -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <h3 class="font-semibold text-gray-700 flex items-center">
+                        <i class="fas fa-user-injured mr-2"></i>
+                        Pacient selectat
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-blue-100 p-3 rounded-full mr-4">
+                            <i class="fas fa-user text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800">
+                                <span th:text="${pacientNume}"></span>
+                                <span th:text="${pacientPrenume}"></span>
+                            </h4>
+                            <p class="text-sm text-gray-600" th:text="${pacient.user.email}"></p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Medic responsabil:</span>
+                            <span class="font-medium">
+                                <span th:text="${medic.user.nume}"></span>
+                                <span th:text="${medic.user.prenume}"></span>
+                            </span>
+                        </div>
+                        <div class="flex justify-between" th:if="${pacient.cnp}">
+                            <span class="text-gray-500">CNP:</span>
+                            <span class="font-medium" th:text="${pacient.cnp}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card instrucțiuni -->
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-6">
+                <h3 class="font-bold text-blue-800 mb-3 flex items-center">
+                    <i class="fas fa-lightbulb mr-2"></i>
+                    Informații importante
+                </h3>
+                <ul class="space-y-2 text-sm text-blue-700">
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle mt-0.5 mr-2 text-green-500"></i>
+                        <span>Puteți selecta unul sau mai multe chestionare</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle mt-0.5 mr-2 text-green-500"></i>
+                        <span>Pacientul va primi notificare prin email</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle mt-0.5 mr-2 text-green-500"></i>
+                        <span>Chestionarele vor apărea în contul pacientului</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle mt-0.5 mr-2 text-green-500"></i>
+                        <span>Puteți urmări progresul completării</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card confirmare -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                <h3 class="font-semibold text-gray-700 mb-4">Confirmare atribuire</h3>
+
+<!--                <div class="mb-6">-->
+<!--                    <label class="block text-sm font-medium text-gray-700 mb-2">-->
+<!--                        Mesaj personalizat pentru pacient (opțional):-->
+<!--                    </label>-->
+<!--                    <textarea th:field="*{mesajPersonalizat}"-->
+<!--                              th:if="${requestDTO != null}"-->
+<!--                              rows="3"-->
+<!--                              class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"-->
+<!--                              placeholder="Adăugați un mesaj personalizat pentru pacient..."></textarea>-->
+<!--                    <p class="text-xs text-gray-500 mt-1">-->
+<!--                        Acest mesaj va apărea în notificarea trimisă pacientului.-->
+<!--                    </p>-->
+<!--                </div>-->
+
+                <div class="flex space-x-3">
+                    <a th:href="@{'/medic/pacienti/' + ${pacient.id}}"
+                       class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-lg text-center transition duration-300">
+                        <i class="fas fa-times mr-2"></i>
+                        Anulează
+                    </a>
+
+                    <button type="button"
+                            onclick="submitAtribuire()"
+                            id="submitButton"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span class="button-text">Confirmă atribuirea</span>
+                    </button>
+
+                    <!-- Înlocuiește butonul de detalii din fiecare chestionar: -->
+                    <button type="button"
+                            onclick="toggleDetails('details-${iterStat.index}')"
+                            class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Detalii chestionar
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    </button>
+                </div>
+
+                <p class="text-xs text-gray-500 mt-4 text-center">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Datele pacientului sunt protejate conform GDPR
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripturi -->
+<!-- Scripturi -->
+<div layout:fragment="scripts">
+    <script>
+        /**
+         * Script pentru pagina de atribuire chestionar
+         * Gestionează validarea și trimiterea formularului de atribuire
+         */
+
+        // Funcție pentru a afișa/ascunde detaliile chestionarului
+        function toggleDetails(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.classList.toggle('hidden');
+
+                // Schimbă și iconița chevron
+                const button = document.querySelector(`button[onclick="toggleDetails('${id}')"]`);
+                if (button) {
+                    const icon = button.querySelector('.fa-chevron-down, .fa-chevron-up');
+                    if (icon) {
+                        icon.classList.toggle('fa-chevron-down');
+                        icon.classList.toggle('fa-chevron-up');
+                    }
+                }
+            }
+        }
+
+        // Funcție pentru validare și trimitere formular
+        function submitAtribuire() {
+            console.log('✅ submitAtribuire called');
+
+            const form = document.getElementById('atribuireForm');
+            if (!form) {
+                console.error('❌ Form not found');
+                alert('Eroare: Formularul nu a fost găsit');
+                return;
+            }
+
+            const checkboxes = form.querySelectorAll('input[type="checkbox"][name="chestionareIds"]:checked');
+            console.log('🔍 Checked checkboxes:', checkboxes.length);
+
+            // Validare: cel puțin un chestionar selectat
+            if (checkboxes.length === 0) {
+                alert('Vă rugăm să selectați cel puțin un chestionar pentru atribuire!');
+                return;
+            }
+
+            // Construiește mesajul de confirmare
+            const numChestionare = checkboxes.length;
+            const mesaj = `Sunteți sigur că doriți să atribuiți ${numChestionare} chestionar${numChestionare > 1 ? 'e' : ''} pacientului?`;
+
+            // Confirmare
+            if (confirm(mesaj)) {
+                console.log('✅ User confirmed, submitting form...');
+
+                // Adaugă indicator de loading
+                const submitButton = document.getElementById('submitButton');
+                if (submitButton) {
+                    const originalHTML = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Se atribuie...';
+
+                    // După 5 secunde, resetează butonul (în caz de timeout)
+                    setTimeout(() => {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalHTML;
+                    }, 5000);
+                }
+
+                // Trimite formularul
+                form.submit();
+            }
+        }
+
+        // Inițializare la încărcarea paginii
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Script atribuire chestionar încărcat');
+
+            // Adaugă event listener pentru checkbox-uri
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][name="chestionareIds"]');
+            console.log('📊 Found checkboxes:', checkboxes.length);
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    console.log('🔍 Checkbox changed:', this.checked);
+                });
+            });
+        });
+    </script>
+</div>
+
+</body>
+</html>

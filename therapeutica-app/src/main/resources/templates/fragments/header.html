@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="header">
+    <header class="bg-white shadow-sm border-b border-gray-200" th:unless="${session != null and session.userId != null}">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"></path>
+                    </svg>
+                    <span class="text-xl font-bold text-gray-800">Therapeutica</span>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-4">
+                    <a th:href="@{/}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">
+                        Acasă
+                    </a>
+
+                    <!-- Butoane autentificare -->
+                    <div class="flex items-center space-x-3">
+                        <a th:href="@{/login}"
+                           class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 transform hover:scale-105">
+                            Autentificare
+                        </a>
+                        <a th:href="@{/inregistrare}"
+                           class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 transform hover:scale-105">
+                            Înregistrare
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+</div>
+</body>
+</html>

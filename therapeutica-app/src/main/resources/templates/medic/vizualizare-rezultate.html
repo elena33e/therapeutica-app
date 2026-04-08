@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Analiză Detaliată Chestionar</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body class="bg-slate-50">
+
+<div layout:fragment="content">
+    <div class="min-h-screen py-8">
+        <div class="max-w-6xl mx-auto px-4">
+
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight mb-1" th:text="${chestionar.nume}">Analiză Sisteme Corp</h2>
+                </div>
+                <div class="flex gap-3">
+                    <a th:href="@{'/medic/' + ${medicId} + '/pacient/' + ${pacient.id}}"
+                       class="inline-flex items-center px-5 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">
+                        <i class="fas fa-arrow-left mr-2 text-slate-400"></i> Înapoi la Profil
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-12">
+                <div class="flex flex-col lg:flex-row">
+                    <div class="lg:w-2/3 p-10">
+                        <h5 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center">
+                            <span class="w-8 h-[2px] bg-blue-500 mr-3"></span> Index de Severitate Globală
+                        </h5>
+                        <div id="mainChart" class="w-full" style="height: 300px;"></div>
+                    </div>
+                    <div class="lg:w-1/3 bg-slate-50/50 p-10 flex flex-col justify-center border-l border-slate-100">
+                        <div class="mb-4">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scor Actual</label>
+                            <div class="text-7xl font-black tracking-tighter" th:style="'color:' + ${rezultat.culoareTotalHex}"
+                                 th:text="${#numbers.formatDecimal(rezultat.scorTotal ?: 0, 1, 2)}">0.00</div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider"
+                                 th:style="'background-color:' + ${rezultat.culoareTotalHex} + '20; color:' + ${rezultat.culoareTotalHex}">
+                                <i class="fas fa-exclamation-triangle mr-2"></i> Status: <span class="ml-1" th:text="${rezultat.interpretareTotal}">Interpretare</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-12 mt-12">
+                <div class="flex items-center justify-between px-2">
+                    <h3 class="text-2xl font-black text-slate-800 tracking-tight">Analiză Sisteme Funcționale</h3>
+                    <div class="hidden md:flex gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#10B981] mr-2"></span> Optim (0-1)</span>
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#FBBF24] mr-2"></span> Ușor (1-2)</span>
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#F97316] mr-2"></span> Moderat (2-3)</span>
+                        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#991B1B] mr-2"></span> Critic (3-4)</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <th:block th:each="entry, iter : ${raspunsuriPeCategorii}"
+                              th:with="categoriaObj=${categoriiMap.get(entry.key)}">
+
+                        <div th:if="${categoriaObj != null and categoriaObj.esteEvaluabila}"
+                             class="bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden transition-all hover:shadow-md">
+
+                            <div class="p-8 flex flex-col items-center text-center">
+                                <h4 class="text-lg font-bold text-slate-800 mb-1" th:text="${entry.key}">Nume Categorie</h4>
+                                <span class="text-[10px] font-black uppercase tracking-widest mb-4"
+                                      th:style="'color: ' + ${rezultat.culoriCategorii.get(entry.key)}"
+                                      th:text="${rezultat.interpretariCategorii.get(entry.key)}">Status</span>
+
+                                <div class="cat-gauge w-full" style="height: 200px;"
+                                     th:data-score="${rezultat.scoruriCategorii.get(entry.key) ?: 0}">
+                                </div>
+                            </div>
+
+                            <details class="group border-t border-slate-50">
+                                <summary class="list-none cursor-pointer p-4 text-center hover:bg-slate-50 transition-colors">
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest group-open:hidden"><i class="fas fa-list mr-1"></i> Vezi Biomarkeri</span>
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden group-open:inline"><i class="fas fa-chevron-up mr-1"></i> Ascunde</span>
+                                </summary>
+                                <div class="px-6 pb-8 bg-slate-50/50">
+                                    <table class="w-full text-left mt-2 text-[11px]">
+                                        <thead>
+                                        <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
+                                            <th class="pb-2 px-2">Întrebare</th>
+                                            <th class="pb-2 px-2 text-center">Răspuns</th>
+                                            <th class="pb-2 px-2 text-right">Scor</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                        <tr th:each="r : ${entry.value}" class="hover:bg-slate-100 transition-colors">
+                                            <td class="py-3 px-2 text-slate-700 font-semibold" th:text="${r.intrebare.textIntrebare}">Text</td>
+                                            <td class="py-3 px-2 text-center text-slate-500" th:text="${r.raspunsText ?: r.raspunsNumeric}">-</td>
+                                            <td class="py-3 px-2 text-right">
+                                                    <span class="font-black text-slate-800 bg-white shadow-sm border border-slate-200 px-2.5 py-1 rounded-md"
+                                                          th:text="${r.scor != null ? #numbers.formatInteger(r.scor, 1) : '0'}">0</span>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </details>
+                        </div>
+                    </th:block>
+                </div>
+
+                <div class="pt-12 border-t border-slate-100">
+                    <h3 class="text-xl font-black text-slate-800 mb-8">Context Clinic & Stil de Viață</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <th:block th:each="entry : ${raspunsuriPeCategorii}" th:with="categoriaObj=${categoriiMap.get(entry.key)}">
+                            <div th:if="${categoriaObj != null and !categoriaObj.esteEvaluabila}"
+                                 class="bg-slate-100/50 p-6 rounded-[2rem] border border-slate-100">
+                                <h4 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-4" th:text="${entry.key}">Informații</h4>
+                                <div class="space-y-4">
+                                    <div th:each="r : ${entry.value}" class="flex flex-col border-b border-slate-200/50 pb-2">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase" th:text="${r.intrebare.textIntrebare}">Întrebare</span>
+                                        <span class="text-sm text-slate-700 font-bold" th:text="${r.raspunsText ?: r.raspunsNumeric}">Răspuns</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </th:block>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Funcția magică ce creează un Sweep Gradient curb și capete rotunjite (Progress Bar Gauge)
+            // Se bazează pe suprapunerea a două grafice: unul gri (fundalul) și unul colorat tăiat exact la scor.
+            function createProgressGauge(score, maxScore, radius, center, width) {
+                const safeScore = Math.min(Math.max(score, 0), maxScore);
+
+                // 1. Seria pentru fundal (Track-ul gri pe care "curge" bara)
+                const bgSeries = {
+                    type: 'gauge',
+                    startAngle: 180, endAngle: 0, min: 0, max: maxScore,
+                    radius: radius, center: center,
+                    axisLine: {
+                        roundCap: true, // Margini rotunjite la capete
+                        // ATENȚIE: Spațiile din interiorul array-ului previn erorile Thymeleaf!
+                        lineStyle: { width: width, color: [ [1, '#f1f5f9'] ] }
+                    },
+                    pointer: { show: false }, // Fără ac
+                    axisTick: { show: false }, splitLine: { show: false },
+                    axisLabel: { show: false }, detail: { show: false },
+                    data: [{ value: safeScore }]
+                };
+
+                // Dacă scorul e practic zero, afișăm doar fundalul gol
+                if (safeScore <= 0.05) return [bgSeries];
+
+                // --- Generare dinamică a gradientului care urmează curba perfect ---
+                const absoluteRatio = safeScore / maxScore;
+                const steps = 40; // 40 de tăieturi pentru o trecere invizibilă
+                const segments = [];
+
+                const hexToRgb = hex => hex.match(/\w\w/g).map(x => parseInt(x, 16));
+                const interpolate = (c1, c2, factor) => {
+                    const rgb1 = hexToRgb(c1); const rgb2 = hexToRgb(c2);
+                    const r = Math.round(rgb1[0] + factor * (rgb2[0] - rgb1[0]));
+                    const g = Math.round(rgb1[1] + factor * (rgb2[1] - rgb1[1]));
+                    const b = Math.round(rgb1[2] + factor * (rgb2[2] - rgb1[2]));
+                    return 'rgb(' + r + ',' + g + ',' + b + ')';
+                };
+
+                const getAbsoluteColor = (pct) => {
+                    if (pct <= 0.333) return interpolate('#10b981', '#fbbf24', pct / 0.333);
+                    if (pct <= 0.666) return interpolate('#fbbf24', '#f97316', (pct - 0.333) / 0.333);
+                    return interpolate('#f97316', '#991b1b', (pct - 0.666) / 0.334);
+                };
+
+                for (let i = 1; i <= steps; i++) {
+                    const relativeRatio = i / steps;
+                    const absolutePct = relativeRatio * absoluteRatio;
+                    segments.push([relativeRatio, getAbsoluteColor(absolutePct)]);
+                }
+
+                // 2. Seria de deasupra (Bara propriu-zisă colorată care se oprește la scor)
+                const fgSeries = {
+                    type: 'gauge',
+                    startAngle: 180,
+                    endAngle: 180 - (absoluteRatio * 180), // Oprim arcul exact unde trebuie
+                    min: 0, max: safeScore, // Redimensionăm min-max doar pentru acest arc
+                    radius: radius, center: center,
+                    axisLine: {
+                        roundCap: true, // Face ca și "vârful" progresului să fie rotunjit
+                        lineStyle: { width: width, color: segments }
+                    },
+                    pointer: { show: false }, // Fără ac
+                    axisTick: { show: false }, splitLine: { show: false },
+                    axisLabel: { show: false }, detail: { show: false },
+                    data: [{ value: safeScore }],
+                    z: 3 // Asigură că stă peste track-ul gri
+                };
+
+                return [bgSeries, fgSeries];
+            }
+
+            // APLICARE PENTRU GRAFICUL PRINCIPAL (Mare)
+            const mainDom = document.getElementById('mainChart');
+            if (mainDom) {
+                const totalScore = /*[[${rezultat.scorTotal ?: 0}]]*/ 0;
+                const mainChart = echarts.init(mainDom);
+                const seriesData = createProgressGauge(totalScore, 4, '140%', ['50%', '85%'], 18);
+
+                // Reactivăm cifrele 0 și 4 pe marginile graficului principal
+                seriesData[0].axisLabel = {
+                    show: true, distance: -40, color: '#94a3b8', fontSize: 10, fontWeight: 'bold',
+                    formatter: function (val) { return val === 0 ? '0' : (val === 4 ? '4' : ''); }
+                };
+
+                mainChart.setOption({ series: seriesData });
+                window.addEventListener('resize', () => mainChart.resize());
+            }
+
+            // APLICARE PENTRU TOATE CATEGORIILE (Mini Gauges ca în documentul tău)
+            document.querySelectorAll('.cat-gauge').forEach((dom) => {
+                const score = parseFloat(dom.getAttribute('data-score')) || 0;
+                const chart = echarts.init(dom);
+                const seriesData = createProgressGauge(score, 4, '110%', ['50%', '80%'], 16);
+
+                // Afișăm scorul în centru-jos, frumos și vizibil, fără ac indicator
+                seriesData[0].detail = {
+                    show: true,
+                    fontSize: 34,
+                    fontWeight: '900',
+                    color: '#0f172a',
+                    offsetCenter: [0, '15%'],
+                    formatter: '{value}'
+                };
+
+                chart.setOption({ series: seriesData });
+            });
+
+            // Re-render la schimbarea dimeniunii ecranului
+            window.addEventListener('resize', function() {
+                document.querySelectorAll('.cat-gauge').forEach(dom => {
+                    const instance = echarts.getInstanceByDom(dom);
+                    if (instance) instance.resize();
+                });
+            });
+        });
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

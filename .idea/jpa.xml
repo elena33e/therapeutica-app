@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JpaBuddyIdeaProjectConfig">
+    <option name="defaultUnitInitialized" value="true" />
+    <option name="newEntityIdStrategy" />
+    <option name="renamerInitialized" value="true" />
+  </component>
+  <component name="PersistenceUnitSettings">
+    <persistence-units>
+      <persistence-unit moduleName="therapeutica-app" name="Default">
+        <packages>
+          <package value="com.therapeutica.therapeutica_app" />
+        </packages>
+      </persistence-unit>
+    </persistence-units>
+  </component>
+</project>

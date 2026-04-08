@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Chestionarele Mele</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="container mx-auto px-4 py-8">
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Chestionarele Mele</h1>
+            <p class="text-gray-600 mb-6">Gestionează și completează chestionarele atribuite de medic</p>
+        </div>
+
+        <!-- Mesaje de alertă -->
+        <div th:if="${success}" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span th:text="${success}"></span>
+        </div>
+
+        <div th:if="${error}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <div th:if="${info}" class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-6">
+            <i class="fas fa-info-circle mr-2"></i>
+            <span th:text="${info}"></span>
+        </div>
+
+        <!-- Tab-uri -->
+        <div class="mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8">
+                    <a th:href="@{/raspunsuri-chestionare/pacient/{id}/disponibile(id=${userId})}"
+                       class="border-b-2 py-4 px-1 text-sm font-medium"
+                       th:class="${activeTab == 'disponibile'} ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fas fa-inbox mr-2"></i>
+                        Disponibile
+                        <span th:if="${#lists.size(chestionareDisponibile) > 0}"
+                              class="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                            <span th:text="${#lists.size(chestionareDisponibile)}">0</span>
+                        </span>
+                    </a>
+
+                    <a th:href="@{/raspunsuri-chestionare/pacient/{id}/istoric(id=${userId})}"
+                       class="border-b-2 py-4 px-1 text-sm font-medium"
+                       th:class="${activeTab == 'istoric'} ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                        <i class="fas fa-history mr-2"></i>
+                        Istoric
+                        <span th:if="${#lists.size(istoricChestionare) > 0}"
+                              class="ml-2 bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                            <span th:text="${#lists.size(istoricChestionare)}">0</span>
+                        </span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Secțiunea chestionare disponibile -->
+        <div th:if="${activeTab == 'disponibile'}">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-inbox mr-2 text-blue-600"></i>
+                    Chestionare de completat
+                </h2>
+                <p class="text-gray-600">Completează chestionarele pentru evaluare</p>
+            </div>
+
+            <!-- Grid chestionare disponibile -->
+            <div th:if="${not chestionareDisponibile.empty}">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div th:each="chestionar : ${chestionareDisponibile}"
+                         class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+
+                        <div class="flex flex-col h-full">
+                            <!-- Header card -->
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    NECOMPLETAT
+                                </span>
+
+                                <!-- Timp estimat -->
+                                <div class="text-right">
+                                    <div class="text-xs text-gray-500">
+                                        ~15 min
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Titlu și descriere -->
+                            <h3 class="text-lg font-bold text-gray-800 mb-2"
+                                th:text="${chestionar.chestionar?.nume ?: 'Chestionar fără nume'}">
+                                Nume Chestionar
+                            </h3>
+
+                            <p class="text-gray-600 mb-4 flex-grow"
+                               th:text="${chestionar.chestionar?.descriere ?: 'Completează acest chestionar pentru evaluare'}">
+                                Descriere chestionar
+                            </p>
+
+                            <!-- Informații medic -->
+                            <div class="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user-md text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Atribuit de</p>
+                                    <p class="font-medium text-gray-800">
+                                        <span th:text="${chestionar.medic?.user?.nume ?: ''}"></span>
+                                        <span th:if="${chestionar.medic?.user?.prenume != null}"
+                                              th:text="' ' + ${chestionar.medic.user.prenume}"></span>
+                                        <span th:if="${chestionar.medic?.user == null}"
+                                              class="text-gray-400">Medic necunoscut</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Buton start -->
+                            <a th:href="@{/chestionare/completare/{id}(id=${chestionar.id})}"
+                               class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                                <i class="fas fa-play-circle mr-2"></i>
+                                Începe chestionarul
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mesaj dacă nu există chestionare -->
+            <div th:if="${chestionareDisponibile.empty}" class="text-center py-12 bg-gray-50 rounded-xl">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check-circle text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-700 mb-2">
+                    Niciun chestionar disponibil
+                </h3>
+                <p class="text-gray-500 max-w-md mx-auto mb-6">
+                    Momentan nu ai niciun chestionar de completat.
+                    Chestionarele noi vor apărea aici când vor fi atribuite de medic.
+                </p>
+            </div>
+        </div>
+
+        <!-- Secțiunea istoric chestionare -->
+        <div th:if="${activeTab == 'istoric'}">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-history mr-2 text-blue-600"></i>
+                    Istoric Chestionare
+                </h2>
+                <p class="text-gray-600">Chestionarele pe care le-ai completat</p>
+            </div>
+
+            <!-- Tabel istoric -->
+            <div th:if="${not istoricChestionare.empty}" class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                Chestionar
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                Data completării
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                Status
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="chestionar : ${istoricChestionare}">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-clipboard-check text-green-600"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900"
+                                             th:text="${chestionar.chestionar?.nume ?: 'Chestionar fără nume'}">
+                                            Nume Chestionar
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                    <span th:if="${chestionar.medic?.user != null}"
+                                          th:text="${chestionar.medic.user.nume} + ' ' + ${chestionar.medic.user.prenume}">
+                                        Dr. Nume
+                                    </span>
+                                            <span th:if="${chestionar.medic?.user == null}"
+                                                  class="text-gray-400">
+                                        Medic necunoscut
+                                    </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900"
+                                     th:text="${chestionar.completatLa != null} ?
+                                      ${#temporals.format(chestionar.completatLa, 'dd.MM.yyyy HH:mm')} :
+                                      'Data necunoscută'">
+                                    01.01.2024 14:30
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            COMPLETAT
+                        </span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mesaj dacă nu există istoric -->
+            <div th:if="${istoricChestionare.empty}" class="text-center py-12 bg-gray-50 rounded-xl">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-history text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-700 mb-2">
+                    Nu ai completat niciun chestionar
+                </h3>
+                <p class="text-gray-500 max-w-md mx-auto mb-6">
+                    Completează chestionarele disponibile pentru a-ți vedea istoricul aici.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

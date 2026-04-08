@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Fragment footer -->
+<div th:fragment="footer">
+    <footer class="bg-gray-800 text-white py-6 mt-auto"> <!-- Schimbat aici -->
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 Therapeutica. Toate drepturile rezervate.</p>
+            <p class="text-gray-400 text-sm mt-2" th:if="${session != null and session.userId != null}">
+                Autentificat ca: <span class="font-medium" th:text="${session.userRole}"></span>
+            </p>
+        </div>
+    </footer>
+</div>
+</body>
+</html>
