@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedical;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedicalRepository;
 import com.therapeutica.therapeutica_app.intrebari.Intrebare;
+import com.therapeutica.therapeutica_app.pacienti.Pacienti;
+import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebari;
@@ -16,7 +18,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,72 +32,144 @@ public class DiagnozaService {
     private final RaspunsuriIntrebariRepository raspunsuriIntrebariRepository;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
+    private final IstoricDiagnozaRepository istoricDiagnozaRepository;
+    private final PacientiRepository pacientiRepository;
 
-    @Value("${external.services.python-semantic.url}")
+    @Value("${external.services.python-server.base-url}")
     private String pythonBaseUrl;
 
-    public String ruleazaDiagnoza(UUID pacientId) {
-        log.info("Inițiere diagnoză on-demand pentru pacientul: {}", pacientId);
+    @Value("${external.services.python-diagnosis.path}")
+    private String diagnosisPath;
 
-        // 1. Colectăm datele de laborator (cele deja interpretate/standardizate de Python anterior)
-        Object dateLab = extrageDateLab(pacientId);
+    /**
+     * Declanșează procesul de diagnoză integrată (Lab + Simptome)
+     */
+    public String ruleazaDiagnoza(UUID userId, UUID profilPacientId) {
+        log.info("Inițiere diagnoză cumulativă. UserId: {}, ProfilId: {}", userId, profilPacientId);
 
-        // 2. Colectăm simptomele brute din chestionar (filtrate pentru zgomot)
-        List<Map<String, String>> simptomeBrute = extrageSimptomeBrute(pacientId);
+        // 1. Extragere date fuzionate din TOATE buletinele de analize
+        List<Object> dateLab = extrageDateLab(userId);
 
-        // 3. Validare: Dacă nu avem nicio informație, nu are sens să apelăm Python
-        if (dateLab == null && simptomeBrute.isEmpty()) {
-            throw new RuntimeException("Nu există date (analize sau chestionar) pentru acest pacient.");
+        // 2. Extragere simptome unice din chestionare (cu triggere)
+        List<Map<String, Object>> simptomeBrute = extrageSimptomeBrute(profilPacientId);
+
+        log.info("Date colectate: {} analize unice, {} simptome unice.", dateLab.size(), simptomeBrute.size());
+
+        if (dateLab.isEmpty() && simptomeBrute.isEmpty()) {
+            throw new RuntimeException("Nu există date clinice (analize sau chestionare) pentru acest pacient.");
         }
 
-        // 4. Construim Payload-ul către Python (Java nu face FHIR!)
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("pacientId", pacientId.toString());
-        requestBody.put("lab_data", dateLab); // JSON-ul LOINC deja existent
-        requestBody.put("symptoms_data", simptomeBrute); // Listă de {hpo_code, hpo_term}
+        requestBody.put("pacientId", profilPacientId.toString());
+        requestBody.put("lab_data", dateLab);
+        requestBody.put("symptoms_data", simptomeBrute);
 
-        // 5. Apelăm endpoint-ul de diagnostic din Python
-        return trimiteSprePython(requestBody);
+        // 3. Apelare server Python
+        String jsonRaspuns = trimiteSprePython(requestBody);
+
+        // 4. Salvare istoric în DB
+        salveazaIstoric(profilPacientId, jsonRaspuns);
+
+        return jsonRaspuns;
     }
 
-    private Object extrageDateLab(UUID pacientId) {
-        return documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(pacientId).stream()
-                .filter(doc -> doc.getStatus() == DocumentMedical.StatusDocument.INTERPRETAT)
-                .findFirst()
-                .map(doc -> {
-                    try {
-                        // Returnăm conținutul coloanei date_interpretate ca obiect/map
-                        return objectMapper.readValue(doc.getDateInterpretate(), Object.class);
-                    } catch (Exception e) { return null; }
-                }).orElse(null);
+    /**
+     * Colectează analizele din TOATE documentele interpretate, păstrând doar cea mai recentă valoare pentru fiecare marker.
+     */
+    public List<Object> extrageDateLab(UUID userId) {
+        List<DocumentMedical> documente = documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(userId);
+
+        List<Map<String, Object>> toateObservatiile = new ArrayList<>();
+
+        for (DocumentMedical doc : documente) {
+            if (doc.getStatus() == DocumentMedical.StatusDocument.INTERPRETAT && doc.getDateInterpretate() != null) {
+                try {
+                    List<Map<String, Object>> obsDinDoc = objectMapper.readValue(
+                            doc.getDateInterpretate(),
+                            new TypeReference<List<Map<String, Object>>>() {}
+                    );
+                    toateObservatiile.addAll(obsDinDoc);
+                } catch (Exception e) {
+                    log.error("Eroare la parsarea JSON pentru documentul {}: {}", doc.getId(), e.getMessage());
+                }
+            }
+        }
+
+        // Deduplicare după codul HPO: Dacă avem același marker în 2 buletine, 'toMap' îl păstrează pe primul (care e cel mai nou datorită sortării)
+        return new ArrayList<>(
+                toateObservatiile.stream()
+                        .filter(obs -> extrageCodHPO(obs) != null)
+                        .collect(Collectors.toMap(
+                                this::extrageCodHPO,
+                                obs -> obs,
+                                (existent, nou) -> existent
+                        ))
+                        .values()
+        );
     }
 
-    private List<Map<String, String>> extrageSimptomeBrute(UUID pacientId) {
-        // Luăm ultimul chestionar completat
-        List<RaspunsuriChestionare> completari = raspunsuriChestionareRepository
-                .findByPacientIdAndStatusFullRelations(pacientId, RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
+    /**
+     * Extrage simptomele din ultimul chestionar completat, deduplicând și păstrând relația cu Trigger-ul.
+     */
+    public List<Map<String, Object>> extrageSimptomeBrute(UUID profilPacientId) {
+        // Luam hestionarele completate, sortate descrescător după dată
+        List<RaspunsuriChestionare> toateCompletarile = raspunsuriChestionareRepository
+                .findByPacientIdAndStatusFullRelations(profilPacientId, RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
 
-        if (completari.isEmpty()) return new ArrayList<>();
+        if (toateCompletarile.isEmpty()) return new ArrayList<>();
 
-        // Luăm răspunsurile individuale și aplicăm filtrul de zgomot clinic
-        return raspunsuriIntrebariRepository
-                .findByRaspunsChestionarIdWithDetails(completari.get(0).getId()).stream()
-                .filter(this::esteSimptomRelevant)
-                .map(r -> {
-                    Map<String, String> simptom = new HashMap<>();
-                    simptom.put("hpo_code", r.getIntrebare().getHpoCode());
-                    simptom.put("hpo_term", r.getIntrebare().getHpoTerm());
-                    return simptom;
-                }).toList();
+        List<Map<String, Object>> toateSimptomeleDetectate = new ArrayList<>();
+
+        //Colectare simtome din toate chestionarele
+        for (RaspunsuriChestionare chestionar : toateCompletarile) {
+            List<Map<String, Object>> simptomeDinChestionar = raspunsuriIntrebariRepository
+                    .findByRaspunsChestionarIdWithDetails(chestionar.getId()).stream()
+                    .filter(this::esteSimptomRelevant)
+                    .map(ri -> {
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("hpo_code", ri.getIntrebare().getHpoCode());
+                        item.put("hpo_term", ri.getIntrebare().getHpoTerm());
+
+                        if (ri.getIntrebare().getHpoTriggerCode() != null) {
+                            item.put("trigger_code", ri.getIntrebare().getHpoTriggerCode());
+                            item.put("trigger_term", ri.getIntrebare().getHpoTriggerTerm());
+                        }
+                        return item;
+                    })
+                    .toList();
+
+            toateSimptomeleDetectate.addAll(simptomeDinChestionar);
+        }
+
+        return new ArrayList<>(
+                toateSimptomeleDetectate.stream()
+                        .collect(Collectors.toMap(
+                                m -> (String) m.get("hpo_code"), // Cheia unică: codul HPO
+                                m -> m,                          // Valoarea: obiectul simptom
+                                (existent, nou) -> existent      // Prioritate: cel mai recent (deja în listă datorită sortării)
+                        ))
+                        .values()
+        );
+    }
+
+    private String extrageCodHPO(Map<String, Object> obs) {
+        try {
+            List<Map<String, Object>> extensions = (List<Map<String, Object>>) obs.get("extension");
+            if (extensions == null) return null;
+            return extensions.stream()
+                    .filter(ext -> "http://hl7.org/fhir/StructureDefinition/observation-phenotype".equals(ext.get("url")))
+                    .map(ext -> (String) ((Map<String, Object>) ((List<Map<String, Object>>)
+                            ((Map<String, Object>) ext.get("valueCodeableConcept")).get("coding")).get(0)).get("code"))
+                    .findFirst().orElse(null);
+        } catch (Exception e) { return null; }
     }
 
     private boolean esteSimptomRelevant(RaspunsuriIntrebari r) {
         Intrebare i = r.getIntrebare();
         if (i.getHpoCode() == null || r.getScor() == null) return false;
-
         return switch (i.getTipIntrebare().name()) {
-            case "SCOR_0_3" -> r.getScor() >= 2; // Pragul programatic pentru severitate
-            case "DA_NU" -> r.getScor() == 1;   // Doar dacă răspunsul este DA
+            case "SCOR_0_3" -> r.getScor() >= 2;
+            case "DA_NU" -> r.getScor() == 1;
             default -> false;
         };
     }
@@ -103,14 +179,24 @@ public class DiagnozaService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            String url = pythonBaseUrl.replace("standardize-results", "generate-integrated-diagnosis");
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-
+            ResponseEntity<String> response = restTemplate.postForEntity(pythonBaseUrl + diagnosisPath, entity, String.class);
             return response.getBody();
         } catch (Exception e) {
-            log.error("Eroare la comunicarea cu motorul de diagnostic: {}", e.getMessage());
-            throw new RuntimeException("Motorul de diagnostic nu a putut fi contactat.");
+            log.error("Eroare server Python: {}", e.getMessage());
+            throw new RuntimeException("Motorul de diagnostic (Python) nu a putut fi contactat.");
         }
+    }
+
+    public Optional<IstoricDiagnoza> getUltimaDiagnoza(UUID pacientId) {
+        return istoricDiagnozaRepository.findFirstByPacientIdOrderByDataRulareDesc(pacientId);
+    }
+
+    private void salveazaIstoric(UUID pacientId, String jsonRaspuns) {
+        Pacienti pacient = pacientiRepository.findById(pacientId).orElseThrow();
+        IstoricDiagnoza istoric = new IstoricDiagnoza();
+        istoric.setPacient(pacient);
+        istoric.setRezultatJson(jsonRaspuns);
+        istoric.setDataRulare(LocalDateTime.now());
+        istoricDiagnozaRepository.save(istoric);
     }
 }

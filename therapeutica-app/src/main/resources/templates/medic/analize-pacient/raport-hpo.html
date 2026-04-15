@@ -20,9 +20,19 @@
                 </div>
             </div>
             <div class="flex items-center space-x-3 text-print-none">
+
+                <form th:if="${diagnostice == null}" th:action="@{'/medic/analize/vizualizeaza/' + ${document.id}}" method="get">
+                    <input type="hidden" name="runDiagnosis" value="true">
+                    <button type="submit"
+                            class="px-5 py-2 bg-indigo-600 text-white text-sm rounded-xl hover:bg-indigo-700 font-medium shadow-sm transition-all flex items-center animate-pulse">
+                        <i class="fas fa-brain mr-2"></i> Generează Diagnoză Integrată
+                    </button>
+                </form>
+
                 <button onclick="window.print()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
                     <i class="fas fa-print mr-2"></i> Print
                 </button>
+
                 <a th:href="@{'/medic/analize/dosar/' + ${realPacientId}}"
                    class="px-5 py-2 bg-slate-900 text-white text-sm rounded-xl hover:bg-slate-800 font-medium shadow-sm transition-all flex items-center">
                     <i class="fas fa-chevron-left mr-2 text-[10px]"></i> Înapoi
@@ -55,13 +65,31 @@
                         </div>
                     </th:block>
                 </div>
+                <div th:unless="${hasHpo}" class="text-center py-6 text-slate-500 text-sm">
+                    Nu s-au detectat abateri care să indice fenotipuri clinice specifice în aceste analize.
+                </div>
             </div>
         </section>
 
-        <section th:if="${hasHpo}" class="space-y-6">
-            <div class="px-4">
-                <h3 class="text-xl font-semibold text-slate-800">Evaluare Diagnostică (Model Bayesian)</h3>
-                <p class="text-slate-500 text-sm">Patologii ierarhizate după Conținutul Informațional (IC) explicat</p>
+        <section th:if="${hasHpo or diagnostice != null}" class="space-y-6">
+            <div class="px-4 flex justify-between items-end">
+                <div>
+                    <h3 class="text-xl font-semibold text-slate-800">Evaluare Diagnostică (Model Bayesian)</h3>
+                    <p class="text-slate-500 text-sm">Patologii ierarhizate după Conținutul Informațional (IC) explicat</p>
+                </div>
+
+                <div th:if="${diagnosticError != null}" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-medium border border-red-100 flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span th:text="${diagnosticError}">Eroare</span>
+                </div>
+            </div>
+
+            <div th:if="${diagnostice == null and diagnosticError == null}" class="bg-indigo-50/50 border-2 border-dashed border-indigo-100 rounded-[2rem] p-12 text-center">
+                <div class="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-robot text-indigo-500 text-2xl"></i>
+                </div>
+                <h4 class="text-indigo-900 font-semibold">Gata pentru Diagnoză Integrată</h4>
+                <p class="text-indigo-600/60 text-sm mt-2 max-w-xs mx-auto">Apăsați butonul de sus pentru a corela analizele cu simptomele pacientului.</p>
             </div>
 
             <div th:if="${diagnostice != null and !diagnostice.isEmpty()}" class="grid grid-cols-1 md:grid-cols-2 gap-6">

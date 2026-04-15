@@ -9,27 +9,43 @@
 
 <div layout:fragment="content" class="min-h-screen bg-slate-50 pb-20">
 
-    <div class="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 shadow-sm">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <div class="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-5 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+
             <div class="flex items-center space-x-4">
-                <div class="bg-indigo-50 p-2.5 rounded-xl">
-                    <i class="fas fa-user-injured text-indigo-600 text-xl"></i>
+                <div class="bg-indigo-50 p-3 rounded-2xl">
+                    <i class="fas fa-user text-indigo-600 text-2xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-semibold text-slate-800 leading-none">
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">
                         <span th:text="${pacientUser.nume}"></span> <span th:text="${pacientUser.prenume}"></span>
                     </h1>
-                    <p class="text-[11px] text-slate-400 mt-1 font-medium">Fișa medicală a pacientului</p>
+                    <div class="flex items-center mt-1 space-x-3 text-xs font-medium text-slate-500">
+                        <span th:if="${pacient.cnp}"><i class="far fa-id-card mr-1"></i> <span th:text="${pacient.cnp}"></span></span>
+                        <span><i class="far fa-envelope mr-1"></i> <span th:text="${pacientUser.email}"></span></span>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/atribuire-nou'}"
-                   class="px-5 py-2 bg-indigo-600 text-white text-sm rounded-xl hover:bg-indigo-700 font-medium shadow-sm transition-all flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Atribuie Chestionar
-                </a>
-                <a th:href="@{'/medic/analize/dosar/' + ${pacient.id}}"
-                   class="px-5 py-2 bg-slate-900 text-white text-sm rounded-xl hover:bg-slate-800 font-medium shadow-sm transition-all flex items-center">
-                    <i class="fas fa-microscope mr-2"></i> Dosar Analize
+
+            <div class="flex flex-wrap items-center gap-3">
+
+                <div class="flex space-x-2">
+                    <a th:href="@{'/medic/analize/dosar/' + ${pacient.id}}"
+                       class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm flex items-center">
+                        <i class="fas fa-microscope mr-2 text-slate-400"></i> Dosar Analize
+                    </a>
+
+                    <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/atribuire-nou'}"
+                       class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm flex items-center">
+                        <i class="fas fa-clipboard-list mr-2 text-slate-400"></i> Atribuie Chestionar
+                    </a>
+                </div>
+
+                <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/diagnoza-integrata'}"
+                   class="px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 flex items-center group relative overflow-hidden">
+                    <span class="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></span>
+                    <i class="fas fa-brain mr-2 group-hover:scale-110 transition-transform relative z-10"></i>
+                    <span class="relative z-10">Profil Fenotipic</span>
                 </a>
             </div>
         </div>
@@ -46,36 +62,14 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
-                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center">
-                    <i class="fas fa-id-card text-slate-300 mr-2"></i> Date Identificare
-                </h3>
-                <div class="space-y-5">
-                    <div>
-                        <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Nume complet</p>
-                        <p class="text-base font-semibold text-slate-800">
-                            <span th:text="${pacientUser.nume}"></span> <span th:text="${pacientUser.prenume}"></span>
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Email de contact</p>
-                        <p class="text-base font-medium text-slate-700" th:text="${pacientUser.email}"></p>
-                    </div>
-                    <div th:if="${pacient.cnp}">
-                        <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Cod Numeric Personal</p>
-                        <p class="text-base font-medium tracking-wide text-slate-700" th:text="${pacient.cnp}"></p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col justify-between">
                 <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center">
                     <i class="fas fa-chart-bar text-slate-300 mr-2"></i> Activitate Chestionare
                 </h3>
 
-                <div class="mb-6">
+                <div class="mb-6 flex-grow">
                     <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Total Atribuite</p>
-                    <p class="text-4xl font-bold text-indigo-600 tracking-tight"
+                    <p class="text-5xl font-black text-indigo-600 tracking-tight"
                        th:text="${totalChestionareCompletate + totalChestionareNecompletate}">0</p>
                 </div>
 
@@ -84,14 +78,71 @@
                         <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1 flex items-center">
                             <i class="fas fa-check-circle text-emerald-400 mr-1.5"></i> Completate
                         </p>
-                        <p class="text-xl font-bold text-slate-700" th:text="${totalChestionareCompletate}">0</p>
+                        <p class="text-2xl font-bold text-slate-700" th:text="${totalChestionareCompletate}">0</p>
                     </div>
                     <div>
                         <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1 flex items-center">
                             <i class="fas fa-clock text-amber-400 mr-1.5"></i> În așteptare
                         </p>
-                        <p class="text-xl font-bold text-slate-700" th:text="${totalChestionareNecompletate}">0</p>
+                        <p class="text-2xl font-bold text-slate-700" th:text="${totalChestionareNecompletate}">0</p>
                     </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-200 flex flex-col justify-between h-full">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center">
+                    <i class="fas fa-heartbeat text-slate-300 mr-2"></i> Date Biometrice
+                </h3>
+
+                <div class="grid grid-cols-2 gap-y-6 gap-x-4 flex-grow">
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Vârstă / Naștere</p>
+                        <p class="text-base font-semibold text-slate-800">
+                            <span th:text="${pacient.varsta > 0 ? pacient.varsta + ' ani' : '-'}"></span>
+                        </p>
+                        <p class="text-[11px] text-slate-500 font-medium" th:if="${pacient.dataNasterii}">
+                            (<span th:text="${#temporals.format(pacient.dataNasterii, 'dd.MM.yyyy')}"></span>)
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Sex Biologic</p>
+                        <p class="text-base font-semibold text-slate-800">
+                            <span th:if="${pacient.sex != null and pacient.sex.name() == 'MASCULIN'}">
+                                <i class="fas fa-mars text-blue-500 mr-1"></i> Masculin
+                            </span>
+                            <span th:if="${pacient.sex != null and pacient.sex.name() == 'FEMININ'}">
+                                <i class="fas fa-venus text-pink-500 mr-1"></i> Feminin
+                            </span>
+                            <span th:if="${pacient.sex == null}" class="text-slate-400 italic font-normal text-sm">Nespecificat</span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Înălțime</p>
+                        <p class="text-base font-semibold text-slate-800">
+                            <span th:text="${pacient.inaltime != null ? pacient.inaltime + ' cm' : '-'}"></span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Greutate</p>
+                        <p class="text-base font-semibold text-slate-800">
+                            <span th:text="${pacient.greutate != null ? pacient.greutate + ' kg' : '-'}"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-5 border-t border-slate-200/60 flex items-center justify-between">
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Grupă Sanguină</p>
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-red-50 text-red-700 border border-red-100"
+                          th:if="${pacient.grupaSangvina != null and !pacient.grupaSangvina.isEmpty()}">
+                         <i class="fas fa-tint mr-1.5 text-red-500"></i> <span th:text="${pacient.grupaSangvina}"></span>
+                     </span>
+                    <span class="text-xs text-slate-400 italic font-medium"
+                          th:unless="${pacient.grupaSangvina != null and !pacient.grupaSangvina.isEmpty()}">
+                         Neînregistrată
+                     </span>
                 </div>
             </div>
         </div>

@@ -45,8 +45,6 @@ public class Pacienti {
     @Column(name = "grupa_sangvina")
     private String grupaSangvina;
 
-    // --------------------------------
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medic_id", nullable = true)
     private Medici medic;

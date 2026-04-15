@@ -5,6 +5,7 @@ import com.therapeutica.therapeutica_app.analize_medicale.BuletinAnalizeService;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedical;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedicalRepository;
 import com.therapeutica.therapeutica_app.analize_medicale.dto.BuletinEditabilDTO;
+import com.therapeutica.therapeutica_app.diagnoza.DiagnozaService;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -40,6 +41,8 @@ public class MedicAnalizeController {
     private final BuletinAnalizeService analizeService;
     private final DocumentMedicalRepository documentMedicalRepository;
     private final PacientiRepository pacientiRepository;
+    private final DiagnozaService diagnozaService; // Adaugă asta!
+    private final ObjectMapper objectMapper;
 
     /**
      * 1. Lista de lucru a medicului (Worklist)
@@ -148,80 +151,60 @@ public class MedicAnalizeController {
     /**
      * 7. Vizualizarea Raportului Clinic Final (FHIR & HPO)
      */
+    /**
+     * 7. Vizualizarea Raportului Clinic Final (FHIR & HPO)
+     * Acum suportă diagnoza ON-DEMAND prin parametrul runDiagnosis.
+     */
     @GetMapping("/vizualizeaza/{docId}")
-    public String afiseazaRaportFinal(@PathVariable UUID docId, Model model) {
-        log.info("Medic accesează raportul final pentru documentul: {}", docId);
+    public String afiseazaRaportFinal(
+            @PathVariable UUID docId,
+            @RequestParam(value = "runDiagnosis", required = false) boolean runDiagnosis,
+            Model model) {
+
+        log.info("Accesare raport pentru documentul: {}. Diagnoză solicitată: {}", docId, runDiagnosis);
 
         DocumentMedical doc = documentMedicalRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Documentul nu a fost găsit."));
 
+        // Aici extragem realPacientId din entitatea Pacienti, folosind doc.getPacientId() (care e de fapt UserId)
         Pacienti pacient = pacientiRepository.findByUserId(doc.getPacientId())
-                .orElseThrow(() -> new RuntimeException("Nu a fost găsit profilul de pacient asociat acestui document."));
+                .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit."));
 
-        UUID realPacientId = pacient.getId();
+        UUID realPacientId = pacient.getId(); // <--- ACEASTA ESTE VARIABILA de care aveam nevoie
         model.addAttribute("realPacientId", realPacientId);
+        model.addAttribute("document", doc);
 
-        String fhirJson = doc.getDateInterpretate();
-
-        if (fhirJson == null || fhirJson.isEmpty()) {
-            log.warn("Raportul nu poate fi afișat: date_interpretate_fhir este gol pentru {}", docId);
-            return "redirect:/medic/analize/dosar/" + realPacientId;
-        }
-
-        ObjectMapper mapper = new ObjectMapper();
         try {
-            // Parsăm FHIR-ul pentru afișarea de bază
-            List<Map<String, Object>> observations = mapper.readValue(
-                    fhirJson,
+            List<Map<String, Object>> observations = objectMapper.readValue(
+                    doc.getDateInterpretate(),
                     new TypeReference<List<Map<String, Object>>>() {}
             );
-
             model.addAttribute("observations", observations);
-            model.addAttribute("document", doc);
 
-            boolean hasHpo = observations.stream()
-                    .anyMatch(obs -> obs.containsKey("extension") &&
-                            !((List<?>) obs.get("extension")).isEmpty());
+            boolean hasHpoInLab = observations.stream()
+                    .anyMatch(obs -> obs.containsKey("extension") && !((List<?>) obs.get("extension")).isEmpty());
+            model.addAttribute("hasHpo", hasHpoInLab);
 
-            model.addAttribute("hasHpo", hasHpo);
-
-
-            // Apel catre motorul de diagnoza din Python
-
-            // --- ÎN METODA afiseazaRaportFinal ---
-
-            if (hasHpo) {
+            // LOGICA ON-DEMAND: Rulăm diagnoza doar la apăsarea butonului
+            if (runDiagnosis) {
                 try {
-                    RestTemplate restTemplate = new RestTemplate();
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    // ACUM ESTE VIZIBILĂ: Trimitem UserId-ul (doc.getPacientId()) și ProfilId-ul (realPacientId)
+                    String jsonDiagnostic = diagnozaService.ruleazaDiagnoza(doc.getPacientId(), realPacientId);
 
-                    // Cererea sub formă de MAP
-                    Map<String, Object> payload = new HashMap<>();
-                    payload.put("pacientId", realPacientId.toString());
-                    payload.put("lab_data", observations);
-                    payload.put("symptoms_data", new ArrayList<>());
+                    Map<String, Object> diagnosisData = objectMapper.readValue(jsonDiagnostic, new TypeReference<>() {});
 
-                    HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+                    model.addAttribute("diagnostice", diagnosisData.get("diagnostice"));
+                    model.addAttribute("simptomeAnalizate", diagnosisData.get("simptome_analizate"));
 
-                    String pythonApiUrl = "http://localhost:8000/differential-diagnosis";
-
-                    ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, request, Map.class);
-
-                    if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                        Map<String, Object> diagnosisData = response.getBody();
-                        model.addAttribute("diagnostice", diagnosisData.get("diagnostice"));
-                        model.addAttribute("simptomeAnalizate", diagnosisData.get("simptome_analizate"));
-                    }
                 } catch (Exception e) {
-                    log.error("Eroare la apelarea motorului de diagnoză Python: {}", e.getMessage());
-                    model.addAttribute("diagnosticError", "Serviciul de diagnostic este momentan indisponibil.");
+                    log.error("Eroare la generarea diagnozei Python: {}", e.getMessage());
+                    model.addAttribute("diagnosticError", "Serviciul de diagnostic integrat este momentan indisponibil sau datele sunt insuficiente.");
                 }
             }
 
-        } catch (JsonProcessingException e) {
-            log.error("Eroare la parsarea JSON-ului FHIR: {}", e.getMessage());
-            model.addAttribute("error", "Eroare tehnică la citirea datelor interpretate.");
+        } catch (Exception e) {
+            log.error("Eroare la parsarea datelor FHIR: {}", e.getMessage());
+            model.addAttribute("error", "Eroare la citirea datelor interpretate.");
         }
 
         return "medic/analize-pacient/raport-hpo";
