@@ -22,6 +22,7 @@ import org.hibernate.LazyInitializationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -369,6 +370,36 @@ public class ChestionarController {
         model.addAttribute("esteVizualizareMedic", true); // Flag pentru template
 
         return "medic/chestionare/vizualizare-chestionar";
+    }
+
+    /**
+     * Marchează un chestionar ca fiind revizuit de către medic
+     */
+    @PostMapping("/medic/marcheaza-revizuit/{raspunsChestionarId}")
+    public String marcheazaCaRevizuit(@PathVariable UUID raspunsChestionarId,
+                                      @RequestParam UUID pacientId,
+                                      RedirectAttributes redirectAttributes) {
+        log.info("Medicul a validat chestionarul: {}", raspunsChestionarId);
+
+        try {
+            RaspunsuriChestionare raspuns = raspunsuriChestionareRepository.findById(raspunsChestionarId)
+                    .orElseThrow(() -> new NotFoundException("Răspunsul nu a fost găsit"));
+
+            // Schimbăm statusul folosind Enum-ul tău
+            if (raspuns.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
+                raspuns.setStatus(RaspunsuriChestionare.StatusRaspuns.REVIZUIT);
+                raspunsuriChestionareRepository.save(raspuns);
+                redirectAttributes.addFlashAttribute("success", "Evaluarea a fost marcată ca revizuită.");
+            }
+
+            // Redirecționăm înapoi la pagina de detalii a pacientului
+            return "redirect:/medic/pacienti/" + pacientId;
+
+        } catch (Exception e) {
+            log.error("Eroare la marcarea ca revizuit: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Nu s-a putut schimba statusul.");
+            return "redirect:/medic/pacienti/" + pacientId;
+        }
     }
 }
 

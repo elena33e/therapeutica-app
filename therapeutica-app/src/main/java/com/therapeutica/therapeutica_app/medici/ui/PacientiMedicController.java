@@ -6,6 +6,7 @@ import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
+import com.therapeutica.therapeutica_app.raspunsuri_chestionare.dto.RaspunsChestionarDTO; // IMPORTUL NOU
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
 import jakarta.servlet.http.HttpSession;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/medic")
@@ -42,29 +44,24 @@ public class PacientiMedicController {
 
         log.info("GET /medic/{}/pacienti - Lista generală pacienți", medicId);
 
-        // Verificare autentificare
         String sessionUserId = (String) session.getAttribute("userId");
         if (sessionUserId == null || !sessionUserId.equals(medicId.toString())) {
             return "redirect:/login";
         }
 
         try {
-            // Obține medicul
             Medici medic = mediciRepository.findById(medicId)
                     .orElseThrow(() -> new RuntimeException("Medic not found"));
 
-            // Obține toți pacienții medicului CU datele utilizatorului
             List<Pacienti> pacientiMedic = pacientiRepository
                     .findPacientiByMedicIdWithUser(medicId);
 
-            // Transformă în DTO-uri cu statistici simple
             List<PacientCuStatisticiDTO> pacientiDTO = new ArrayList<>();
 
             for (Pacienti pacient : pacientiMedic) {
                 Utilizatori user = pacient.getUser();
                 if (user == null) continue;
 
-                // Obține statistici SIMPLE (doar numărătoare)
                 long chestionareCompletate = raspunsuriChestionareRepository
                         .findByPacientIdAndStatusFullRelations(
                                 pacient.getId(),
@@ -87,9 +84,8 @@ public class PacientiMedicController {
                 pacientiDTO.add(dto);
             }
 
-            // Adaugă datele în model
             model.addAttribute("medicId", medicId);
-            model.addAttribute("pacienti", pacientiDTO); // ATRIBUTUL CRUCIAL!
+            model.addAttribute("pacienti", pacientiDTO);
             model.addAttribute("medic", medic);
             model.addAttribute("totalPacienti", pacientiDTO.size());
 
@@ -112,18 +108,15 @@ public class PacientiMedicController {
 
         log.info("GET /medic/{}/pacient/{} - Detalii generale pacient", medicId, pacientId);
 
-        // Verificare autentificare
         String sessionUserId = (String) session.getAttribute("userId");
         if (sessionUserId == null || !sessionUserId.equals(medicId.toString())) {
             return "redirect:/login";
         }
 
         try {
-            // Obține pacientul CU toate relațiile
             Pacienti pacient = pacientiRepository.findByIdWithUser(pacientId)
                     .orElseThrow(() -> new RuntimeException("Pacient not found"));
 
-            // Verifică dacă pacientul aparține medicului
             if (pacient.getMedic() == null ||
                     !pacient.getMedic().getUser().getId().equals(medicId)) {
                 model.addAttribute("error", "Pacientul nu aparține medicului curent");
@@ -135,56 +128,45 @@ public class PacientiMedicController {
                 throw new RuntimeException("User not found for pacient");
             }
 
-            // Obține statistici SIMPLE
-            long totalChestionareCompletate = raspunsuriChestionareRepository
+            // 1. Extragem ENTITĂȚILE din baza de date
+            List<RaspunsuriChestionare> completateEntity = raspunsuriChestionareRepository
+                    .findByPacientIdAndStatusInFullRelations(
+                            pacientId,
+                            List.of(RaspunsuriChestionare.StatusRaspuns.COMPLETAT,
+                                    RaspunsuriChestionare.StatusRaspuns.REVIZUIT));
+
+            List<RaspunsuriChestionare> necompletateEntity = raspunsuriChestionareRepository
                     .findByPacientIdAndStatusFullRelations(
                             pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.COMPLETAT)
-                    .size();
+                            RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
 
-            long totalChestionareNecompletate = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatusFullRelations(
-                            pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT)
-                    .size();
+            // 2. Mapăm Entitățile în DTO-ul tău curat
+            List<RaspunsChestionarDTO> chestionareCompletate = completateEntity.stream()
+                    .map(this::mapToDTO)
+                    .collect(Collectors.toList());
 
-            // Ultimul chestionar completat
-            List<RaspunsuriChestionare> chestionareCompletate = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatusFullRelations(
-                            pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
+            List<RaspunsChestionarDTO> chestionareNecompletate = necompletateEntity.stream()
+                    .map(this::mapToDTO)
+                    .collect(Collectors.toList());
 
-            LocalDateTime ultimaActivitate = null;
-            if (!chestionareCompletate.isEmpty()) {
-                ultimaActivitate = chestionareCompletate.get(0).getCompletatLa();
-            }
+            // 3. Calculăm data ultimei activități
+            LocalDateTime ultimaActivitate = !chestionareCompletate.isEmpty()
+                    ? chestionareCompletate.get(0).getCompletatLa()
+                    : null;
 
-            // ADAUGĂ DOAR LISTA SIMPLĂ DE CHESTIONARE COMPLETATE (pentru tabel)
-            List<ChestionarSimpluDTO> chestionareCompletateLista = new ArrayList<>();
-            for (RaspunsuriChestionare rc : chestionareCompletate) {
-                if (rc.getChestionar() != null && rc.getCompletatLa() != null) {
-                    chestionareCompletateLista.add(
-                            ChestionarSimpluDTO.builder()
-                                    .id(rc.getId())
-                                    .nume(rc.getChestionar().getNume())
-                                    .dataCompletare(rc.getCompletatLa())
-                                    //.scor(rc.getScorTotal()) // sau ce metodă ai tu pentru scor
-                                    .build()
-                    );
-                }
-            }
-
-            // Adaugă datele în model (DOAR CE E NECESAR)
+            // 4. Trimitem totul în Model
             model.addAttribute("medicId", medicId);
             model.addAttribute("pacient", pacient);
             model.addAttribute("pacientUser", pacientUser);
-            model.addAttribute("totalChestionareCompletate", totalChestionareCompletate);
-            model.addAttribute("totalChestionareNecompletate", totalChestionareNecompletate);
+            model.addAttribute("totalChestionareCompletate", chestionareCompletate.size());
+            model.addAttribute("totalChestionareNecompletate", chestionareNecompletate.size());
             model.addAttribute("ultimaActivitate", ultimaActivitate);
-            model.addAttribute("chestionareCompletate", chestionareCompletateLista);
+            model.addAttribute("chestionareCompletate", chestionareCompletate);
+            model.addAttribute("chestionareNecompletate", chestionareNecompletate); // Asta lipsea!
 
-            log.info("✅ Detalii pacient: {} {}",
-                    pacientUser.getNume(), pacientUser.getPrenume());
+            log.info("✅ Detalii pacient: {} {} | Completate: {} | Restante: {}",
+                    pacientUser.getNume(), pacientUser.getPrenume(),
+                    chestionareCompletate.size(), chestionareNecompletate.size());
 
             return "medic/pacienti-detalii";
 
@@ -195,7 +177,30 @@ public class PacientiMedicController {
         }
     }
 
-    // DTO simplu pentru pacient cu statistici
+    /**
+     * Metodă privată pentru izolarea logicii de mapare Entitate -> DTO
+     */
+    private RaspunsChestionarDTO mapToDTO(RaspunsuriChestionare rc) {
+        RaspunsChestionarDTO dto = new RaspunsChestionarDTO();
+        dto.setId(rc.getId());
+
+        if (rc.getChestionar() != null) {
+            dto.setChestionarId(rc.getChestionar().getId());
+            dto.setNumeChestionar(rc.getChestionar().getNume());
+        }
+
+        if (rc.getStatus() != null) {
+            dto.setStatus(rc.getStatus().name());
+        }
+
+        // Dacă ai scor în entitate, activează linia asta:
+        // dto.setScorTotalGeneral(rc.getScorTotalGeneral());
+
+        dto.setCompletatLa(rc.getCompletatLa());
+        return dto;
+    }
+
+    // DTO simplu pentru tabelul general de pacienți (Rămâne neschimbat)
     @Data
     @Builder
     private static class PacientCuStatisticiDTO {
@@ -223,15 +228,5 @@ public class PacientiMedicController {
         public UUID getUserId() {
             return user != null ? user.getId() : null;
         }
-    }
-
-    // DTO simplu pentru chestionare (doar ceea ce trebuie)
-    @Data
-    @Builder
-    private static class ChestionarSimpluDTO {
-        private UUID id;
-        private String nume;
-        private LocalDateTime dataCompletare;
-        private Integer scor;
     }
 }

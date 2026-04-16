@@ -56,7 +56,7 @@ public class RaspunsuriChestionareController {
                     .findByPacientIdAndStatusFullRelations(pacientId,
                             RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
 
-            log.info("✅ Found {} chestionare disponibile, {} în istoric",
+            log.info("Found {} chestionare disponibile, {} în istoric",
                     chestionareDisponibile.size(), istoricChestionare.size());
 
             // DEBUG: Verifică datele încărcate
@@ -133,7 +133,7 @@ public class RaspunsuriChestionareController {
      * Helper method pentru debugging
      */
     private void debugLogChestionare(String tip, List<RaspunsuriChestionare> chestionare) {
-        log.info("🔍 DEBUG {} ({} chestionare):", tip, chestionare.size());
+        log.info("DEBUG {} ({} chestionare):", tip, chestionare.size());
         for (RaspunsuriChestionare rc : chestionare) {
             String chestionarNume = rc.getChestionar() != null ? rc.getChestionar().getNume() : "NULL";
 

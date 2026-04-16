@@ -24,7 +24,7 @@
             </div>
 
             <div class="flex items-center space-x-3">
-                <a th:href="@{'/medic/pacienti/' + ${pacient.id}}"
+                <a th:href="@{'/medic/' + ${pacient.medic.user.id} + '/pacient/' + ${pacient.id}}"
                    class="px-5 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-colors shadow-sm">
                     <i class="fas fa-arrow-left mr-2"></i> Înapoi la Dosar
                 </a>

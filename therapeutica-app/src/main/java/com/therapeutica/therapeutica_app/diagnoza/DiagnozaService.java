@@ -111,16 +111,24 @@ public class DiagnozaService {
     /**
      * Extrage simptomele din ultimul chestionar completat, deduplicând și păstrând relația cu Trigger-ul.
      */
+    /**
+     * Extrage simptomele din chestionarele finalizate (COMPLETAT sau REVIZUIT),
+     * deduplicând și păstrând relația cu Trigger-ul.
+     */
     public List<Map<String, Object>> extrageSimptomeBrute(UUID profilPacientId) {
-        // Luam hestionarele completate, sortate descrescător după dată
+        // Folosim noua metodă IN pentru a aduce și chestionarele noi, și pe cele deja validate
         List<RaspunsuriChestionare> toateCompletarile = raspunsuriChestionareRepository
-                .findByPacientIdAndStatusFullRelations(profilPacientId, RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
+                .findByPacientIdAndStatusInFullRelations(
+                        profilPacientId,
+                        List.of(RaspunsuriChestionare.StatusRaspuns.COMPLETAT,
+                                RaspunsuriChestionare.StatusRaspuns.REVIZUIT)
+                );
 
         if (toateCompletarile.isEmpty()) return new ArrayList<>();
 
         List<Map<String, Object>> toateSimptomeleDetectate = new ArrayList<>();
 
-        //Colectare simtome din toate chestionarele
+        // Colectare simptome din toate chestionarele extrase
         for (RaspunsuriChestionare chestionar : toateCompletarile) {
             List<Map<String, Object>> simptomeDinChestionar = raspunsuriIntrebariRepository
                     .findByRaspunsChestionarIdWithDetails(chestionar.getId()).stream()

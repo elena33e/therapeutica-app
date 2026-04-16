@@ -59,6 +59,19 @@ public interface RaspunsuriChestionareRepository extends JpaRepository<Raspunsur
             @Param("status") RaspunsuriChestionare.StatusRaspuns status);
 
     @Query("SELECT rc FROM RaspunsuriChestionare rc " +
+            "LEFT JOIN FETCH rc.chestionar c " +           // Chestionar
+            "LEFT JOIN FETCH rc.medic m " +                // Medic
+            "LEFT JOIN FETCH m.user mu " +                 // User-ul medicului
+            "LEFT JOIN FETCH rc.pacient p " +              // Pacient
+            "LEFT JOIN FETCH p.user pu " +                 // User-ul pacientului
+            "WHERE rc.pacient.id = :pacientId " +
+            "AND rc.status IN :statusuri " +               // AICI ESTE MODIFICAREA (IN în loc de =)
+            "ORDER BY rc.completatLa DESC NULLS LAST")
+    List<RaspunsuriChestionare> findByPacientIdAndStatusInFullRelations(
+            @Param("pacientId") UUID pacientId,
+            @Param("statusuri") List<RaspunsuriChestionare.StatusRaspuns> statusuri);
+
+    @Query("SELECT rc FROM RaspunsuriChestionare rc " +
             "LEFT JOIN FETCH rc.chestionar " +
             "LEFT JOIN FETCH rc.pacient p " +
             "LEFT JOIN FETCH p.user " +  // ← ASTA E CHEIA!

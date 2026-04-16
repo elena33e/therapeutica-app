@@ -17,8 +17,9 @@ public class RaspunsChestionarDTO {
     private UUID chestionarId;
     private String status;
     private LocalDateTime completatLa;
+    private LocalDateTime atribuitLa;
     private BigDecimal scorTotalGeneral;
-    private String numePacient;     // pentru afișare
-    private String numeMedic;       // pentru afișare
-    private String numeChestionar;  // pentru afișare
+    private String numePacient;
+    private String numeMedic;
+    private String numeChestionar;
 }

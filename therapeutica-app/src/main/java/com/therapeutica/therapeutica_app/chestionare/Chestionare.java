@@ -42,7 +42,6 @@ public class Chestionare {
     @OneToMany(mappedBy = "chestionar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CategoriiChestionare> categoriiChestionare = new ArrayList<>();
 
-    // Constructor implicit (obligatoriu pentru JPA)
     public Chestionare() {
     }
 
