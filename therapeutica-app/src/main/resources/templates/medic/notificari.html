@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}"> <head>
+    <title>Notificări | Therapeutica</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-bell text-amber-500 mr-3"></i>Notificări
+            </h1>
+            <p class="text-gray-500 mt-1">Istoricul activităților recente ale pacienților tăi.</p>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(notificari)}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center max-w-4xl">
+        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-check-double text-3xl text-green-400"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-700">Ești la zi!</h3>
+        <p class="text-gray-500 mt-2">Nu ai nicio notificare</p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(notificari)}" class="space-y-4 max-w-4xl">
+
+        <div th:each="notif : ${notificari}"
+             class="relative bg-white rounded-xl shadow-sm border p-5 flex flex-col md:flex-row md:items-center justify-between transition hover:shadow-md"
+             th:classappend="${!notif.citita} ? 'border-blue-300 border-l-4' : 'border-gray-200'">
+
+            <div class="flex items-start space-x-4">
+                <div class="mt-1 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                     th:classappend="${notif.titlu.contains('Chestionar')} ? 'bg-purple-100' : 'bg-blue-100'">
+                    <i th:if="${notif.titlu.contains('Chestionar')}" class="fas fa-clipboard-list text-purple-600"></i>
+                    <i th:unless="${notif.titlu.contains('Chestionar')}" class="fas fa-file-medical text-blue-600"></i>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-800 text-lg">
+                        <span th:text="${notif.titlu}">Titlu Notificare</span>
+                        <span th:if="${!notif.citita}" class="ml-2 px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider text-blue-700 bg-blue-100 rounded-full">Nou</span>
+                    </h4>
+                    <p class="text-gray-600 mt-1" th:text="${notif.mesaj}">Aici apare mesajul detaliat.</p>
+
+                    <div class="flex items-center text-xs text-gray-400 mt-2 font-medium">
+                        <i class="far fa-clock mr-1.5"></i>
+                        <span th:text="${#temporals.format(notif.dataCreare, 'dd MMMM yyyy, HH:mm')}">Data</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 md:mt-0 ml-14 md:ml-0 flex-shrink-0">
+                <a th:href="@{${notif.linkActiune}}"
+                   class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition shadow-sm">
+                    <span>Vezi Detalii</span>
+                    <i class="fas fa-chevron-right ml-2 text-xs"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script>
+        // Dacă ai nevoie de scripturi JS specifice doar pentru această pagină de notificări, le pui aici.
+        // Deocamdată nu avem nevoie de scripturi suplimentare, deoarece backend-ul marchează automat ca "citit".
+    </script>
+</div>
+
+</body>
+</html>

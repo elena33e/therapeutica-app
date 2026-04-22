@@ -27,8 +27,6 @@ public class Pacienti {
     @Column(name = "cnp", unique = true)
     private String cnp;
 
-    // --- DATE BIOMETRICE ADAUGATE ---
-
     @Column(name = "data_nasterii")
     private java.time.LocalDate dataNasterii;
 

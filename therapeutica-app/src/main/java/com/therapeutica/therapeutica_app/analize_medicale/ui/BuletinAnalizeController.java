@@ -149,6 +149,40 @@ public class BuletinAnalizeController {
         return "pacient/analize/vizualizare-analize";
     }
 
+    /**
+     * POST - Ștergerea unui document medical
+     */
+    @PostMapping("/sterge/{documentId}")
+    public String stergeDocument(@PathVariable UUID documentId, RedirectAttributes redirectAttributes) {
+        log.info("Primire cerere de ștergere pentru documentul: {}", documentId);
+
+        // Extragem documentul mai întâi pentru a afla pacientId-ul necesar redirecționării
+        DocumentMedical doc = documentMedicalRepository.findById(documentId).orElse(null);
+
+        if (doc == null) {
+            log.warn("Încercare de ștergere eșuată. Documentul {} nu există.", documentId);
+            // Dacă nu avem pacientul, redirecționăm către o pagină generică (ajustează dacă ai o rută mai bună)
+            redirectAttributes.addFlashAttribute("error", "Documentul nu a fost găsit.");
+            return "redirect:/";
+        }
+
+        UUID pacientId = doc.getPacientId();
+
+        try {
+            // Apelăm serviciul pentru a executa ștergerea în cascadă (fișier, DB, FHIR)
+            analizeService.stergeDocument(documentId);
+
+            log.info("Documentul {} a fost șters cu succes.", documentId);
+            redirectAttributes.addFlashAttribute("success", "Documentul a fost șters cu succes.");
+        } catch (Exception e) {
+            log.error("Eroare la ștergerea documentului {}: {}", documentId, e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Eroare la ștergerea documentului: " + e.getMessage());
+        }
+
+        // Redirecționăm înapoi la dosarul pacientului
+        return "redirect:/analize/pacient/documente/" + pacientId;
+    }
+
 
 
 }

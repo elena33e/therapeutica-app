@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- Întregul fișier este fragmentul sidebar pentru medic -->
 <aside class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-green-50 to-white border-r border-gray-200 shadow-lg z-50 hidden md:block">
-    <!-- Logo și informații medic -->
     <div class="p-6 border-b border-gray-100 bg-white">
         <div class="flex items-center space-x-3 mb-4">
             <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -11,7 +9,6 @@
             </div>
             <div>
                 <h2 class="font-bold text-gray-800">Medic</h2>
-
             </div>
         </div>
         <div class="mt-2">
@@ -23,9 +20,7 @@
         </div>
     </div>
 
-    <!-- Meniu de navigare pentru medic -->
     <nav class="p-4 space-y-1">
-        <!-- Dashboard Medic -->
         <a th:href="@{'/medic/dashboard/' + ${session.userId}}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-green-100 text-gray-700 hover:text-green-700 transition duration-200">
             <i class="fas fa-tachometer-alt w-5 text-center"></i>
@@ -38,41 +33,41 @@
             <span>Profil</span>
         </a>
 
-        <!-- Pacienți mei -->
-
         <a th:href="@{'/medic/' + ${session.userId} + '/pacienti'}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition duration-200">
-            <i class="fas fa-users w-5 text-center"></i>
-            <span>Pacienții mei</span>
+           class="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition duration-200 group">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-users w-5 text-center"></i>
+                <span>Pacienții mei</span>
+            </div>
         </a>
 
-
-        <!-- Rapoarte -->
         <a th:href="@{'/medic/rapoarte/' + ${session.userId}}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-100 text-gray-700 hover:text-teal-700 transition duration-200">
             <i class="fas fa-chart-bar w-5 text-center"></i>
             <span>Rapoarte</span>
         </a>
 
-        <!-- Chestionare -->
         <a th:href="@{/chestionare/medic/lista-chestionare}"
            class="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition">
             <i class="fas fa-list-alt w-5"></i>
             <span>Chestionare</span>
         </a>
 
-
-        <!-- Divider -->
         <div class="border-t border-gray-200 my-2"></div>
 
-        <!-- Setări Medic -->
-        <a th:href="@{'/medic/setari/' + ${session.userId}}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition duration-200">
-            <i class="fas fa-cog w-5 text-center"></i>
-            <span>Setări Medic</span>
+        <a th:href="@{'/medic/notificari/' + ${session.userId}}"
+           class="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-700 transition duration-200 group">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-bell w-5 text-center"></i>
+                <span>Notificări</span>
+            </div>
+            <div id="notif-wrapper" class="hidden items-center">
+        <span id="notif-count" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+            0
+        </span>
+            </div>
         </a>
 
-        <!-- Deconectare -->
         <form th:action="@{/api/auth/logout-web}" method="post" class="m-0 p-0">
             <button type="submit"
                     class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-50 text-gray-700 hover:text-red-600 transition duration-200 mt-2 text-left">
@@ -83,5 +78,34 @@
     </nav>
 </aside>
 
+<script th:inline="javascript">
+    (function() {
+        const medicId = [[${session.userId}]];
+
+        function updateNotificationBadge() {
+            if (!medicId) return;
+
+            fetch('/api/notificari/necitite/' + medicId)
+                .then(response => response.json())
+                .then(data => {
+                    const wrapper = document.getElementById('notif-wrapper');
+                    const count = document.getElementById('notif-count');
+
+                    if (wrapper && count && data && data.length > 0) {
+                        count.innerText = data.length > 9 ? '9+' : data.length;
+                        wrapper.classList.remove('hidden');
+                        wrapper.classList.add('flex');
+                    } else if (wrapper) {
+                        wrapper.classList.add('hidden');
+                        wrapper.classList.remove('flex');
+                    }
+                })
+                .catch(err => console.error("Eroare verificare notificări:", err));
+        }
+
+        updateNotificationBadge();
+        setInterval(updateNotificationBadge, 30000);
+    })();
+</script>
 </body>
 </html>

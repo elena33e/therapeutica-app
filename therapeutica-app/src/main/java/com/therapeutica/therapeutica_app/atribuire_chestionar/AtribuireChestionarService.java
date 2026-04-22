@@ -4,7 +4,7 @@ import com.therapeutica.therapeutica_app.chestionare.Chestionare;
 import com.therapeutica.therapeutica_app.chestionare.ChestionareRepository;
 import com.therapeutica.therapeutica_app.medici.Medici;
 import com.therapeutica.therapeutica_app.medici.MediciRepository;
-import com.therapeutica.therapeutica_app.notificari.NotificareService;
+import com.therapeutica.therapeutica_app.notificari.NotificareListenerService;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
@@ -27,19 +27,19 @@ public class AtribuireChestionarService {
     private final PacientiRepository pacientiRepository;
     private final MediciRepository mediciRepository;
     private final ChestionareRepository chestionareRepository;
-    private final NotificareService notificareService;
+    private final NotificareListenerService notificareListenerService;
 
     public AtribuireChestionarService(
             final RaspunsuriChestionareRepository raspunsuriChestionareRepository,
             final PacientiRepository pacientiRepository,
             final MediciRepository mediciRepository,
             final ChestionareRepository chestionareRepository,
-            final NotificareService notificareService) {
+            final NotificareListenerService notificareListenerService) {
         this.raspunsuriChestionareRepository = raspunsuriChestionareRepository;
         this.pacientiRepository = pacientiRepository;
         this.mediciRepository = mediciRepository;
         this.chestionareRepository = chestionareRepository;
-        this.notificareService = notificareService;
+        this.notificareListenerService = notificareListenerService;
     }
 
     /**
@@ -234,7 +234,7 @@ public class AtribuireChestionarService {
 //                            "Mesaj personalizat de la medic:\n" + requestDTO.getMesajPersonalizat() : ""
             );
 
-            notificareService.trimiteEmail(pacientUser.getEmail(), subiect, mesaj);
+            //notificareListenerService.trimiteEmail(pacientUser.getEmail(), subiect, mesaj);
         }
     }
 
@@ -242,12 +242,12 @@ public class AtribuireChestionarService {
      * Obține chestionarele disponibile pentru atribuire (care nu sunt deja atribuite și necompletate)
      */
     public List<Chestionare> getChestionareDisponibilePentruPacient(UUID pacientId) {
-        System.out.println("🔍 Getting available questionnaires for patient: " + pacientId);
+        System.out.println("Getting available questionnaires for patient: " + pacientId);
 
-        // ✅ Folosește metoda corectă din repository
+        // Folosește metoda corectă din repository
         // Obține chestionarele deja atribuite (indiferent de status)
         List<UUID> chestionareAtribuite = raspunsuriChestionareRepository
-                .findByPacientIdOrderByCompletatLa(pacientId) // ✅ Aceasta există
+                .findByPacientIdOrderByCompletatLa(pacientId)
                 .stream()
                 .map(rc -> rc.getChestionar().getId())
                 .distinct() // Elimină duplicatele
@@ -287,7 +287,7 @@ public class AtribuireChestionarService {
      */
 
     public List<RaspunsuriChestionare> getIstoricChestionarePacient(UUID pacientId) {
-        // Folosește noua metodă cu FETCH
+
         return raspunsuriChestionareRepository.findByPacientIdWithRelations(pacientId);
     }
 

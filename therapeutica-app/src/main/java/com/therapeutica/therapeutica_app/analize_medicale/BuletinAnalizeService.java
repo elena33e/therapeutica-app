@@ -5,11 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.therapeutica.therapeutica_app.analize_medicale.dto.BuletinEditabilDTO;
 import com.therapeutica.therapeutica_app.analize_medicale.dto.SectiuneWrapperDTO;
+import com.therapeutica.therapeutica_app.notificari.events.NotificareEvent;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
@@ -36,8 +38,9 @@ public class BuletinAnalizeService {
     private final DocumentMedicalRepository documentMedicalRepository;
     private final ObjectMapper objectMapper;
     private final RestTemplate ocrRestTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
-    // --- CONFIGURARE URL-URI (Conform noii structuri din YML) ---
+    //Config URL-uri
     @Value("${external.services.python-server.base-url}")
     private String pythonBaseUrl;
 
@@ -49,40 +52,78 @@ public class BuletinAnalizeService {
 
     @Value("${external.services.python-interpret.path}")
     private String interpretPath;
-    // Notă: În YML, python-interpret.path trebuie să fie "/interpret-clinical-data"
+
 
     private final Path rootLocation = Paths.get("upload-dir/analize");
 
     /**
-     * PASUL 1: Încărcare fișier și Salvare Persistentă
+     * Încărcare fișier și Salvare Persistentă
      */
-    public DocumentMedical initializeazaDocument(MultipartFile file, UUID pacientId) throws Exception {
-        if (file.isEmpty()) throw new IllegalArgumentException("Fișierul este gol.");
+
+    @Transactional
+    public DocumentMedical initializeazaDocument(MultipartFile file, UUID userIdDinSesiune) throws Exception {
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Fișierul este gol.");
+        }
 
         String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         String sanitizedName = sanitizeFilename(originalFilename);
 
-        String extension = getExtension(sanitizedName);
-        if (!List.of("pdf", "jpg", "png").contains(extension.toLowerCase())) {
-            throw new IllegalArgumentException("Formatul " + extension + " nu este acceptat pentru OCR.");
-        }
-
+        // Logica de salvare fișier
         Files.createDirectories(rootLocation);
         String uniqueFileName = UUID.randomUUID().toString() + "_" + sanitizedName;
         Path destinationFile = rootLocation.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
 
         DocumentMedical doc = new DocumentMedical();
-        doc.setPacientId(pacientId);
+
+        doc.setPacientId(userIdDinSesiune);
         doc.setNumeFisier(originalFilename);
         doc.setCaleFisierStocare(destinationFile.toAbsolutePath().toString());
         doc.setStatus(DocumentMedical.StatusDocument.INCARCAT);
 
-        return documentMedicalRepository.save(doc);
+        DocumentMedical savedDoc = documentMedicalRepository.save(doc);
+        log.info("Document salvat în DB. ID Document: {}", savedDoc.getId());
+
+        return savedDoc;
+    }
+    /**
+     * Șterge un document medical:
+     * 1. Elimină fișierul fizic de pe disc
+     * 2. (Opțional pe viitor) Curăță datele FHIR asociate
+     * 3. Elimină înregistrarea din baza de date
+     */
+    @Transactional
+    public void stergeDocument(UUID documentId) {
+        // 1. Căutăm documentul
+        DocumentMedical doc = documentMedicalRepository.findById(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Eroare: Documentul cu ID-ul specificat nu există."));
+
+        // 2. Ștergem fișierul fizic de pe disc
+        String caleFisier = doc.getCaleFisierStocare();
+        if (StringUtils.hasText(caleFisier)) {
+            try {
+                Path filePath = Paths.get(caleFisier);
+                boolean deleted = Files.deleteIfExists(filePath);
+                if (deleted) {
+                    log.info("Fișierul fizic a fost șters cu succes: {}", caleFisier);
+                } else {
+                    log.warn("Fișierul fizic nu a fost găsit pe disc (poate a fost șters anterior): {}", caleFisier);
+                }
+            } catch (Exception e) {
+                // Prindem excepția pentru a permite ștergerea din baza de date chiar dacă fișierul este blocat de un alt proces (ex: antivirus)
+                log.error("Eroare la ștergerea fișierului fizic {}: {}", caleFisier, e.getMessage());
+            }
+        }
+
+        // 3. Ștergem intrarea din baza de date
+        documentMedicalRepository.delete(doc);
+        log.info("Documentul {} a fost șters definitiv din baza de date.", documentId);
     }
 
     /**
-     * PASUL 2: Procesare OCR via Python (Trimitere Multipart)
+     * Procesare OCR via Python
      */
     @Async
     public void proceseazaDocumentAsincron(DocumentMedical doc) {
@@ -102,7 +143,6 @@ public class BuletinAnalizeService {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // REPARARE URL: base-url + path
             String fullOcrUrl = pythonBaseUrl + ocrPath;
             log.info("--- [THREAD: {}] Începe OCR la {} pentru: {} ---",
                     Thread.currentThread().getName(), fullOcrUrl, doc.getNumeFisier());
@@ -123,7 +163,7 @@ public class BuletinAnalizeService {
     }
 
     /**
-     * PASUL 3: Salvare finală după validarea UI și trimitere la Standardizare
+     * Salvare finală după validarea UI și trimitere la Standardizare
      */
     @Transactional
     public void salveazaDateValidate(BuletinEditabilDTO dto) {
@@ -131,14 +171,38 @@ public class BuletinAnalizeService {
                 .orElseThrow(() -> new RuntimeException("Eroare: Documentul nu există."));
 
         try {
+            // Găsim pacientul pe baza User ID-ului salvat în DTO
             Pacienti pacient = pacientiRepository.findByUserId(dto.getPacientId())
                     .orElseThrow(() -> new RuntimeException("Eroare: Pacientul nu a fost găsit."));
 
+            // Salvăm datele validate de pacient
             String jsonValidat = objectMapper.writeValueAsString(dto.getSectiuni());
             doc.setDateValidate(jsonValidat);
             doc.setStatus(DocumentMedical.StatusDocument.VALIDAT);
             documentMedicalRepository.save(doc);
 
+            // Logica notificare
+            if (pacient.getMedic() != null && pacient.getMedic().getUser() != null) {
+                UUID medicUserId = pacient.getMedic().getUser().getId();
+                String numePacient = (pacient.getUser() != null) ? pacient.getUser().getNume() : "Un pacient";
+
+                // Link-ul corect către dosarul medicului, folosind ID-ul intern al pacientului
+                String linkPentruMedic = "/medic/analize/dosar/" + pacient.getId();
+
+                NotificareEvent event = new NotificareEvent(
+                        medicUserId,
+                        "Buletin analize nou",
+                        "Pacientul " + numePacient + " a încărcat un nou buletin de analize.",
+                        linkPentruMedic
+                );
+
+                eventPublisher.publishEvent(event);
+                log.info("Notificare trimisă către medicul {} pentru documentul validat.", medicUserId);
+            } else {
+                log.warn("Pacientul nu are medic asociat. Notificarea nu a fost trimisă.");
+            }
+
+            // 3. Lansăm procesarea asincronă către Python pentru standardizare
             this.trimiteSpreStandardizareSemantica(dto, pacient.getDataNasterii(), String.valueOf(pacient.getSex()));
 
         } catch (Exception e) {
@@ -160,7 +224,6 @@ public class BuletinAnalizeService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-            // REPARARE URL: base-url + path
             String fullSemanticUrl = pythonBaseUrl + semanticPath;
             log.info("--- Trimitere la Standardizare: {} ---", fullSemanticUrl);
 
@@ -230,7 +293,7 @@ public class BuletinAnalizeService {
         }
     }
 
-    // --- METODE UTILITARE (Neschimbate) ---
+    // --- METODE UTILITARE ---
 
     private String pregatestePayloadHpo(String jsonStandardizat, UUID documentId, UUID pacientId) throws Exception {
         Map<String, Object> sursaMap = objectMapper.readValue(jsonStandardizat, new TypeReference<>() {});

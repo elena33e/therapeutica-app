@@ -84,7 +84,7 @@
                                 <i class="fas fa-clipboard-check mr-1.5"></i> Validează
                             </a>
 
-                            <th:block th:if="${doc.status.name() == 'VALIDAT' or doc.status.name() == 'STANDARDIZAT'}">
+                            <th:block th:if="${doc.status.name() == 'VALIDAT' or doc.status.name() == 'STANDARDIZAT' or doc.status.name() == 'INTERPRETAT' }">
                                 <a th:href="@{/analize/vizualizeaza/{id}(id=${doc.id})}"
                                    class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-200 transition-colors">
                                     <i class="fas fa-eye mr-1.5 text-gray-500"></i> Vezi
@@ -94,6 +94,11 @@
                                    title="Editează datele">
                                     <i class="fas fa-pen mr-1.5 text-gray-400"></i> Edit
                                 </a>
+
+
+
+
+
                             </th:block>
 
                             <div class="inline-flex ml-2 border-l border-gray-100 pl-2 space-x-1">

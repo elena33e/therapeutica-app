@@ -47,10 +47,10 @@ public class DiagnozaService {
     public String ruleazaDiagnoza(UUID userId, UUID profilPacientId) {
         log.info("Inițiere diagnoză cumulativă. UserId: {}, ProfilId: {}", userId, profilPacientId);
 
-        // 1. Extragere date fuzionate din TOATE buletinele de analize
+        // Extragere date fuzionate din TOATE buletinele de analize
         List<Object> dateLab = extrageDateLab(userId);
 
-        // 2. Extragere simptome unice din chestionare (cu triggere)
+        // Extragere simptome unice din chestionare, cu tot cu Clinical modifiers asociati
         List<Map<String, Object>> simptomeBrute = extrageSimptomeBrute(profilPacientId);
 
         log.info("Date colectate: {} analize unice, {} simptome unice.", dateLab.size(), simptomeBrute.size());
@@ -64,17 +64,17 @@ public class DiagnozaService {
         requestBody.put("lab_data", dateLab);
         requestBody.put("symptoms_data", simptomeBrute);
 
-        // 3. Apelare server Python
+        // Apelare server Python
         String jsonRaspuns = trimiteSprePython(requestBody);
 
-        // 4. Salvare istoric în DB
+        // Salvare istoric în DB
         salveazaIstoric(profilPacientId, jsonRaspuns);
 
         return jsonRaspuns;
     }
 
     /**
-     * Colectează analizele din TOATE documentele interpretate, păstrând doar cea mai recentă valoare pentru fiecare marker.
+     * Colectează analizele din documentele interpretate, păstrând doar cea mai recentă valoare pentru fiecare marker.
      */
     public List<Object> extrageDateLab(UUID userId) {
         List<DocumentMedical> documente = documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(userId);
@@ -108,12 +108,10 @@ public class DiagnozaService {
         );
     }
 
-    /**
-     * Extrage simptomele din ultimul chestionar completat, deduplicând și păstrând relația cu Trigger-ul.
-     */
+
     /**
      * Extrage simptomele din chestionarele finalizate (COMPLETAT sau REVIZUIT),
-     * deduplicând și păstrând relația cu Trigger-ul.
+     * deduplicând și păstrând relația cu clinical modifier-ul.
      */
     public List<Map<String, Object>> extrageSimptomeBrute(UUID profilPacientId) {
         // Folosim noua metodă IN pentru a aduce și chestionarele noi, și pe cele deja validate
@@ -152,9 +150,9 @@ public class DiagnozaService {
         return new ArrayList<>(
                 toateSimptomeleDetectate.stream()
                         .collect(Collectors.toMap(
-                                m -> (String) m.get("hpo_code"), // Cheia unică: codul HPO
-                                m -> m,                          // Valoarea: obiectul simptom
-                                (existent, nou) -> existent      // Prioritate: cel mai recent (deja în listă datorită sortării)
+                                m -> (String) m.get("hpo_code"),
+                                m -> m,
+                                (existent, nou) -> existent
                         ))
                         .values()
         );
