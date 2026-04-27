@@ -27,6 +27,8 @@ public interface DocumentMedicalRepository extends JpaRepository<DocumentMedical
 
     List<DocumentMedical> findByPacientIdOrderByDataIncarcareDesc(UUID pacientId);
 
-    // Aceasta este metoda necesară pentru Worklist-ul medicului
+    //metoda necesară pentru Worklist-ul medicului
     List<DocumentMedical> findByStatus(DocumentMedical.StatusDocument status);
+
+    List<DocumentMedical> findByPacientIdAndStatusNotOrderByDataIncarcareDesc(UUID pacientId, DocumentMedical.StatusDocument status);
 }

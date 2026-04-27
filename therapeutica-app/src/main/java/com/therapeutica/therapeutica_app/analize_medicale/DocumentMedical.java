@@ -59,6 +59,7 @@ public class DocumentMedical {
         PROCESAT,
         STANDARDIZAT,
         INTERPRETAT,
-        EROARE
+        EROARE,
+        STERS_DE_PACIENT
     }
 }

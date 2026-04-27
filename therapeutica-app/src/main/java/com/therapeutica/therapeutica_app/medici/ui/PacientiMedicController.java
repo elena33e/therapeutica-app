@@ -154,7 +154,9 @@ public class PacientiMedicController {
                     ? chestionareCompletate.get(0).getCompletatLa()
                     : null;
 
-            // 4. Trimitem totul în Model
+
+
+            // Trimitem totul în Model
             model.addAttribute("medicId", medicId);
             model.addAttribute("pacient", pacient);
             model.addAttribute("pacientUser", pacientUser);
@@ -164,7 +166,7 @@ public class PacientiMedicController {
             model.addAttribute("chestionareCompletate", chestionareCompletate);
             model.addAttribute("chestionareNecompletate", chestionareNecompletate); // Asta lipsea!
 
-            log.info("✅ Detalii pacient: {} {} | Completate: {} | Restante: {}",
+            log.info("Detalii pacient: {} {} | Completate: {} | Restante: {}",
                     pacientUser.getNume(), pacientUser.getPrenume(),
                     chestionareCompletate.size(), chestionareNecompletate.size());
 

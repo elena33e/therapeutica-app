@@ -176,14 +176,14 @@ public class MedicEvaluareController {
             model.addAttribute("chestionareNecompletate", chestionareNecompletate);
             model.addAttribute("totalChestionare", toateChestionarele.size());
 
-            log.info("✅ Pacient: {} {}, {} chestionare completate",
+            log.info("Pacient: {} {}, {} chestionare completate",
                     pacientUser.getNume(), pacientUser.getPrenume(),
                     chestionareCompletate.size());
 
             return "medic/detalii-pacient-chestionare";
 
         } catch (Exception e) {
-            log.error("❌ Eroare la obținerea detaliilor pacientului: {}", e.getMessage(), e);
+            log.error("Eroare la obținerea detaliilor pacientului: {}", e.getMessage(), e);
             model.addAttribute("error", "Eroare: " + e.getMessage());
             return "medic/error";
         }

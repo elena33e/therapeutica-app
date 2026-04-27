@@ -31,20 +31,20 @@ public class RaspunsuriChestionareController {
     @GetMapping("/pacient/{userId}/disponibile")
     public String listeazaDisponibile(@PathVariable UUID userId, Model model) {
 
-        log.info("📋 [RaspunsuriChestionare] Afișare chestionare pentru USER: {}", userId);
+        log.info("[RaspunsuriChestionare] Afișare chestionare pentru USER: {}", userId);
 
         try {
             Optional<Pacienti> pacientOpt = pacientiRepository.findByUserId(userId);
 
             if (pacientOpt.isEmpty()) {
-                log.warn("⚠️ Pacient not found for user: {}", userId);
+                log.warn("Pacient not found for user: {}", userId);
                 return setupEmptyModel(model, userId, "disponibile",
                         "Nu s-a găsit profil de pacient pentru contul tău.");
             }
 
             Pacienti pacient = pacientOpt.get();
             UUID pacientId = pacient.getId();
-            log.info("✅ Converted user {} to pacient {}", userId, pacientId);
+            log.info("Converted user {} to pacient {}", userId, pacientId);
 
             // Folosește metoda cu toate relațiile pentru chestionarele NECOMPLETAT
             List<RaspunsuriChestionare> chestionareDisponibile = raspunsuriChestionareRepository
@@ -72,7 +72,7 @@ public class RaspunsuriChestionareController {
             return "pacient/chestionare";
 
         } catch (Exception e) {
-            log.error("❌ Eroare la încărcarea chestionarelor: {}", e.getMessage(), e);
+            log.error("Eroare la încărcarea chestionarelor: {}", e.getMessage(), e);
             return setupEmptyModel(model, userId, "disponibile",
                     "Eroare la încărcarea datelor: " + e.getMessage());
         }
@@ -84,13 +84,13 @@ public class RaspunsuriChestionareController {
     @GetMapping("/pacient/{userId}/istoric")
     public String afiseazaIstoric(@PathVariable UUID userId, Model model) {
 
-        log.info("📜 [RaspunsuriChestionare] Afișare istoric pentru USER: {}", userId);
+        log.info("[RaspunsuriChestionare] Afișare istoric pentru USER: {}", userId);
 
         try {
             Optional<Pacienti> pacientOpt = pacientiRepository.findByUserId(userId);
 
             if (pacientOpt.isEmpty()) {
-                log.warn("⚠️ Pacient not found for user: {}", userId);
+                log.warn("Pacient not found for user: {}", userId);
                 return setupEmptyModel(model, userId, "istoric",
                         "Nu s-a găsit profil de pacient pentru contul tău.");
             }
@@ -108,7 +108,7 @@ public class RaspunsuriChestionareController {
                     .findByPacientIdAndStatusFullRelations(pacientId,
                             RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
 
-            log.info("✅ Found {} chestionare in istoric, {} disponibile",
+            log.info("Found {} chestionare in istoric, {} disponibile",
                     istoric.size(), chestionareDisponibile.size());
 
             // DEBUG
@@ -182,7 +182,7 @@ public class RaspunsuriChestionareController {
     public String vizualizeazaDetalii(@PathVariable UUID raspunsChestionarId,
                                       Model model) {
 
-        log.info("🔍 [RaspunsuriChestionare] Vizualizare detalii pentru: {}", raspunsChestionarId);
+        log.info("[RaspunsuriChestionare] Vizualizare detalii pentru: {}", raspunsChestionarId);
 
         // TODO: Implementare vizualizare detalii
         model.addAttribute("raspunsChestionarId", raspunsChestionarId);

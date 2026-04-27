@@ -15,6 +15,7 @@ import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebar
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebariService;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
@@ -250,7 +251,7 @@ public class ChestionarController {
         }
     }
 
-    // ========== PENTRU MEDIC ==========
+    // ========== PENTRU MEDIC
 
     /**
      * Vizualizează răspunsurile unui pacient (pentru medic)
@@ -263,7 +264,7 @@ public class ChestionarController {
                 .findById(raspunsChestionarId)
                 .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit"));
 
-        // Verifică permisiuni (medicul să vadă doar pacienții săi)
+
 
         // Obține răspunsurile detaliate
         List<RaspunsuriIntrebari> raspunsuriDetaliate = raspunsuriIntrebariService
@@ -378,27 +379,24 @@ public class ChestionarController {
     @PostMapping("/medic/marcheaza-revizuit/{raspunsChestionarId}")
     public String marcheazaCaRevizuit(@PathVariable UUID raspunsChestionarId,
                                       @RequestParam UUID pacientId,
+                                      HttpSession session, // Adaugă sesiunea aici
                                       RedirectAttributes redirectAttributes) {
-        log.info("Medicul a validat chestionarul: {}", raspunsChestionarId);
-
         try {
             RaspunsuriChestionare raspuns = raspunsuriChestionareRepository.findById(raspunsChestionarId)
                     .orElseThrow(() -> new NotFoundException("Răspunsul nu a fost găsit"));
 
-            // Schimbăm statusul folosind Enum-ul tău
             if (raspuns.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
                 raspuns.setStatus(RaspunsuriChestionare.StatusRaspuns.REVIZUIT);
                 raspunsuriChestionareRepository.save(raspuns);
                 redirectAttributes.addFlashAttribute("success", "Evaluarea a fost marcată ca revizuită.");
             }
 
-            // Redirecționăm înapoi la pagina de detalii a pacientului
-            return "redirect:/medic/pacienti/" + pacientId;
+            String medicId = (String) session.getAttribute("userId");
+            return "redirect:/medic/" + medicId + "/pacient/" + pacientId;
 
         } catch (Exception e) {
-            log.error("Eroare la marcarea ca revizuit: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Nu s-a putut schimba statusul.");
-            return "redirect:/medic/pacienti/" + pacientId;
+            String medicId = (String) session.getAttribute("userId");
+            return "redirect:/medic/" + medicId + "/pacient/" + pacientId;
         }
     }
 }

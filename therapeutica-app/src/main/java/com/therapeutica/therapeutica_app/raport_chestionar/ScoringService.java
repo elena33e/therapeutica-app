@@ -30,12 +30,12 @@ public class ScoringService {
     private final RezultatScoringRepository rezultatScoringRepository;
 
     public RezultatScoring calculeazaSiSalveazaScor(UUID raspunsChestionarId) {
-        log.info("🔄 Inițiere calcul scoring pentru ID: {}", raspunsChestionarId);
+        log.info("Inițiere calcul scoring pentru ID: {}", raspunsChestionarId);
 
         // 1. Verificare existență și status recalculare
         Optional<RezultatScoring> existent = rezultatScoringRepository.findByRaspunsChestionarId(raspunsChestionarId);
         if (existent.isPresent() && !existent.get().getNecesitaRecalculare()) {
-            log.info("✅ Rezultat valid deja existent. Abandonare calcul.");
+            log.info("Rezultat valid deja existent. Abandonare calcul.");
             return existent.get();
         }
 
@@ -45,14 +45,14 @@ public class ScoringService {
 
         // 3. Extragere răspunsuri brute
         List<RaspunsuriIntrebari> toateRaspunsurile = raspunsuriIntrebariRepository.findByRaspunsChestionarId(raspunsChestionarId);
-        log.info("📋 Răspunsuri extrase din DB: {}", toateRaspunsurile.size());
+        log.info("Răspunsuri extrase din DB: {}", toateRaspunsurile.size());
 
         // 4. Grupare sigură după ID-ul categoriei (pentru a evita coliziuni de nume)
         Map<UUID, List<RaspunsuriIntrebari>> grupatePeId = toateRaspunsurile.stream()
                 .filter(r -> r.getScor() != null && r.getCategorie() != null)
                 .collect(Collectors.groupingBy(r -> r.getCategorie().getId()));
 
-        log.info("📂 Categorii identificate pentru procesare: {}", grupatePeId.size());
+        log.info("Categorii identificate pentru procesare: {}", grupatePeId.size());
 
         // 5. Calcul scoruri per categorie
         List<ScorCategorieDTO> scoruriCategorii = grupatePeId.values().stream()

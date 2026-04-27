@@ -94,33 +94,40 @@ public class BuletinAnalizeService {
      * 2. (Opțional pe viitor) Curăță datele FHIR asociate
      * 3. Elimină înregistrarea din baza de date
      */
+    /**
+     * Ștergere hibridă (State-Dependent Deletion)
+     */
     @Transactional
     public void stergeDocument(UUID documentId) {
-        // 1. Căutăm documentul
         DocumentMedical doc = documentMedicalRepository.findById(documentId)
-                .orElseThrow(() -> new IllegalArgumentException("Eroare: Documentul cu ID-ul specificat nu există."));
+                .orElseThrow(() -> new IllegalArgumentException("Eroare: Documentul nu există."));
 
-        // 2. Ștergem fișierul fizic de pe disc
-        String caleFisier = doc.getCaleFisierStocare();
-        if (StringUtils.hasText(caleFisier)) {
-            try {
-                Path filePath = Paths.get(caleFisier);
-                boolean deleted = Files.deleteIfExists(filePath);
-                if (deleted) {
-                    log.info("Fișierul fizic a fost șters cu succes: {}", caleFisier);
-                } else {
-                    log.warn("Fișierul fizic nu a fost găsit pe disc (poate a fost șters anterior): {}", caleFisier);
+        // Verificăm dacă documentul a "plecat" deja spre medic
+        boolean esteOficializat = doc.getStatus() == DocumentMedical.StatusDocument.VALIDAT ||
+                doc.getStatus() == DocumentMedical.StatusDocument.STANDARDIZAT ||
+                doc.getStatus() == DocumentMedical.StatusDocument.INTERPRETAT;
+
+        if (esteOficializat) {
+            // SOFT DELETE: Păstrăm documentul pentru audit
+            doc.setStatus(DocumentMedical.StatusDocument.STERS_DE_PACIENT);
+            documentMedicalRepository.save(doc);
+            log.info("Documentul {} a fost marcat ca STERS_DE_PACIENT (Soft Delete).", documentId);
+        } else {
+            // HARD DELETE: Ștergem complet (nu a fost văzut de nimeni)
+            String caleFisier = doc.getCaleFisierStocare();
+            if (StringUtils.hasText(caleFisier)) {
+                try {
+                    Files.deleteIfExists(Paths.get(caleFisier));
+                    log.info("Fișierul fizic a fost șters: {}", caleFisier);
+                } catch (Exception e) {
+                    log.error("Eroare la ștergerea fișierului fizic {}: {}", caleFisier, e.getMessage());
                 }
-            } catch (Exception e) {
-                // Prindem excepția pentru a permite ștergerea din baza de date chiar dacă fișierul este blocat de un alt proces (ex: antivirus)
-                log.error("Eroare la ștergerea fișierului fizic {}: {}", caleFisier, e.getMessage());
             }
+            documentMedicalRepository.delete(doc);
+            log.info("Documentul {} a fost șters definitiv din baza de date.", documentId);
         }
-
-        // 3. Ștergem intrarea din baza de date
-        documentMedicalRepository.delete(doc);
-        log.info("Documentul {} a fost șters definitiv din baza de date.", documentId);
     }
+
 
     /**
      * Procesare OCR via Python
@@ -343,6 +350,12 @@ public class BuletinAnalizeService {
     }
 
     public List<DocumentMedical> getDocumentePacient(UUID pacientId) {
+        return documentMedicalRepository.findByPacientIdAndStatusNotOrderByDataIncarcareDesc(
+                pacientId, DocumentMedical.StatusDocument.STERS_DE_PACIENT);
+    }
+
+    // Metoda pentru Medic - vede TOT (inclusiv cele retrase de pacient)
+    public List<DocumentMedical> getDocumentePacientPentruMedic(UUID pacientId) {
         return documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(pacientId);
     }
 

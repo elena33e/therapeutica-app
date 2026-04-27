@@ -14,31 +14,34 @@
 
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h2 class="text-3xl font-black text-slate-900 tracking-tight mb-1" th:text="${chestionar.nume}">Analiză Sisteme Corp</h2>
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight mb-1"
+                        th:text="${chestionar.chestionar.nume}">Analiză Sisteme Corp</h2>
+
                     <p class="text-sm text-slate-500 font-medium">
-                        Pacient: <span class="text-slate-900 font-bold" th:text="${pacientUser.nume + ' ' + pacientUser.prenume}"></span>
+                        Pacient: <span class="text-slate-900 font-bold"
+                                       th:text="${chestionar.pacient.user.nume + ' ' + chestionar.pacient.user.prenume}">Nume Pacient</span>
                     </p>
                 </div>
 
                 <div class="flex flex-wrap gap-3">
-                    <a th:href="@{'/chestionare/raport/visual/' + ${raspunsChestionar.id}}"
+                    <a th:href="@{'/chestionare/raport/visual/' + ${chestionar.id}}"
                        class="inline-flex items-center px-5 py-2.5 bg-red-50 border border-red-100 rounded-xl shadow-sm text-sm font-bold text-red-600 hover:bg-red-100 transition-all">
                         <i class="fas fa-file-pdf mr-2"></i> Descarcă PDF
                     </a>
 
-                    <form th:if="${raspunsChestionar.status.name() == 'COMPLETAT'}"
-                          th:action="@{'/chestionare/medic/marcheaza-revizuit/' + ${raspunsChestionar.id}}"
+                    <form th:if="${chestionar.status.name() == 'COMPLETAT'}"
+                          th:action="@{'/chestionare/medic/marcheaza-revizuit/' + ${chestionar.id}}"
                           method="post" class="inline">
-                        <input type="hidden" name="pacientId" th:value="${pacient.id}" />
+                        <input type="hidden" name="pacientId" th:value="${chestionar.pacient.id}" />
                         <button type="submit"
                                 class="inline-flex items-center px-5 py-2.5 bg-emerald-600 rounded-xl shadow-md shadow-emerald-100 text-sm font-bold text-white hover:bg-emerald-700 transition-all">
                             <i class="fas fa-check-double mr-2"></i> Finalizează Revizuirea
                         </button>
                     </form>
 
-                    <a th:href="@{'/medic/pacienti/' + ${pacient.id}}"
-                       class="inline-flex items-center px-5 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all">
-                        <i class="fas fa-arrow-left mr-2 text-slate-400"></i> Înapoi la Profil
+                    <a th:href="@{'/medic/' + ${medicId} + '/pacient/' + ${chestionar.pacient.id}}"
+                       class="inline-flex items-center ...">
+                        <i class="fas fa-arrow-left mr-2"></i> Înapoi la Profil
                     </a>
                 </div>
             </div>
@@ -54,11 +57,11 @@
 
                     <div class="lg:w-1/3 bg-slate-50/50 p-10 flex flex-col justify-center border-l border-slate-100 text-center lg:text-left">
                         <div class="mb-6">
-                            <span th:if="${raspunsChestionar.status.name() == 'REVIZUIT'}"
+                            <span th:if="${chestionar.status.name() == 'REVIZUIT'}"
                                   class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full border border-emerald-200 uppercase">
                                 <i class="fas fa-check-circle mr-1.5"></i> Raport Revizuit
                             </span>
-                            <span th:if="${raspunsChestionar.status.name() == 'COMPLETAT'}"
+                            <span th:if="${chestionar.status.name() == 'COMPLETAT'}"
                                   class="inline-flex items-center px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black rounded-full border border-amber-200 uppercase">
                                 <i class="fas fa-clock mr-1.5"></i> Necesită Analiză
                             </span>
@@ -166,33 +169,27 @@
         /*<![CDATA[*/
         document.addEventListener('DOMContentLoaded', function() {
 
-            // Funcția magică ce creează un Sweep Gradient curb și capete rotunjite (Progress Bar Gauge)
-            // Se bazează pe suprapunerea a două grafice: unul gri (fundalul) și unul colorat tăiat exact la scor.
             function createProgressGauge(score, maxScore, radius, center, width) {
                 const safeScore = Math.min(Math.max(score, 0), maxScore);
 
-                // 1. Seria pentru fundal (Track-ul gri pe care "curge" bara)
                 const bgSeries = {
                     type: 'gauge',
                     startAngle: 180, endAngle: 0, min: 0, max: maxScore,
                     radius: radius, center: center,
                     axisLine: {
-                        roundCap: true, // Margini rotunjite la capete
-                        // ATENȚIE: Spațiile din interiorul array-ului previn erorile Thymeleaf!
+                        roundCap: true,
                         lineStyle: { width: width, color: [ [1, '#f1f5f9'] ] }
                     },
-                    pointer: { show: false }, // Fără ac
+                    pointer: { show: false },
                     axisTick: { show: false }, splitLine: { show: false },
                     axisLabel: { show: false }, detail: { show: false },
                     data: [{ value: safeScore }]
                 };
 
-                // Dacă scorul e practic zero, afișăm doar fundalul gol
                 if (safeScore <= 0.05) return [bgSeries];
 
-                // --- Generare dinamică a gradientului care urmează curba perfect ---
                 const absoluteRatio = safeScore / maxScore;
-                const steps = 40; // 40 de tăieturi pentru o trecere invizibilă
+                const steps = 40;
                 const segments = [];
 
                 const hexToRgb = hex => hex.match(/\w\w/g).map(x => parseInt(x, 16));
@@ -216,35 +213,32 @@
                     segments.push([relativeRatio, getAbsoluteColor(absolutePct)]);
                 }
 
-                // 2. Seria de deasupra (Bara propriu-zisă colorată care se oprește la scor)
                 const fgSeries = {
                     type: 'gauge',
                     startAngle: 180,
-                    endAngle: 180 - (absoluteRatio * 180), // Oprim arcul exact unde trebuie
-                    min: 0, max: safeScore, // Redimensionăm min-max doar pentru acest arc
+                    endAngle: 180 - (absoluteRatio * 180),
+                    min: 0, max: safeScore,
                     radius: radius, center: center,
                     axisLine: {
-                        roundCap: true, // Face ca și "vârful" progresului să fie rotunjit
+                        roundCap: true,
                         lineStyle: { width: width, color: segments }
                     },
-                    pointer: { show: false }, // Fără ac
+                    pointer: { show: false },
                     axisTick: { show: false }, splitLine: { show: false },
                     axisLabel: { show: false }, detail: { show: false },
                     data: [{ value: safeScore }],
-                    z: 3 // Asigură că stă peste track-ul gri
+                    z: 3
                 };
 
                 return [bgSeries, fgSeries];
             }
 
-            // APLICARE PENTRU GRAFICUL PRINCIPAL (Mare)
             const mainDom = document.getElementById('mainChart');
             if (mainDom) {
                 const totalScore = /*[[${rezultat.scorTotal ?: 0}]]*/ 0;
                 const mainChart = echarts.init(mainDom);
                 const seriesData = createProgressGauge(totalScore, 4, '140%', ['50%', '85%'], 18);
 
-                // Reactivăm cifrele 0 și 4 pe marginile graficului principal
                 seriesData[0].axisLabel = {
                     show: true, distance: -40, color: '#94a3b8', fontSize: 10, fontWeight: 'bold',
                     formatter: function (val) { return val === 0 ? '0' : (val === 4 ? '4' : ''); }
@@ -254,13 +248,11 @@
                 window.addEventListener('resize', () => mainChart.resize());
             }
 
-            // APLICARE PENTRU TOATE CATEGORIILE (Mini Gauges ca în documentul tău)
             document.querySelectorAll('.cat-gauge').forEach((dom) => {
                 const score = parseFloat(dom.getAttribute('data-score')) || 0;
                 const chart = echarts.init(dom);
                 const seriesData = createProgressGauge(score, 4, '110%', ['50%', '80%'], 16);
 
-                // Afișăm scorul în centru-jos, frumos și vizibil, fără ac indicator
                 seriesData[0].detail = {
                     show: true,
                     fontSize: 34,
@@ -273,7 +265,6 @@
                 chart.setOption({ series: seriesData });
             });
 
-            // Re-render la schimbarea dimeniunii ecranului
             window.addEventListener('resize', function() {
                 document.querySelectorAll('.cat-gauge').forEach(dom => {
                     const instance = echarts.getInstanceByDom(dom);

@@ -4,6 +4,7 @@ package com.therapeutica.therapeutica_app.raspunsuri_chestionare;
 import com.therapeutica.therapeutica_app.chestionare.Chestionare;
 import com.therapeutica.therapeutica_app.medici.Medici;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
+import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebari;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +13,8 @@ import org.hibernate.annotations.GenericGenerator;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "raspunsuri_chestionare")
@@ -53,6 +56,9 @@ public class RaspunsuriChestionare {
 
     @Column(name = "scor_total_general", precision = 5, scale = 2)
     private BigDecimal scorTotalGeneral;
+
+    @OneToMany(mappedBy = "raspunsChestionar", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<RaspunsuriIntrebari> raspunsuri = new ArrayList<>();
 
     // Constructor
     public RaspunsuriChestionare() {}

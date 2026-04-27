@@ -147,7 +147,8 @@
                                 <a th:href="@{'/chestionare/raport/visual/' + ${rc.id}}" class="p-2 text-slate-300 hover:text-red-500 transition-colors">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>
-                                <a th:href="@{'/medic/' + ${medicId} + '/chestionar/' + ${rc.id} + '/rezultate'}"
+
+                                <a th:href="@{'/raspunsuri/vizualizare/' + ${rc.id}}"
                                    class="px-3 py-1.5 bg-white border border-slate-200 text-[10px] font-black text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
                                     ANALIZĂ
                                 </a>
@@ -191,10 +192,6 @@
                     </tr>
                     </tbody>
                 </table>
-                <div th:unless="${totalChestionareNecompletate > 0}" class="py-16 text-center text-slate-300">
-                    <i class="fas fa-check-double text-4xl mb-2 text-emerald-100"></i>
-                    <p class="text-xs font-bold uppercase tracking-widest">Toate sarcinile sunt la zi</p>
-                </div>
             </div>
 
         </div>
