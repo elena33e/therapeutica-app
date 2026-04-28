@@ -5,68 +5,68 @@
 <head>
     <title>Revizuire Clinică - Mapare LOINC</title>
 </head>
-<body>
-<div layout:fragment="content" class="bg-gray-50 min-h-screen pb-10">
+<body class="bg-gray-50">
 
-    <div class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
+<div layout:fragment="content" class="bg-gray-50 min-h-screen pb-8">
+
+    <div class="bg-white border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center sticky top-0 z-20 shadow-sm gap-4">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">
+            <h1 class="text-2xl font-bold text-gray-800">
                 Revizuire Analize: <span class="text-purple-600" th:text="${document.numeFisier}">fisier.pdf</span>
             </h1>
-            <p class="text-sm text-gray-500 mt-1">
+            <p class="text-gray-600 mt-1">
                 Verifică și asociază codurile LOINC pentru generarea fenotipului HPO.
             </p>
         </div>
-        <div class="flex space-x-3">
+        <div class="flex items-center space-x-3">
             <a th:href="@{'/medic/analize/dosar/' + ${document.pacientId}}"
-               class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 font-medium transition-colors shadow-sm">
-                <i class="fas fa-times mr-1"></i> Anulează
+               class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-5 rounded-lg transition duration-200">
+                Anulează
             </a>
-
             <button type="submit" form="revizuireForm"
-                    class="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold shadow-md transition-all flex items-center transform hover:-translate-y-0.5">
-                <i class="fas fa-microchip mr-2"></i>
-                Finalizează și Generează HPO
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2.5 px-5 rounded-lg transition duration-200 shadow-sm flex items-center">
+                <i class="fas fa-microchip mr-2"></i> Finalizează
             </button>
         </div>
     </div>
 
-    <div class="container-fluid mx-auto px-4 mt-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="container-fluid mx-auto px-6 mt-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col" style="height: calc(100vh - 160px);">
-                <div class="bg-gray-100 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                    <div class="flex items-center">
-                        <i class="fas fa-file-pdf text-red-500 mr-2 text-lg"></i>
-                        <span class="font-bold text-gray-700">Sursă Document</span>
-                    </div>
-                    <a th:href="@{'/medic/analize/view-pdf/' + ${document.id}}" target="_blank" class="text-xs text-blue-600 hover:underline">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col border border-gray-100" style="height: calc(100vh - 160px);">
+
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                        <i class="fas fa-file-pdf text-red-500"></i>
+                        Sursă Document
+                    </h2>
+                    <a th:href="@{'/medic/analize/view-pdf/' + ${document.id}}" target="_blank"
+                       class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
                         Deschide în tab nou <i class="fas fa-external-link-alt ml-1"></i>
                     </a>
                 </div>
-                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col" style="height: calc(100vh - 160px);">
 
-                    <div class="w-full flex-grow bg-gray-50 overflow-hidden flex items-center justify-center p-2">
+                <div class="w-full flex-grow bg-gray-100 overflow-hidden flex items-center justify-center p-4">
+                    <img th:if="${isImage}"
+                         th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
+                         class="max-w-full max-h-full object-contain rounded-lg shadow-sm border border-gray-200"
+                         alt="Document scanat" />
 
-                        <img th:if="${isImage}"
-                             th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
-                             class="max-w-full max-h-full object-contain shadow-sm"
-                             alt="Document scanat" />
-
-                        <iframe th:unless="${isImage}"
-                                th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
-                                class="w-full h-full border-none"
-                                title="Vizualizator PDF">
-                        </iframe>
-
-                    </div>
+                    <iframe th:unless="${isImage}"
+                            th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
+                            class="w-full h-full border border-gray-200 rounded-lg shadow-sm bg-white"
+                            title="Vizualizator PDF">
+                    </iframe>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col" style="height: calc(100vh - 160px);">
-                <div class="bg-gray-100 border-b border-gray-200 px-4 py-3 flex items-center">
-                    <i class="fas fa-project-diagram text-purple-600 mr-2 text-lg"></i>
-                    <span class="font-bold text-gray-700">Mapare Semantică (LOINC)</span>
+            <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col border border-gray-100" style="height: calc(100vh - 160px);">
+
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                        <i class="fas fa-project-diagram text-purple-600"></i>
+                        Mapare Semantică (LOINC)
+                    </h2>
                 </div>
 
                 <div class="overflow-y-auto p-0 flex-grow bg-white">
@@ -77,24 +77,23 @@
 
                         <th:block th:each="entry : *{sectiuni}">
 
-                            <div class="bg-purple-50 border-y border-purple-100 px-4 py-2 sticky top-0 z-10 shadow-sm flex items-center">
-                                <i class="fas fa-layer-group text-purple-500 mr-2"></i>
-                                <h3 class="text-sm font-bold text-purple-800 uppercase tracking-wider" th:text="${entry.key}">
+                            <div class="bg-gray-100 border-y border-gray-200 px-6 py-3 flex items-center sticky top-0 z-10">
+                                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider" th:text="${entry.key}">
                                     Nume Secțiune
                                 </h3>
                             </div>
 
-                            <table class="w-full text-left border-collapse mb-6">
-                                <thead class="bg-gray-50">
+                            <table class="w-full text-left border-collapse mb-4">
+                                <thead class="bg-gray-50/50">
                                 <tr>
-                                    <th class="px-4 py-2 text-xs font-bold text-gray-500 uppercase border-b border-gray-200 w-2/5">Analiză Extrasă</th>
-                                    <th class="px-4 py-2 text-xs font-bold text-gray-500 uppercase border-b border-gray-200 w-1/5">Valoare</th>
-                                    <th class="px-4 py-2 text-xs font-bold text-gray-500 uppercase border-b border-gray-200 w-2/5">Cod LOINC Final</th>
+                                    <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 w-2/5">Analiză Extrasă</th>
+                                    <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 w-1/5">Valoare</th>
+                                    <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 w-2/5">Cod LOINC Final</th>
                                 </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
 
-                                <tr th:each="ind, stat : ${entry.value.indicatori}" class="hover:bg-blue-50 transition-colors group">
+                                <tr th:each="ind, stat : ${entry.value.indicatori}" class="hover:bg-gray-50 transition-colors">
 
                                     <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].nume}" />
                                     <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].metoda_detectata}" />
@@ -102,24 +101,26 @@
                                     <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].um}" />
                                     <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].interval}" />
 
-                                    <td class="px-4 py-3 align-top">
-                                        <div class="text-sm font-bold text-gray-900" th:text="${ind.nume}">Glucoza</div>
+                                    <td class="px-6 py-4 align-top">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${ind.nume}">Glucoza</div>
 
-                                        <div class="text-[11px] text-blue-600 font-medium mb-1 mt-0.5" th:if="${ind.metoda_detectata != null and ind.metoda_detectata != ''}">
+                                        <div class="text-xs text-blue-600 font-medium mt-1" th:if="${ind.metoda_detectata != null and ind.metoda_detectata != ''}">
                                             <i class="fas fa-vial mr-1"></i> <span th:text="${ind.metoda_detectata}">Spectrometrie</span>
                                         </div>
 
                                         <div class="text-xs text-gray-500 mt-1">
-                                            Ref: <span th:text="${ind.interval}">70-100</span>
+                                            Ref: <span class="font-medium text-gray-700" th:text="${ind.interval}">70-100</span>
                                             <span th:text="${ind.um}">mg/dL</span>
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3 text-sm font-extrabold text-gray-800 align-top">
-                                        <span class="bg-gray-100 px-2 py-1 rounded border border-gray-200" th:text="${ind.valoare}">95</span>
+                                    <td class="px-6 py-4 align-top">
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold bg-gray-100 border border-gray-200 text-gray-800" th:text="${ind.valoare}">
+                                                95
+                                            </span>
                                     </td>
 
-                                    <td class="px-4 py-3 align-top">
+                                    <td class="px-6 py-4 align-top">
                                         <div class="relative">
                                             <input type="hidden"
                                                    th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].loincNume}"
@@ -127,10 +128,10 @@
 
                                             <select th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].loincNum}"
                                                     onchange="handleLoincChange(this)"
-                                                    th:classappend="${ind.loincNum == 'Pending' or ind.loincNum == null or ind.loincNum == '' ? 'border-red-400 bg-red-50 text-red-800 focus:ring-red-500' : 'border-gray-300 focus:ring-purple-500 bg-white'}"
-                                                    class="block w-full text-sm rounded-md transition-all py-2 px-3 pr-10 appearance-none cursor-pointer shadow-sm hover:border-purple-400">
+                                                    th:classappend="${ind.loincNum == 'Pending' or ind.loincNum == null or ind.loincNum == '' ? 'border-amber-400 bg-amber-50 text-amber-800 focus:ring-amber-500 focus:border-amber-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500 bg-white'}"
+                                                    class="block w-full text-sm rounded-lg border py-2 px-3 outline-none transition-colors shadow-sm cursor-pointer">
 
-                                                <option value="Pending" th:if="${ind.loincNum == 'Pending'}" selected>⚠Alege din sugestii...</option>
+                                                <option value="Pending" th:if="${ind.loincNum == 'Pending'}" selected>⚠ Alege din sugestii...</option>
 
                                                 <option th:each="cand : ${ind.candidati}"
                                                         th:value="${cand.code}"
@@ -138,19 +139,12 @@
                                                         th:selected="${cand.code == ind.loincNum}">
                                                 </option>
                                             </select>
-
-                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                                                <i class="fas fa-chevron-down text-xs"></i>
-                                            </div>
                                         </div>
 
-                                        <div class="mt-1 flex justify-between px-1">
-        <span class="text-[9px] text-gray-400 font-mono uppercase tracking-tighter">
-            ID: <span class="loinc-code-display font-bold" th:text="${ind.loincNum}">-</span>
-        </span>
-                                            <span th:if="${ind.loincNum != 'Pending'}" class="text-[9px] text-green-600 font-bold uppercase">
-            <i class="fas fa-robot"></i> Sugestie AI
-        </span>
+                                        <div class="mt-2 flex justify-between items-center px-1">
+                                                <span class="text-xs text-gray-500 font-medium">
+                                                    LOINC: <span class="loinc-code-display text-gray-900 font-bold" th:text="${ind.loincNum}">-</span>
+                                                </span>
                                         </div>
                                     </td>
                                 </tr>
@@ -158,13 +152,13 @@
                             </table>
                         </th:block>
 
-                        <div th:if="${buletin.sectiuni == null or buletin.sectiuni.isEmpty()}" class="flex flex-col items-center justify-center p-12 text-center">
-                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                                <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+                        <div th:if="${buletin.sectiuni == null or buletin.sectiuni.isEmpty()}" class="py-16 text-center">
+                            <div class="mx-auto w-16 h-16 mb-4 text-red-400 bg-red-50 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle text-2xl"></i>
                             </div>
-                            <h3 class="text-lg font-bold text-gray-800 mb-2">Nu s-au găsit date extrase</h3>
-                            <p class="text-sm text-gray-500 max-w-sm">
-                                Sistemul nu a reușit să mapeze indicatorii pentru acest document. Verificați dacă JSON-ul validat de pacient conține secțiuni.
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Nu s-au găsit date extrase</h3>
+                            <p class="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">
+                                Sistemul nu a reușit să mapeze indicatorii pentru acest document. Verificați dacă documentul sursă conține date valide.
                             </p>
                         </div>
 
@@ -179,27 +173,27 @@
 <div layout:fragment="scripts">
     <script>
         function handleLoincChange(selectElement) {
-    const container = selectElement.closest('td');
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const container = selectElement.closest('td');
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
 
-    // 1. Actualizăm numele în input-ul hidden (pentru salvare în DB)
-    const nameHidden = container.querySelector('.loinc-name-hidden');
-    if (nameHidden) {
-        nameHidden.value = selectedOption.text;
-    }
+            // 1. Actualizăm numele în input-ul hidden
+            const nameHidden = container.querySelector('.loinc-name-hidden');
+            if (nameHidden) {
+                nameHidden.value = selectedOption.text;
+            }
 
-    // 2. Actualizăm ID-ul afișat vizual sub dropdown
-    const codeDisplay = container.querySelector('.loinc-code-display');
-    if (codeDisplay) {
-        codeDisplay.textContent = selectElement.value;
-    }
+            // 2. Actualizăm ID-ul afișat vizual
+            const codeDisplay = container.querySelector('.loinc-code-display');
+            if (codeDisplay) {
+                codeDisplay.textContent = selectElement.value;
+            }
 
-    // 3. Eliminăm stilul de eroare (roșu) dacă s-a făcut o selecție validă
-    if (selectElement.value !== 'Pending') {
-        selectElement.classList.remove('border-red-400', 'bg-red-50', 'text-red-800');
-        selectElement.classList.add('border-gray-300', 'bg-white');
-    }
-}
+            // 3. Eliminăm stilul de avertizare (chihlimbar/roșu) dacă s-a făcut o selecție
+            if (selectElement.value !== 'Pending') {
+                selectElement.classList.remove('border-amber-400', 'bg-amber-50', 'text-amber-800', 'focus:ring-amber-500', 'focus:border-amber-500');
+                selectElement.classList.add('border-gray-300', 'bg-white', 'focus:ring-purple-500', 'focus:border-purple-500');
+            }
+        }
     </script>
 </div>
 </body>

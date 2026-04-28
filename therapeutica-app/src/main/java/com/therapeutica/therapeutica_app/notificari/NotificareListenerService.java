@@ -31,8 +31,7 @@ public class NotificareListenerService {
             notificareRepository.save(notificare);
             log.info("Notificare salvată pentru utilizatorul: {}", event.destinatarId());
         } catch (Exception e) {
-            // Prindem excepția aici pentru ca eroarea de notificare
-            // să nu afecteze procesul principal al aplicației.
+
             log.error("Eroare la salvarea notificării: {}", e.getMessage());
         }
     }

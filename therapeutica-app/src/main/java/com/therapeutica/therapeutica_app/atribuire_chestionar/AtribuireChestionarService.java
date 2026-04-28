@@ -5,12 +5,16 @@ import com.therapeutica.therapeutica_app.chestionare.ChestionareRepository;
 import com.therapeutica.therapeutica_app.medici.Medici;
 import com.therapeutica.therapeutica_app.medici.MediciRepository;
 import com.therapeutica.therapeutica_app.notificari.NotificareListenerService;
+import com.therapeutica.therapeutica_app.notificari.events.NotificareEvent;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,181 +25,94 @@ import java.util.UUID;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
+@RequiredArgsConstructor
+@Slf4j
 public class AtribuireChestionarService {
 
     private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
     private final PacientiRepository pacientiRepository;
     private final MediciRepository mediciRepository;
     private final ChestionareRepository chestionareRepository;
-    private final NotificareListenerService notificareListenerService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public AtribuireChestionarService(
-            final RaspunsuriChestionareRepository raspunsuriChestionareRepository,
-            final PacientiRepository pacientiRepository,
-            final MediciRepository mediciRepository,
-            final ChestionareRepository chestionareRepository,
-            final NotificareListenerService notificareListenerService) {
-        this.raspunsuriChestionareRepository = raspunsuriChestionareRepository;
-        this.pacientiRepository = pacientiRepository;
-        this.mediciRepository = mediciRepository;
-        this.chestionareRepository = chestionareRepository;
-        this.notificareListenerService = notificareListenerService;
-    }
 
     /**
      * Atribuie unul sau mai multe chestionare unui pacient
      */
+    @Transactional(rollbackFor = Exception.class)
     public List<UUID> atribuiChestionarePacientului(AtribuireChestionarRequestDTO requestDTO) {
-        try {
-            // Încearcă să găsești pacientul cu acest ID
-            Optional<Pacienti> byId = pacientiRepository.findById(requestDTO.getPacientId());
-            System.out.println("🔍 Found by pacient.id? " + byId.isPresent());
+        log.info("Inițiere atribuire chestionare pentru pacient: {} de către medic: {}",
+                requestDTO.getPacientId(), requestDTO.getMedicId());
 
-            if (!byId.isPresent()) {
-                // Încearcă să găsești după user_id
-                Optional<Pacienti> byUserId = pacientiRepository.findByUserId(requestDTO.getPacientId());
-                System.out.println("🔍 Found by user.id? " + byUserId.isPresent());
-
-                if (byUserId.isPresent()) {
-                    System.out.println("🚨🚨🚨 PROBLEM IDENTIFIED! 🚨🚨🚨");
-                    System.out.println("   - DTO has user.id: " + requestDTO.getPacientId());
-                    System.out.println("   - But should have pacient.id: " + byUserId.get().getId());
-                    System.out.println("   - Patient user_id: " +
-                            (byUserId.get().getUser() != null ? byUserId.get().getUser().getId() : "null"));
-
-
-                    requestDTO.setPacientId(byUserId.get().getId());
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("❌ Error in debug: " + e.getMessage());
-        }
-
-        System.out.println("   - pacientId: " + requestDTO.getPacientId());
-        System.out.println("   - medicId: " + requestDTO.getMedicId());
-        System.out.println("   - chestionareIds: " +
-                (requestDTO.getChestionareIds() != null ? requestDTO.getChestionareIds() : "NULL"));
-
-        if (requestDTO.getChestionareIds() != null) {
-            System.out.println("   - Number of IDs: " + requestDTO.getChestionareIds().size());
-        }
-
-        // Validare precondiții
+        // 1. Validare rapidă input
         if (requestDTO.getChestionareIds() == null || requestDTO.getChestionareIds().isEmpty()) {
-            System.err.println("❌ ERROR: No chestionareIds in DTO!");
-            throw new IllegalArgumentException("Trebuie selectat cel puțin un chestionar");
+            throw new IllegalArgumentException("Trebuie selectat cel puțin un chestionar.");
         }
 
+        // 2. Rezolvare entități (Medicul și Pacientul)
+        final Medici medic = mediciRepository.findById(requestDTO.getMedicId())
+                .orElseThrow(() -> new NotFoundException("Medicul nu a fost găsit."));
+
+        // Fallback logic: Caută pacientul după ID-ul primit (care poate fi ID-ul entității sau UserID)
+        final Pacienti pacient = pacientiRepository.findById(requestDTO.getPacientId())
+                .or(() -> pacientiRepository.findByUserId(requestDTO.getPacientId()))
+                .orElseThrow(() -> new NotFoundException("Pacientul nu a fost găsit."));
+
+        // 3. Verificare securitate
+        if (!estePacientAlMedicului(pacient, medic)) {
+            log.warn("Tentativă neautorizată: Medicul {} a încercat să atribuie chestionare pacientului {}",
+                    medic.getUserId(), pacient.getId());
+            throw new SecurityException("Pacientul nu este asociat acestui medic.");
+        }
+
+        // 4. Procesare atribuiri
+        List<UUID> raspunsuriCreateIds = new ArrayList<>();
+
+        for (UUID chestionarId : requestDTO.getChestionareIds()) {
+            // Evităm duplicatele (chestionare deja atribuite și necompletate)
+            if (existaChestionarNecompletat(pacient.getId(), chestionarId)) {
+                log.debug("Chestionarul {} este deja atribuit pacientului {}. Skip.", chestionarId, pacient.getId());
+                continue;
+            }
+
+            chestionareRepository.findById(chestionarId).ifPresent(chestionar -> {
+                RaspunsuriChestionare raspuns = new RaspunsuriChestionare();
+                raspuns.setPacient(pacient);
+                raspuns.setMedic(medic);
+                raspuns.setChestionar(chestionar);
+                raspuns.setStatus(RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
+
+                RaspunsuriChestionare saved = raspunsuriChestionareRepository.save(raspuns);
+                raspunsuriCreateIds.add(saved.getId());
+            });
+        }
+
+        // 5. Notificare Pacient (doar dacă s-au creat atribuiri noi)
+        if (!raspunsuriCreateIds.isEmpty()) {
+            triggerNotificarePacient(pacient, raspunsuriCreateIds.size());
+        }
+
+        log.info("Succes: S-au atribuit {} chestionare noi pentru pacientul {}",
+                raspunsuriCreateIds.size(), pacient.getId());
+
+        return raspunsuriCreateIds;
+    }
+
+
+     //Metodă notificare
+    private void triggerNotificarePacient(Pacienti pacient, int numarChestionare) {
         try {
-            // Verifică medicul
-            System.out.println("🔍 Looking for medic with ID: " + requestDTO.getMedicId());
-            final Medici medic = mediciRepository.findById(requestDTO.getMedicId())
-                    .orElseThrow(() -> {
-                        System.err.println("❌ Medic NOT FOUND: " + requestDTO.getMedicId());
-                        return new NotFoundException("Medic not found");
-                    });
-            System.out.println("✅ Medic found: " + medic.getUserId());
+            if (pacient.getUser() != null) {
+                UUID userId = pacient.getUser().getId();
+                String link = "/chestionare/pacient/" + userId + "/disponibile";
+                String titlu = numarChestionare > 1 ? "Chestionare noi" : "Chestionar nou";
+                String mesaj = "Medicul tău ți-a atribuit " + numarChestionare + " chestionare noi pentru completare.";
 
-            // Verifică pacientul
-            System.out.println("🔍 Looking for pacient with ID: " + requestDTO.getPacientId());
-            final Pacienti pacient = pacientiRepository.findById(requestDTO.getPacientId())
-                    .orElseThrow(() -> {
-                        System.err.println("❌ Pacient NOT FOUND by ID: " + requestDTO.getPacientId());
-                        // Încearcă și alternative pentru debugging
-                        System.err.println("🔍 Trying to find by user_id instead...");
-                        Optional<Pacienti> byUser = pacientiRepository.findByUserId(requestDTO.getPacientId());
-                        if (byUser.isPresent()) {
-                            System.err.println("⚠️ Found by user_id! But DTO should send pacient.id not user.id");
-                        }
-                        return new NotFoundException("Pacient not found with ID: " + requestDTO.getPacientId());
-                    });
-
-            System.out.println("✅ Pacient found:");
-            System.out.println("   - Pacient ID (from pacienti table): " + pacient.getId());
-            System.out.println("   - User ID (FK to utilizatori): " +
-                    (pacient.getUser() != null ? pacient.getUser().getId() : "null"));
-
-            // Verifică dacă medicul are drepturi asupra pacientului
-            System.out.println("🔍 Checking if pacient belongs to medic...");
-            System.out.println("   - Pacient medic ID: " +
-                    (pacient.getMedic() != null ? pacient.getMedic().getUserId() : "NULL"));
-            System.out.println("   - Request medic ID: " + medic.getUserId());
-
-            boolean pacientApartineMedicului = estePacientAlMedicului(pacient, medic);
-            System.out.println("✅ Patient belongs to medic: " + pacientApartineMedicului);
-
-            if (!pacientApartineMedicului) {
-                throw new SecurityException("Pacientul nu este asociat medicului");
+                eventPublisher.publishEvent(new NotificareEvent(userId, titlu, mesaj, link));
+                log.debug("Eveniment de notificare trimis către UserID: {}", userId);
             }
-
-            List<UUID> raspunsuriCreateIds = new ArrayList<>();
-
-            // Pentru fiecare chestionar selectat
-            System.out.println("🔍 Processing " + requestDTO.getChestionareIds().size() + " chestionare...");
-            for (UUID chestionarId : requestDTO.getChestionareIds()) {
-                System.out.println("   🔄 Processing chestionar ID: " + chestionarId);
-
-                final Chestionare chestionar = chestionareRepository.findById(chestionarId)
-                        .orElseThrow(() -> {
-                            System.err.println("❌ Chestionar NOT FOUND: " + chestionarId);
-                            return new NotFoundException("Chestionar not found");
-                        });
-                System.out.println("     ✅ Chestionar found: " + chestionar.getNume());
-
-                // Verifică dacă chestionarul nu a fost deja atribuit (și necompletat)
-                boolean existaDeja = existaChestionarNecompletat(pacient.getId(), chestionarId);
-                System.out.println("     🔍 Chestionar already assigned (not completed): " + existaDeja);
-
-                if (!existaDeja) {
-                    System.out.println("     🆕 Creating new association...");
-
-                    // Creează un răspuns chestionar (asociere)
-                    RaspunsuriChestionare raspuns = new RaspunsuriChestionare();
-                    raspuns.setPacient(pacient);
-                    raspuns.setMedic(medic);
-                    raspuns.setChestionar(chestionar);
-                    raspuns.setStatus(RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
-                    raspuns.setCompletatLa(null);
-                    raspuns.setScorTotalGeneral(null);
-
-                    System.out.println("     💾 Saving to database...");
-                    RaspunsuriChestionare saved = raspunsuriChestionareRepository.save(raspuns);
-                    System.out.println("     ✅ Saved with ID: " + saved.getId());
-                    raspunsuriCreateIds.add(saved.getId());
-
-                    // Verifică imediat dacă s-a salvat
-                    boolean existsInDb = raspunsuriChestionareRepository.existsById(saved.getId());
-                    System.out.println("     🔍 Verification - exists in DB: " + existsInDb);
-                } else {
-                    System.out.println("     ⚠️ Skipping - already assigned");
-                }
-            }
-
-            System.out.println("✅ Total created associations: " + raspunsuriCreateIds.size());
-
-            if (!raspunsuriCreateIds.isEmpty()) {
-                System.out.println("✅ Created response IDs: " + raspunsuriCreateIds);
-            } else {
-                System.out.println("⚠️ No new associations created (all were already assigned)");
-            }
-
-            // Trimite notificare către pacient
-//            System.out.println("🔍 Sending notification to patient...");
-//            try {
-//                trimiteNotificarePacient(pacient, medic, requestDTO);
-//                System.out.println("✅ Notification sent");
-//            } catch (Exception e) {
-//                System.err.println("⚠️ Failed to send notification: " + e.getMessage());
-//            }
-
-            return raspunsuriCreateIds;
-
         } catch (Exception e) {
-            System.err.println("❌❌❌ ERROR in atribuiChestionarePacientului:");
-            System.err.println("   Message: " + e.getMessage());
-            System.err.println("   Exception type: " + e.getClass().getName());
-            e.printStackTrace();
-            throw e;
+            log.error("Eroare silențioasă la trimiterea notificării: {}", e.getMessage());
         }
     }
     /**
@@ -212,30 +129,6 @@ public class AtribuireChestionarService {
     private boolean existaChestionarNecompletat(UUID pacientId, UUID chestionarId) {
         return raspunsuriChestionareRepository
                 .existsByPacientIdAndChestionarIdAndStatusNecompletat(pacientId, chestionarId);
-    }
-
-    /**
-     * Trimite notificare către pacient
-     */
-    private void trimiteNotificarePacient(Pacienti pacient, Medici medic,
-                                          AtribuireChestionarRequestDTO requestDTO) {
-        if (pacient.getUser() != null) {
-            Utilizatori pacientUser = pacient.getUser();
-            Utilizatori medicUser = medic.getUser();
-
-            String subiect = "Chestionar nou atribuit";
-            String mesaj = String.format(
-                    "Mesaj test trimis",
-                    pacientUser.getPrenume(),
-                    pacientUser.getNume(),
-                    medicUser.getPrenume(),
-                    medicUser.getNume()
-//                    requestDTO.getMesajPersonalizat() != null ?
-//                            "Mesaj personalizat de la medic:\n" + requestDTO.getMesajPersonalizat() : ""
-            );
-
-            //notificareListenerService.trimiteEmail(pacientUser.getEmail(), subiect, mesaj);
-        }
     }
 
     /**

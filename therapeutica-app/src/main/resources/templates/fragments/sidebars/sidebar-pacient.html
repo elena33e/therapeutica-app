@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- Întregul fișier este fragmentul sidebar pentru pacient -->
 <aside class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-blue-50 to-white border-r border-gray-200 shadow-lg z-50 hidden md:block">
-    <!-- Logo și informații pacient -->
     <div class="p-6 border-b border-gray-100 bg-white">
         <div class="flex items-center space-x-3 mb-4">
             <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -11,7 +9,6 @@
             </div>
             <div>
                 <h2 class="font-bold text-gray-800">Pacient</h2>
-
             </div>
         </div>
         <div class="mt-2">
@@ -23,61 +20,46 @@
         </div>
     </div>
 
-    <!-- Meniu de navigare -->
     <nav class="p-4 space-y-1">
-        <!-- Dashboard -->
         <a th:href="@{'/pacient/dashboard/' + ${session.userId}}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition duration-200">
             <i class="fas fa-tachometer-alt w-5 text-center"></i>
             <span>Dashboard</span>
         </a>
 
-        <!-- Profil -->
+        <a th:href="@{'/pacient/notificari/' + ${session.userId}}"
+           class="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-700 transition duration-200 group">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-bell w-5 text-center"></i>
+                <span>Notificări</span>
+            </div>
+            <div id="pacient-notif-wrapper" class="hidden items-center">
+                <span id="pacient-notif-count" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                    0
+                </span>
+            </div>
+        </a>
+
         <a th:href="@{'/pacient/profil/' + ${session.userId}}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition duration-200">
             <i class="fas fa-user-circle w-5 text-center"></i>
             <span>Profil</span>
         </a>
 
-        <!-- Chestionare Medicale -->
         <a th:href="@{'/chestionare/pacient/' + ${session.userId} + '/disponibile'}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-green-100 text-gray-700 hover:text-green-700 transition duration-200">
             <i class="fas fa-clipboard-list w-5 text-center"></i>
             <span>Chestionare Medicale</span>
         </a>
 
-        <!-- Documente Medicale -->
         <a th:href="@{'/analize/pacient/documente/' + ${session.userId}}"
-                                      class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-purple-100 text-gray-700 hover:text-purple-700 transition duration-200">
-        <i class="fas fa-file-medical w-5 text-center"></i>
-        <span>Documente Medicale</span>
-         </a>
-
-        <!-- Diagnostic -->
-        <a th:href="@{'/pacient/diagnostic/' + ${session.userId}}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-100 text-gray-700 hover:text-red-700 transition duration-200">
-            <i class="fas fa-stethoscope w-5 text-center"></i>
-            <span>Diagnostic</span>
+           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-purple-100 text-gray-700 hover:text-purple-700 transition duration-200">
+            <i class="fas fa-file-medical w-5 text-center"></i>
+            <span>Documente Medicale</span>
         </a>
 
-        <!-- Rezultate și Analize -->
-        <a th:href="@{'/pacient/rezultate/' + ${session.userId}}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-100 text-gray-700 hover:text-teal-700 transition duration-200">
-            <i class="fas fa-chart-line w-5 text-center"></i>
-            <span>Rezultate și Analize</span>
-        </a>
-
-        <!-- Divider -->
         <div class="border-t border-gray-200 my-2"></div>
 
-        <!-- Setări -->
-        <a th:href="@{'/pacient/setari/' + ${session.userId}}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition duration-200">
-            <i class="fas fa-cog w-5 text-center"></i>
-            <span>Setări</span>
-        </a>
-
-        <!-- Deconectare -->
         <form th:action="@{/api/auth/logout-web}" method="post" class="m-0 p-0">
             <button type="submit"
                     class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-50 text-gray-700 hover:text-red-600 transition duration-200 mt-2 text-left">
@@ -88,6 +70,37 @@
     </nav>
 </aside>
 
+<script th:inline="javascript">
+    (function() {
+        const userId = /*[[${session.userId}]]*/ null;
 
+        function updatePacientNotifications() {
+            if (!userId) return;
+
+            // Folosim endpoint-ul optimizat de count
+            fetch('/api/notificari/necitite-count/' + userId)
+                .then(response => response.json())
+                .then(count => {
+                    const wrapper = document.getElementById('pacient-notif-wrapper');
+                    const badgeCount = document.getElementById('pacient-notif-count');
+
+                    if (wrapper && badgeCount) {
+                        if (count > 0) {
+                            badgeCount.innerText = count > 9 ? '9+' : count;
+                            wrapper.classList.remove('hidden');
+                            wrapper.classList.add('flex');
+                        } else {
+                            wrapper.classList.add('hidden');
+                            wrapper.classList.remove('flex');
+                        }
+                    }
+                })
+                .catch(err => console.error("Eroare verificare notificări pacient:", err));
+        }
+
+        updatePacientNotifications();
+        setInterval(updatePacientNotifications, 30000);
+    })();
+</script>
 </body>
 </html>

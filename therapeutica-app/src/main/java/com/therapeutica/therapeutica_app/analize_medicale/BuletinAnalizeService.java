@@ -284,7 +284,7 @@ public class BuletinAnalizeService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<String> request = new HttpEntity<>(payloadHpo, headers);
 
-            // REPARARE URL: Folosim base-url + calea de interpretare
+            // Folosim base-url + calea de interpretare
             String hpoUrl = pythonBaseUrl + interpretPath;
 
             log.info("--- Finalizare HPO la URL: {} ---", hpoUrl);

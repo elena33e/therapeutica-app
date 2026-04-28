@@ -29,7 +29,7 @@
 
         <a th:href="@{'/medic/profil/' + ${session.userId}}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition duration-200">
-            <i class="fas fa-users w-5 text-center"></i>
+            <i class="fas fa-user-circle w-5 text-center"></i>
             <span>Profil</span>
         </a>
 
@@ -48,8 +48,8 @@
         </a>
 
         <a th:href="@{/chestionare/medic/lista-chestionare}"
-           class="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition">
-            <i class="fas fa-list-alt w-5"></i>
+           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition">
+            <i class="fas fa-list-alt w-5 text-center"></i>
             <span>Chestionare</span>
         </a>
 
@@ -62,9 +62,9 @@
                 <span>Notificări</span>
             </div>
             <div id="notif-wrapper" class="hidden items-center">
-        <span id="notif-count" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-            0
-        </span>
+                <span id="notif-count" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    0
+                </span>
             </div>
         </a>
 
@@ -80,30 +80,40 @@
 
 <script th:inline="javascript">
     (function() {
-        const medicId = [[${session.userId}]];
+        // Preluăm ID-ul din sesiune folosind inlining-ul securizat de la Thymeleaf
+        const userId = /*[[${session.userId}]]*/ null;
 
         function updateNotificationBadge() {
-            if (!medicId) return;
+            if (!userId) return;
 
-            fetch('/api/notificari/necitite/' + medicId)
-                .then(response => response.json())
-                .then(data => {
+            // Folosim endpoint-ul optimizat de COUNT
+            fetch('/api/notificari/necitite-count/' + userId)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(count => {
                     const wrapper = document.getElementById('notif-wrapper');
-                    const count = document.getElementById('notif-count');
+                    const badge = document.getElementById('notif-count');
 
-                    if (wrapper && count && data && data.length > 0) {
-                        count.innerText = data.length > 9 ? '9+' : data.length;
-                        wrapper.classList.remove('hidden');
-                        wrapper.classList.add('flex');
-                    } else if (wrapper) {
-                        wrapper.classList.add('hidden');
-                        wrapper.classList.remove('flex');
+                    if (wrapper && badge) {
+                        if (count > 0) {
+                            badge.innerText = count > 9 ? '9+' : count;
+                            wrapper.classList.remove('hidden');
+                            wrapper.classList.add('flex');
+                        } else {
+                            wrapper.classList.add('hidden');
+                            wrapper.classList.remove('flex');
+                        }
                     }
                 })
-                .catch(err => console.error("Eroare verificare notificări:", err));
+                .catch(err => console.error("Eroare la actualizarea badge-ului:", err));
         }
 
-        updateNotificationBadge();
+        // Prima rulare la încărcarea paginii
+        document.addEventListener('DOMContentLoaded', updateNotificationBadge);
+
+        // Verificare periodică la fiecare 30 secunde
         setInterval(updateNotificationBadge, 30000);
     })();
 </script>

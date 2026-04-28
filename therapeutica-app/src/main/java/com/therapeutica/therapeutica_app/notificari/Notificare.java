@@ -18,7 +18,6 @@ public class Notificare {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ID-ul utilizatorului care trebuie să primească notificarea (ex: Medicul sau Pacientul)
     @Column(name = "utilizator_destinatar_id", nullable = false)
     private UUID utilizatorDestinatarId;
 
@@ -29,7 +28,6 @@ public class Notificare {
     private String mesaj;
 
     // Calea relativă în aplicație unde va fi redirecționat utilizatorul la click
-    // Ex: "/analize/vizualizeaza/ebf6de2d-de11-47d5-9804-cb7456c98eec"
     @Column(name = "link_actiune", length = 255)
     private String linkActiune;
 

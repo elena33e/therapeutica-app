@@ -1,4 +1,4 @@
-package com.therapeutica.therapeutica_app.notificari.ui; // Ajustează pachetul conform structurii tale
+package com.therapeutica.therapeutica_app.notificari.ui;
 
 import com.therapeutica.therapeutica_app.notificari.Notificare;
 import com.therapeutica.therapeutica_app.notificari.NotificareRepository;
@@ -20,32 +20,23 @@ public class NotificariController {
     private final NotificareRepository notificareRepository;
 
     @GetMapping("/medic/notificari/{medicId}")
-    public String afiseazaInboxNotificari(@PathVariable UUID medicId, Model model) {
-        log.info("Afișare inbox notificări pentru medicul: {}", medicId);
+    public String afiseazaInboxMedic(@PathVariable UUID medicId, Model model) {
+        return proceseazaInbox(medicId, model, "medic/notificari", "medicId");
+    }
 
-        // 1. Extragem toate notificările, sortate de la cele mai noi la cele mai vechi
-        List<Notificare> notificari = notificareRepository.findByUtilizatorDestinatarIdOrderByDataCreareDesc(medicId);
+    @GetMapping("/pacient/notificari/{pacientId}")
+    public String afiseazaInboxPacient(@PathVariable UUID pacientId, Model model) {
+        return proceseazaInbox(pacientId, model, "pacient/notificari", "pacientId");
+    }
 
-        // 2. Marcăm notificările necitite ca fiind "citite" (deoarece medicul le vizualizează acum)
-        boolean areNotificariNoi = false;
-        for (Notificare notif : notificari) {
-            if (!notif.isCitita()) {
-                notif.setCitita(true);
-                areNotificariNoi = true;
-            }
-        }
+    private String proceseazaInbox(UUID userId, Model model, String viewName, String idLabel) {
+        log.info("Încărcare inbox pentru utilizatorul: {}", userId);
 
-        // Dacă am modificat cel puțin o notificare, salvăm noile statusuri în baza de date
-        if (areNotificariNoi) {
-            notificareRepository.saveAll(notificari);
-            log.info("Notificările necitite au fost marcate ca citite pentru medicul: {}", medicId);
-        }
+        List<Notificare> notificari = notificareRepository.findByUtilizatorDestinatarIdOrderByDataCreareDesc(userId);
 
-        // 3. Trimitem datele către pagina web
         model.addAttribute("notificari", notificari);
-        model.addAttribute("medicId", medicId);
+        model.addAttribute(idLabel, userId);
 
-        // 4. Returnăm vizualizarea
-        return "medic/notificari";
+        return viewName;
     }
 }

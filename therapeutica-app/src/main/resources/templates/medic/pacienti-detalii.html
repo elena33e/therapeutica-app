@@ -1,41 +1,44 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:x-transition="http://www.w3.org/1999/xhtml"
       layout:decorate="~{layout}">
 <head>
-    <title th:text="${pacientUser.nume + ' ' + pacientUser.prenume}">Detalii Pacient</title>
+    <title th:text="${pacientUser.nume + ' ' + pacientUser.prenume}">Detalii Pacient | Therapeutica</title>
 </head>
-<body class="bg-slate-50">
+<body class="bg-gray-50">
 
-<div layout:fragment="content" class="min-h-screen bg-slate-50 pb-20">
+<div layout:fragment="content" class="min-h-screen pb-20">
 
-    <div class="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-4 shadow-sm">
+    <div class="bg-white border-b border-gray-200 sticky top-0 z-40 px-6 py-4 shadow-sm">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-
             <div class="flex items-center space-x-4">
-                <div class="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-100">
+                <div class="bg-blue-600 p-3 rounded-xl shadow-md shadow-blue-100">
                     <i class="fas fa-user text-white text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-black text-slate-900 leading-none">
+                    <h1 class="text-xl font-bold text-gray-800 leading-none">
                         <span th:text="${pacientUser.nume}"></span> <span th:text="${pacientUser.prenume}"></span>
                     </h1>
-                    <div class="flex items-center mt-2 space-x-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <div class="flex items-center mt-2 space-x-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         <span><i class="far fa-id-card mr-1"></i> <span th:text="${pacient.cnp}"></span></span>
-                        <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                        <span class="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
                         <span><i class="far fa-envelope mr-1"></i> <span th:text="${pacientUser.email}"></span></span>
                     </div>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <a th:href="@{'/medic/analize/dosar/' + ${pacient.id}}" class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center">
-                    <i class="fas fa-microscope mr-2 text-indigo-500"></i> Analize
+                <a th:href="@{'/medic/analize/dosar/' + ${pacient.id}}"
+                   class="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center shadow-sm">
+                    <i class="fas fa-microscope mr-2 text-blue-500"></i> Analize
                 </a>
-                <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/atribuire-nou'}" class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center">
+                <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/atribuire-nou'}"
+                   class="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all flex items-center shadow-sm">
                     <i class="fas fa-plus-circle mr-2 text-emerald-500"></i> Atribuie
                 </a>
-                <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/diagnoza-integrata'}" class="px-6 py-2.5 bg-indigo-600 text-white text-xs font-black rounded-xl hover:bg-indigo-700 transition-all shadow-md flex items-center">
+                <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/diagnoza-integrata'}"
+                   class="px-6 py-2.5 bg-gray-800 text-white text-xs font-bold rounded-xl hover:bg-gray-900 transition-all shadow-md flex items-center">
                     <i class="fas fa-brain mr-2"></i> Profil Fenotipic
                 </a>
             </div>
@@ -44,156 +47,182 @@
 
     <div class="max-w-7xl mx-auto px-6 mt-8 space-y-6">
 
-        <div th:if="${success}" class="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 rounded-r-2xl flex items-center shadow-sm">
+        <div th:if="${success}" class="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 rounded-r-xl flex items-center shadow-sm">
             <i class="fas fa-check-circle mr-3 text-emerald-500"></i>
-            <span class="text-sm font-bold" th:text="${success}">Operațiune reușită</span>
+            <span class="text-sm font-bold" th:text="${success}"></span>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Activitate</h3>
-                <div class="flex items-baseline gap-2 mb-6">
-                    <span class="text-5xl font-black text-slate-900" th:text="${totalChestionareCompletate + totalChestionareNecompletate}">0</span>
-                    <span class="text-slate-400 font-bold text-[10px] uppercase">Evaluări</span>
+
+            <div class="bg-white p-7 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Evaluări Chestionare</h3>
+                    <div class="flex items-baseline gap-2 mb-6">
+                        <span class="text-5xl font-black text-gray-800" th:text="${totalChestionareCompletate + totalChestionareNecompletate}">0</span>
+                        <span class="text-gray-400 font-bold text-[10px] uppercase tracking-tighter">Total</span>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-                        <p class="text-[9px] font-black text-emerald-600 uppercase mb-1">Finalizate</p>
-                        <p class="text-xl font-black text-slate-800" th:text="${totalChestionareCompletate}">0</p>
+                    <div class="bg-emerald-50/40 p-3 rounded-xl border border-emerald-100/50 text-center">
+                        <p class="text-[9px] font-bold text-emerald-600 uppercase mb-1">Finalizate</p>
+                        <p class="text-xl font-bold text-gray-800" th:text="${totalChestionareCompletate}">0</p>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-                        <p class="text-[9px] font-black text-amber-600 uppercase mb-1">Restante</p>
-                        <p class="text-xl font-black text-slate-800" th:text="${totalChestionareNecompletate}">0</p>
+                    <div class="bg-amber-50/40 p-3 rounded-xl border border-amber-100/50 text-center">
+                        <p class="text-[9px] font-bold text-amber-600 uppercase mb-1">Restante</p>
+                        <p class="text-xl font-bold text-gray-800" th:text="${totalChestionareNecompletate}">0</p>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 bg-slate-900 p-8 rounded-[2rem] shadow-xl text-white relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-8 opacity-10"><i class="fas fa-dna text-7xl"></i></div>
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Biometrie Pacient</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div>
-                        <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Vârstă</p>
-                        <p class="text-xl font-bold" th:text="${pacient.varsta > 0 ? pacient.varsta + ' ani' : '-'}"></p>
+            <div class="lg:col-span-2 bg-white p-7 rounded-2xl shadow-sm border border-gray-200 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date Biometrice Pacient</h3>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[9px] font-bold rounded-lg border border-blue-100 uppercase">Profil Actualizat</span>
                     </div>
-                    <div>
-                        <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Sex</p>
-                        <p class="text-xl font-bold">
-                            <i th:if="${pacient.sex?.name() == 'MASCULIN'}" class="fas fa-mars text-blue-400 mr-1"></i>
-                            <i th:if="${pacient.sex?.name() == 'FEMININ'}" class="fas fa-venus text-pink-400 mr-1"></i>
-                            <span th:text="${pacient.sex?.name() ?: 'N/A'}"></span>
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Înălțime</p>
-                        <p class="text-xl font-bold" th:text="${pacient.inaltime != null ? pacient.inaltime + ' cm' : '-'}"></p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Greutate</p>
-                        <p class="text-xl font-bold" th:text="${pacient.greutate != null ? pacient.greutate + ' kg' : '-'}"></p>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                            <p class="text-[9px] text-gray-400 uppercase font-bold mb-2 tracking-tight">Vârstă</p>
+                            <p class="text-lg font-bold text-gray-800" th:text="${pacient.varsta > 0 ? pacient.varsta + ' ani' : '-'}"></p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                            <p class="text-[9px] text-gray-400 uppercase font-bold mb-2 tracking-tight">Sex</p>
+                            <p class="text-lg font-bold text-gray-800 flex items-center">
+                                <i th:if="${pacient.sex?.name() == 'MASCULIN'}" class="fas fa-mars text-blue-500 mr-2"></i>
+                                <i th:if="${pacient.sex?.name() == 'FEMININ'}" class="fas fa-venus text-pink-500 mr-2"></i>
+                                <span th:text="${pacient.sex?.name() ?: 'N/A'}"></span>
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                            <p class="text-[9px] text-gray-400 uppercase font-bold mb-2 tracking-tight">Înălțime</p>
+                            <p class="text-lg font-bold text-gray-800">
+                                <span th:text="${pacient.inaltime ?: '-'}"></span>
+                                <span class="text-xs text-gray-400 ml-1 font-medium" th:if="${pacient.inaltime != null}">cm</span>
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                            <p class="text-[9px] text-gray-400 uppercase font-bold mb-2 tracking-tight">Greutate</p>
+                            <p class="text-lg font-bold text-gray-800">
+                                <span th:text="${pacient.greutate ?: '-'}"></span>
+                                <span class="text-xs text-gray-400 ml-1 font-medium" th:if="${pacient.greutate != null}">kg</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden" x-data="{ activeTab: 'completate' }">
-
-            <div class="px-8 py-5 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center bg-slate-50/50 gap-4">
-                <div class="flex p-1 bg-slate-200/50 rounded-xl">
-                    <button @click="activeTab = 'completate'" :class="activeTab === 'completate' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'"
-                            class="px-6 py-2 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" x-data="{ activeTab: 'completate' }">
+            <div class="px-8 py-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center bg-gray-50/50 gap-4">
+                <div class="flex p-1 bg-gray-200/50 rounded-xl">
+                    <button @click="activeTab = 'completate'"
+                            :class="activeTab === 'completate' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                            class="px-6 py-2.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest outline-none">
                         Finalizate (<span th:text="${totalChestionareCompletate}">0</span>)
                     </button>
-                    <button @click="activeTab = 'necompletate'" :class="activeTab === 'necompletate' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'"
-                            class="px-6 py-2 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest">
+                    <button @click="activeTab = 'necompletate'"
+                            :class="activeTab === 'necompletate' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                            class="px-6 py-2.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest outline-none">
                         În așteptare (<span th:text="${totalChestionareNecompletate}">0</span>)
                     </button>
                 </div>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Istoric Evaluări</p>
             </div>
 
-            <div x-show="activeTab === 'completate'" class="overflow-x-auto">
-                <table th:if="${totalChestionareCompletate > 0}" class="w-full text-left border-collapse">
+            <div x-show="activeTab === 'completate'" x-transition:enter="transition ease-out duration-200" class="overflow-x-auto">
+                <table th:if="${totalChestionareCompletate > 0}" class="w-full text-left">
                     <thead>
-                    <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                        <th class="px-8 py-4">Denumire Chestionar</th>
-                        <th class="px-8 py-4">Data</th>
-                        <th class="px-8 py-4 text-center">Status Clinic</th>
-                        <th class="px-8 py-4 text-center">Scor</th>
-                        <th class="px-8 py-4 text-right">Acțiuni</th>
+                    <tr class="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50/30">
+                        <th class="px-8 py-4 border-b border-gray-100">Denumire Chestionar</th>
+                        <th class="px-8 py-4 border-b border-gray-100">Data Completării</th>
+                        <th class="px-8 py-4 border-b border-gray-100 text-center">Status</th>
+                        <th class="px-8 py-4 border-b border-gray-100 text-center">Scor</th>
+                        <th class="px-8 py-4 border-b border-gray-100 text-right">Acțiuni</th>
                     </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-50">
-                    <tr th:each="rc : ${chestionareCompletate}" class="hover:bg-slate-50 transition-colors">
-                        <td class="px-8 py-4">
-                            <span class="text-sm font-bold text-slate-800" th:text="${rc.numeChestionar ?: 'Nume Indisponibil'}">Nume</span>
+                    <tbody class="divide-y divide-gray-100">
+                    <tr th:each="rc : ${chestionareCompletate}" class="hover:bg-gray-50 transition-colors group">
+                        <td class="px-8 py-5">
+                            <span class="text-sm font-bold text-gray-800" th:text="${rc.numeChestionar}">Nume</span>
                         </td>
-                        <td class="px-8 py-4 text-sm font-medium text-slate-600">
-                            <span th:text="${rc.completatLa != null ? #temporals.format(rc.completatLa, 'dd.MM.yyyy') : '-'}"></span>
-                            <span class="text-[10px] text-slate-400 ml-1" th:text="${rc.completatLa != null ? #temporals.format(rc.completatLa, 'HH:mm') : ''}"></span>
+                        <td class="px-8 py-5">
+                            <div class="text-xs font-medium text-gray-600 flex flex-col">
+                                <span th:text="${#temporals.format(rc.completatLa, 'dd MMMM yyyy')}"></span>
+                                <span class="text-[10px] text-gray-400" th:text="${#temporals.format(rc.completatLa, 'HH:mm')}"></span>
+                            </div>
                         </td>
-                        <td class="px-8 py-4 text-center">
-                            <span th:if="${rc.status == 'REVIZUIT'}" class="px-2 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-md border border-emerald-100 uppercase">
-                                <i class="fas fa-check-double mr-1"></i> Revizuit
-                            </span>
-                            <span th:if="${rc.status == 'COMPLETAT'}" class="px-2 py-1 bg-amber-50 text-amber-600 text-[9px] font-black rounded-md border border-amber-100 uppercase animate-pulse">
-                                <i class="fas fa-clock mr-1"></i> De analizat
-                            </span>
+                        <td class="px-8 py-5 text-center">
+                                <span th:if="${rc.status == 'REVIZUIT'}" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-bold rounded-lg border border-emerald-100 uppercase tracking-tight">
+                                    <i class="fas fa-check-double mr-1 text-[8px]"></i> Revizuit
+                                </span>
+                            <span th:if="${rc.status == 'COMPLETAT'}" class="px-2.5 py-1 bg-amber-50 text-amber-600 text-[9px] font-bold rounded-lg border border-amber-100 uppercase tracking-tight">
+                                    <i class="fas fa-hourglass-half mr-1 text-[8px]"></i> De analizat
+                                </span>
                         </td>
-                        <td class="px-8 py-4 text-center">
-                            <span class="text-xs font-black text-indigo-600" th:text="${rc.scorTotalGeneral != null ? rc.scorTotalGeneral + ' pct.' : '-'}"></span>
+                        <td class="px-8 py-5 text-center">
+                                <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100"
+                                      th:text="${rc.scorTotalGeneral != null ? #numbers.formatDecimal(rc.scorTotalGeneral, 1, 1) + ' pct.' : '-'}"></span>
                         </td>
-                        <td class="px-8 py-4 text-right">
-                            <div class="flex justify-end gap-2">
-                                <a th:href="@{'/chestionare/raport/visual/' + ${rc.id}}" class="p-2 text-slate-300 hover:text-red-500 transition-colors">
+                        <td class="px-8 py-5 text-right">
+                            <div class="flex justify-end items-center gap-3">
+                                <a th:href="@{'/chestionare/raport/visual/' + ${rc.id}}" class="text-gray-400 hover:text-red-500 transition-colors">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>
-
                                 <a th:href="@{'/raspunsuri/vizualizare/' + ${rc.id}}"
-                                   class="px-3 py-1.5 bg-white border border-slate-200 text-[10px] font-black text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-                                    ANALIZĂ
+                                   class="px-4 py-2 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm">
+                                    VEZI REZULTATE
                                 </a>
                             </div>
                         </td>
                     </tr>
                     </tbody>
                 </table>
-                <div th:unless="${totalChestionareCompletate > 0}" class="py-16 text-center text-slate-300">
-                    <i class="fas fa-inbox text-4xl mb-2"></i>
-                    <p class="text-xs font-bold uppercase tracking-widest">Nicio evaluare finalizată</p>
+                <div th:unless="${totalChestionareCompletate > 0}" class="py-20 text-center">
+                    <i class="fas fa-inbox text-3xl text-gray-200 mb-3"></i>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nicio evaluare completată în istoric</p>
                 </div>
             </div>
 
-            <div x-show="activeTab === 'necompletate'" class="overflow-x-auto">
+            <div x-show="activeTab === 'necompletate'" x-transition:enter="transition ease-out duration-200" class="overflow-x-auto" style="display: none;">
                 <table th:if="${totalChestionareNecompletate > 0}" class="w-full text-left">
-                    <thead>
-                    <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                    <thead class="bg-gray-50/30">
+                    <tr class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                         <th class="px-8 py-4">Denumire</th>
                         <th class="px-8 py-4 text-center">Status</th>
                         <th class="px-8 py-4 text-center">Data Atribuirii</th>
                         <th class="px-8 py-4 text-right">Acțiuni</th>
                     </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-50">
-                    <tr th:each="rn : ${chestionareNecompletate}" class="hover:bg-slate-50 transition-colors">
-                        <td class="px-8 py-4 text-sm font-bold text-slate-800" th:text="${rn.numeChestionar ?: 'Nume Indisponibil'}">Nume</td>
-                        <td class="px-8 py-4 text-center">
-                            <span class="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black rounded-md border border-slate-200 uppercase">
-                                În așteptare
-                            </span>
+                    <tbody class="divide-y divide-gray-100">
+                    <tr th:each="rn : ${chestionareNecompletate}" class="hover:bg-gray-50 transition-colors">
+                        <td class="px-8 py-5 text-sm font-bold text-gray-800" th:text="${rn.numeChestionar}">Nume</td>
+                        <td class="px-8 py-5 text-center">
+                            <span class="px-2.5 py-1 bg-gray-100 text-gray-500 text-[9px] font-bold rounded-lg border border-gray-200 uppercase">În așteptare</span>
                         </td>
-                        <td class="px-8 py-4 text-center text-sm font-medium text-slate-500">
+                        <td class="px-8 py-5 text-center text-sm font-medium text-gray-500">
                             <span th:text="${rn.completatLa != null ? #temporals.format(rn.completatLa, 'dd.MM.yyyy') : '-'}"></span>
                         </td>
-                        <td class="px-8 py-4 text-right">
-                            <button class="text-[10px] font-black text-indigo-600 uppercase hover:text-indigo-800 transition-colors bg-indigo-50 px-3 py-1.5 rounded-lg">
-                                <i class="fas fa-paper-plane mr-1"></i> Memento
+                        <td class="px-8 py-5 text-right">
+                            <button class="px-4 py-2 bg-white border border-gray-200 text-[10px] font-bold text-gray-600 rounded-lg hover:bg-gray-50 transition-all flex items-center ml-auto shadow-sm">
+                                <i class="fas fa-paper-plane mr-2 text-blue-500"></i> MEMENTO
                             </button>
                         </td>
                     </tr>
                     </tbody>
                 </table>
+                <div th:unless="${totalChestionareNecompletate > 0}" class="py-20 text-center">
+                    <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100 text-emerald-500">
+                        <i class="fas fa-check-double text-2xl"></i>
+                    </div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Toate chestionarele au fost finalizate de către pacient</p>
+                </div>
             </div>
-
         </div>
     </div>
 </div>

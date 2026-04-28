@@ -81,7 +81,7 @@ public class AtribuireChestionarViewController {
             return "medic/pacienti-list";
 
         } catch (Exception e) {
-            System.err.println("❌ Error in listaPacienti: " + e.getMessage());
+            System.err.println("Error in listaPacienti: " + e.getMessage());
             return handleException(e);
         }
     }

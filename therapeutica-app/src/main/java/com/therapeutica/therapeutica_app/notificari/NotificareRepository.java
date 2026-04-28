@@ -12,9 +12,11 @@ public interface NotificareRepository extends JpaRepository<Notificare, Long> {
 
     // Extrage doar notificările pe care medicul nu le-a văzut încă,
      //si le afiseaza pe cele mai recente
-
     List<Notificare> findByUtilizatorDestinatarIdAndCititaFalseOrderByDataCreareDesc(UUID utilizatorDestinatarId);
 
     //Utilă pentru istoricul complet de notificări
     List<Notificare> findByUtilizatorDestinatarIdOrderByDataCreareDesc(UUID utilizatorDestinatarId);
+
+    // Returnează numărul de notificări necitite
+    long countByUtilizatorDestinatarIdAndCititaFalse(UUID utilizatorDestinatarId);
 }

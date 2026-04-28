@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout}"> <head>
-    <title>Notificări | Therapeutica</title>
+      layout:decorate="~{layout}">
+<head>
+    <title>Notificările Mele | Therapeutica</title>
 </head>
 <body>
 
@@ -11,18 +12,18 @@
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-800 flex items-center">
-                <i class="fas fa-bell text-amber-500 mr-3"></i>Notificări
+                <i class="fas fa-bell text-blue-500 mr-3"></i>Notificări
             </h1>
-            <p class="text-gray-500 mt-1">Istoricul activităților recente ale pacienților tăi.</p>
+            <p class="text-gray-500 mt-1">Urmărește recomandările și noutățile trimise de medicul tău.</p>
         </div>
     </div>
 
     <div th:if="${#lists.isEmpty(notificari)}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center max-w-4xl">
         <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-check-double text-3xl text-green-400"></i>
+            <i class="fas fa-envelope-open text-3xl text-blue-400"></i>
         </div>
-        <h3 class="text-lg font-bold text-gray-700">Ești la zi!</h3>
-        <p class="text-gray-500 mt-2">Nu ai nicio notificare</p>
+        <h3 class="text-lg font-bold text-gray-700">Inbox-ul este gol</h3>
+        <p class="text-gray-500 mt-2">Te vom anunța imediat ce medicul tău îți trimite informații noi.</p>
     </div>
 
     <div th:unless="${#lists.isEmpty(notificari)}" class="space-y-4 max-w-4xl">
@@ -33,9 +34,10 @@
 
             <div class="flex items-start space-x-4">
                 <div class="mt-1 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-                     th:classappend="${notif.titlu.contains('Chestionar')} ? 'bg-purple-100' : 'bg-blue-100'">
-                    <i th:if="${notif.titlu.contains('Chestionar')}" class="fas fa-clipboard-list text-purple-600"></i>
-                    <i th:unless="${notif.titlu.contains('Chestionar')}" class="fas fa-file-medical text-blue-600"></i>
+                     th:classappend="${notif.titlu.contains('Chestionar')} ? 'bg-purple-100' : (${notif.titlu.contains('Analiză') or notif.titlu.contains('Rezultate')} ? 'bg-emerald-100' : 'bg-blue-100')">
+                    <i th:if="${notif.titlu.contains('Chestionar')}" class="fas fa-tasks text-purple-600"></i>
+                    <i th:if="${notif.titlu.contains('Analiză') or notif.titlu.contains('Rezultate')}" class="fas fa-file-medical-alt text-emerald-600"></i>
+                    <i th:unless="${notif.titlu.contains('Chestionar') or notif.titlu.contains('Analiză') or notif.titlu.contains('Rezultate')}" class="fas fa-info-circle text-blue-600"></i>
                 </div>
 
                 <div>
@@ -53,17 +55,21 @@
             </div>
 
             <div class="mt-4 md:mt-0 ml-14 md:ml-0 flex-shrink-0">
-                <a th:href="@{'/api/notificari/acceseaza/' + ${notif.id}}"
-                   class="w-full md:w-auto inline-flex items-center justify-center px-6 py-3 bg-white border border-slate-200 rounded-xl text-xs font-black text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm group">
-                    <span>ACCESEAZĂ</span>
-                    <i class="fas fa-arrow-right ml-2 text-[10px] transform group-hover:translate-x-1 transition-transform"></i>
-                </a>
+                <div class="mt-4 md:mt-0 ml-14 md:ml-0 flex-shrink-0">
+                    <a th:href="@{'/api/notificari/acceseaza/' + ${notif.id}}"
+                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition shadow-sm">
+                        <span>Vezi Detalii</span>
+                        <i class="fas fa-chevron-right ml-2 text-xs"></i>
+                    </a>
+                </div>
             </div>
         </div>
 
     </div>
 </div>
 
+<div layout:fragment="scripts">
+</div>
 
 </body>
 </html>
