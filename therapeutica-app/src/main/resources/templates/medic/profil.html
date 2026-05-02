@@ -7,15 +7,15 @@
 </head>
 <body>
 
-<div layout:fragment="content" class="container mx-auto px-4 py-8">
+<div layout:fragment="content" class="container mx-auto px-4 py-12 max-w-7xl">
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800">
+            <h1 class="text-3xl font-bold text-brand-navy">
                 <span th:if="${mode == 'view'}">Profilul meu</span>
                 <span th:if="${mode == 'edit'}">Editare Profil Medic</span>
             </h1>
-            <p class="text-gray-600 mt-2">
+            <p class="text-brand-navy/70 mt-2 font-medium">
                 <span th:if="${mode == 'view'}">Gestionează informațiile tale profesionale</span>
                 <span th:if="${mode == 'edit'}">Modifică informațiile tale personale și profesionale</span>
             </p>
@@ -24,25 +24,26 @@
         <div class="flex items-center gap-3">
             <a th:if="${mode == 'view'}"
                th:href="@{'/medic/profil/' + ${medicId} + '/editare'}"
-               class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                <i class="fas fa-edit mr-1"></i> Editare profil
+               class="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-sm flex items-center">
+                <i class="fas fa-edit mr-2 text-brand-gold"></i> Editare profil
             </a>
 
             <div th:if="${mode == 'edit'}" class="flex gap-3">
                 <a th:href="@{'/medic/profil/' + ${medicId}}"
-                   class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-200">
+                   class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-sm">
                     Anulare
                 </a>
                 <button type="submit" form="profilForm"
-                        class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                    <i class="fas fa-save mr-1"></i> Salvează
+                        class="bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-sm flex items-center">
+                    <i class="fas fa-save mr-2"></i> Salvează
                 </button>
             </div>
         </div>
     </div>
 
-    <div th:if="${successMessage}" class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-        <i class="fas fa-check-circle mr-2"></i>
+    <!-- Mesaj Succes Teal -->
+    <div th:if="${successMessage}" class="mb-6 p-4 bg-brand-teal text-white font-bold rounded-xl flex items-center shadow-md">
+        <i class="fas fa-check-circle mr-3 text-lg"></i>
         <span th:text="${successMessage}"></span>
     </div>
 
@@ -52,110 +53,111 @@
           method="post"
           class="space-y-6 max-w-4xl">
 
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h2 class="text-xl font-semibold text-gray-700">
-                    <i class="fas fa-user mr-2 text-blue-600"></i>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-xl font-bold text-brand-navy">
+                    <i class="fas fa-user mr-2 text-brand-blue"></i>
                     Informații Personale
                 </h2>
             </div>
 
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nume *</label>
+                    <label class="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Nume *</label>
                     <input type="text" name="nume" th:value="${utilizator.nume}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-medium text-brand-navy"
                            th:classappend="${numeError != null} ? 'border-red-500'">
-                    <p th:if="${numeError}" class="text-red-500 text-sm mt-1" th:text="${numeError}"></p>
+                    <p th:if="${numeError}" class="text-red-500 text-sm mt-1 font-medium" th:text="${numeError}"></p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Prenume *</label>
+                    <label class="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Prenume *</label>
                     <input type="text" name="prenume" th:value="${utilizator.prenume}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-medium text-brand-navy"
                            th:classappend="${prenumeError != null} ? 'border-red-500'">
-                    <p th:if="${prenumeError}" class="text-red-500 text-sm mt-1" th:text="${prenumeError}"></p>
+                    <p th:if="${prenumeError}" class="text-red-500 text-sm mt-1 font-medium" th:text="${prenumeError}"></p>
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <label class="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Email *</label>
                     <input type="email" name="email" th:value="${utilizator.email}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-medium text-brand-navy"
                            th:classappend="${emailError != null} ? 'border-red-500'">
-                    <p th:if="${emailError}" class="text-red-500 text-sm mt-1" th:text="${emailError}"></p>
+                    <p th:if="${emailError}" class="text-red-500 text-sm mt-1 font-medium" th:text="${emailError}"></p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h2 class="text-xl font-semibold text-gray-700">
-                    <i class="fas fa-user-md mr-2 text-green-600"></i>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-xl font-bold text-brand-navy">
+                    <i class="fas fa-user-md mr-2 text-brand-teal"></i>
                     Informații Profesionale
                 </h2>
             </div>
             <div class="p-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Specializare</label>
+                <label class="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Specializare</label>
                 <input type="text" name="specializare" th:value="${medic?.specializare}"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"
-                       placeholder="Ex: Cardiologie">
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-medium text-brand-navy"
+                       placeholder="Ex: Cardiologie, Medicină Funcțională">
             </div>
         </div>
     </form>
 
     <div th:if="${mode == 'view'}" class="space-y-6 max-w-4xl">
 
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h2 class="text-xl font-semibold text-gray-700">
-                    <i class="fas fa-id-card mr-2 text-blue-600"></i>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-xl font-bold text-brand-navy">
+                    <i class="fas fa-id-card mr-2 text-brand-blue"></i>
                     Date Identitate
                 </h2>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Nume Complet</p>
-                    <p class="text-lg font-medium text-gray-900" th:text="${utilizator.prenume + ' ' + utilizator.nume}"></p>
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nume Complet</p>
+                    <p class="text-lg font-bold text-brand-navy" th:text="${utilizator.prenume + ' ' + utilizator.nume}"></p>
                 </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Email</p>
-                    <p class="text-lg text-gray-900" th:text="${utilizator.email}"></p>
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Email</p>
+                    <p class="text-lg font-medium text-brand-navy" th:text="${utilizator.email}"></p>
                 </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Rol Sistem</p>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 md:col-span-2">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Rol Sistem</p>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-teal text-white shadow-sm uppercase tracking-wider">
+                        <i class="fas fa-shield-alt mr-1.5"></i>
                         <span th:text="${utilizator.rol}"></span>
                     </span>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h2 class="text-xl font-semibold text-gray-700">
-                    <i class="fas fa-stethoscope mr-2 text-green-600"></i>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-xl font-bold text-brand-navy">
+                    <i class="fas fa-stethoscope mr-2 text-brand-teal"></i>
                     Detalii Activitate
                 </h2>
             </div>
 
             <div class="p-6">
-                <div th:if="${medic?.specializare != null && !medic.specializare.isEmpty()}">
-                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Specializare Principală</p>
-                    <p class="text-lg font-medium text-gray-900" th:text="${medic.specializare}"></p>
+                <div th:if="${medic?.specializare != null && !medic.specializare.isEmpty()}" class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Specializare Principală</p>
+                    <p class="text-lg font-bold text-brand-navy" th:text="${medic.specializare}"></p>
                 </div>
 
                 <div th:if="${medic == null || medic.specializare == null || medic.specializare.isEmpty()}"
-                     class="text-center py-8">
-                    <div class="mx-auto w-16 h-16 mb-4 text-gray-300">
-                        <i class="fas fa-user-md text-5xl"></i>
+                     class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                    <div class="mx-auto w-16 h-16 mb-4 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                        <i class="fas fa-user-md text-3xl text-brand-blue"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Profil Incomplet</h3>
-                    <p class="text-gray-600 mb-4 max-w-sm mx-auto">
-                        Nu ați adăugat încă o specializare.
+                    <h3 class="text-lg font-bold text-brand-navy mb-2">Profil Incomplet</h3>
+                    <p class="text-gray-500 mb-5 max-w-sm mx-auto font-medium">
+                        Nu ați adăugat încă o specializare profesională.
                     </p>
                     <a th:href="@{'/medic/profil/' + ${medicId} + '/editare'}"
-                       class="text-blue-600 hover:text-blue-800 font-medium">
-                        Completează acum <i class="fas fa-arrow-right ml-1"></i>
+                       class="inline-flex items-center bg-white border border-gray-200 text-brand-navy hover:text-brand-blue font-bold py-2 px-4 rounded-lg shadow-sm transition-colors">
+                        Completează acum <i class="fas fa-arrow-right ml-2 text-xs"></i>
                     </a>
                 </div>
             </div>

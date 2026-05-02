@@ -7,35 +7,28 @@
     <title layout:title-pattern="$CONTENT_TITLE">Therapeutica</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script th:src="@{/js/tailwind-config.js}"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-50">
-<!-- Header pentru utilizatori neautentificați -->
+<body class="bg-gray-50 flex flex-col min-h-screen">
+
 <header th:replace="~{fragments/header :: header}"></header>
 
-<!-- Container principal -->
-<div class="flex min-h-screen ">
-    <!-- Sidebar (va fi înlocuit în funcție de rol) -->
+<div class="flex flex-1">
+
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
-    <!-- Conținut principal -->
-    <div th:class="${session != null and session.userId != null} ? 'flex-1 ml-0 md:ml-64' : 'flex-1'">
-        <main layout:fragment="content" class="p-4 md:p-6 flex-grow">
-            <!-- Aici va fi injectat conținutul din fiecare pagină -->
+    <div th:class="${session != null and session.userId != null} ? 'flex flex-col flex-1 ml-0 md:ml-64' : 'flex flex-col flex-1'">
+
+        <main layout:fragment="content" class="flex-1">
         </main>
 
-        <!-- Footer -->
-        <footer class ="mt-auto"
-                th:replace="~{fragments/footer :: footer}">
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
 
-        </footer>
     </div>
 </div>
 
-<!-- Zona pentru scripts -->
-<div layout:fragment="scripts">
-    <!-- Scripturile vor fi injectate aici -->
-</div>
+<div layout:fragment="scripts"></div>
 
 </body>
 </html>

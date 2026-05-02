@@ -19,8 +19,6 @@ public class CodInregistrareController {
         this.codInregistrareService = codInregistrareService;
     }
 
-    // ========== GET ENDPOINTS ==========
-
     @GetMapping
     public ResponseEntity<List<CodInregistrareDTO>> getAllCoduri() {
         System.out.println("GET /api/coduri-inregistrare - All codes");
@@ -43,7 +41,7 @@ public class CodInregistrareController {
 
     // ========== POST ENDPOINTS ==========
 
-    // ✅ CORECT: POST pentru generare cod
+    // POST pentru generare cod
     @PostMapping("/generare")
     public ResponseEntity<GenerareCodResponse> generareCod(
             @Valid @RequestBody GenerareCodRequest request) {

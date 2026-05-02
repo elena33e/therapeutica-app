@@ -31,7 +31,6 @@ public class Notificare {
     @Column(name = "link_actiune", length = 255)
     private String linkActiune;
 
-    // Starea notificării; implicit este falsă la creare
     @Column(nullable = false)
     @Builder.Default
     private boolean citita = false;

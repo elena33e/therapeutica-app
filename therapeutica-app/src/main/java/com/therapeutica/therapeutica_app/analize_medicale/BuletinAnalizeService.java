@@ -209,7 +209,7 @@ public class BuletinAnalizeService {
                 log.warn("Pacientul nu are medic asociat. Notificarea nu a fost trimisă.");
             }
 
-            // 3. Lansăm procesarea asincronă către Python pentru standardizare
+            // Lansăm procesarea asincronă către Python pentru standardizare
             this.trimiteSpreStandardizareSemantica(dto, pacient.getDataNasterii(), String.valueOf(pacient.getSex()));
 
         } catch (Exception e) {

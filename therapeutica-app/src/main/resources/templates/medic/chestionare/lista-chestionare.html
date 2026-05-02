@@ -3,72 +3,88 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <head>
-    <title>Chestionare Disponibile - CDSS</title>
+    <title>Chestionare Disponibile</title>
 </head>
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content" class="container mx-auto px-4 py-12 max-w-7xl">
 
-    <div class="mb-6 flex justify-between items-end">
+    <!-- Header Secțiune -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Chestionare Medicale</h1>
-            <p class="text-gray-600 mt-1">Lista de chestionare medicale pentru identificarea prealabila a disfunctiilor</p>
+            <h1 class="text-3xl font-bold text-brand-navy">Chestionare Medicale</h1>
+            <p class="text-gray-500 font-medium mt-2">Lista de chestionare medicale pentru identificarea prealabilă a disfuncțiilor.</p>
         </div>
-        <div class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
-            Total: <span class="font-bold text-blue-600" th:text="${#lists.size(chestionareSistem)}">0</span> chestionare
+
+        <div class="text-xs font-bold text-white bg-brand-blue px-4 py-2 rounded-lg shadow-sm flex items-center">
+            <i class="fas fa-layer-group mr-2 opacity-80"></i>
+            Total: <span class="ml-1" th:text="${#lists.size(chestionareSistem)}">0</span>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Denumire</th>
-                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Descriere </th>
-                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Durată Est.</th>
-                <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acțiuni</th>
-            </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
-            <tr th:each="ch : ${chestionareSistem}" class="hover:bg-blue-50/50 transition-colors group">
 
-                <td class="px-6 py-5 whitespace-nowrap">
-                    <div class="flex items-center">
-                        <div class="ml-4">
-                            <a th:href="@{/chestionare/medic/vizualizare-structura/{id}(id=${ch.id})}"
-                               class="text-sm font-bold text-gray-900 hover:text-blue-600 hover:underline transition">
-                                <span th:text="${ch.nume}">Titlu Chestionar</span>
-                            </a>
-                            <div class="text-xs text-blue-600 font-medium uppercase tracking-tighter">ID: CDSS-PROT</div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left">
+                <thead class="bg-gray-100 border-b border-gray-200">
+                <tr>
+                    <th scope="col" class="px-8 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest">Denumire</th>
+                    <th scope="col" class="px-8 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest">Descriere</th>
+                    <th scope="col" class="px-8 py-4 text-center text-[10px] font-bold text-brand-navy uppercase tracking-widest">Durată Est.</th>
+                    <th scope="col" class="px-8 py-4 text-right text-[10px] font-bold text-brand-navy uppercase tracking-widest">Acțiuni</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                <tr th:each="ch : ${chestionareSistem}" class="hover:bg-gray-50 transition-colors group">
+
+                    <td class="px-8 py-5 whitespace-nowrap">
+                        <div class="flex items-center">
+
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200 mr-4 group-hover:bg-white transition-colors shadow-sm">
+                                <i class="fas fa-clipboard-list text-brand-gold text-lg"></i>
+                            </div>
+                            <div>
+                                <a th:href="@{/chestionare/medic/vizualizare-structura/{id}(id=${ch.id})}"
+                                   class="text-sm font-bold text-brand-navy hover:text-brand-blue transition-colors">
+                                    <span th:text="${ch.nume}">Titlu Chestionar</span>
+                                </a>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">ID: CDSS-PROT</div>
+                            </div>
                         </div>
-                    </div>
-                </td>
+                    </td>
 
-                <td class="px-6 py-5">
-                    <p class="text-sm text-gray-600 max-w-xl line-clamp-2 italic" th:text="${ch.descriere}">
-                        Descrierea protocolului clinic și indicațiile pentru utilizarea acestuia în diagnostic.
-                    </p>
-                </td>
+                    <td class="px-8 py-5">
+                        <p class="text-sm text-gray-600 max-w-xl line-clamp-2 font-medium" th:text="${ch.descriere}">
+                            Descrierea protocolului clinic și indicațiile pentru utilizarea acestuia în diagnostic.
+                        </p>
+                    </td>
 
-                <td class="px-6 py-5 text-center whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                            <i class="far fa-clock mr-1.5 text-gray-400"></i> ~10 min
+                    <td class="px-8 py-5 text-center whitespace-nowrap">
+
+                        <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600 uppercase tracking-widest border border-gray-200 shadow-sm">
+                            <i class="far fa-clock mr-1.5 text-brand-blue"></i> ~10 min
                         </span>
-                </td>
+                    </td>
 
-                <td class="px-6 py-5 text-right whitespace-nowrap">
-                    <a th:href="@{/medic/atribuire-chestionar/selecteaza-pacient/{id}(id=${ch.id})}"
-                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all transform active:scale-95">
-                        <i class="fas fa-user-plus mr-2 text-xs"></i>
-                        Atribuie
-                    </a>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+                    <td class="px-8 py-5 text-right whitespace-nowrap">
 
-        <div th:if="${#lists.isEmpty(chestionareSistem)}" class="text-center py-16 bg-white">
-            <i class="fas fa-search text-gray-200 text-4xl mb-3"></i>
-            <p class="text-gray-400 text-sm">Nu s-au găsit chestionare în sistem.</p>
+                        <a th:href="@{/medic/atribuire-chestionar/selecteaza-pacient/{id}(id=${ch.id})}"
+                           class="inline-flex items-center px-5 py-2.5 text-[10px] uppercase tracking-widest font-bold rounded-lg text-white bg-brand-teal hover:bg-brand-teal/90 shadow-sm transition-all transform active:scale-95">
+                            <i class="fas fa-user-plus mr-2 text-white"></i>
+                            Atribuie
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+        <div th:if="${#lists.isEmpty(chestionareSistem)}" class="text-center py-20 bg-white">
+            <div class="mx-auto w-16 h-16 mb-4 bg-gray-50 rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                <i class="fas fa-search text-2xl text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-brand-navy mb-1">Nu s-au găsit chestionare</h3>
+            <p class="text-gray-500 text-sm font-medium">Baza de date cu protocoale este momentan goală.</p>
         </div>
     </div>
 </div>

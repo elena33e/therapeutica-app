@@ -6,55 +6,63 @@
 </head>
 <body>
 
-<div layout:fragment="content">
+<div layout:fragment="content" class="container mx-auto px-4 py-12 max-w-7xl">
 
     <div class="mb-8 flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
-                <i class="fas fa-bell text-amber-500 mr-3"></i>Notificări
+            <h1 class="text-3xl font-bold text-brand-navy flex items-center">
+                <!-- Iconiță Gold pentru a atrage atenția, dar integrată în brand -->
+                <i class="fas fa-bell text-brand-gold mr-3"></i>Notificări
             </h1>
-            <p class="text-gray-500 mt-1">Istoricul activităților recente ale pacienților tăi.</p>
+            <p class="text-gray-500 mt-2 font-medium">Istoricul activităților recente ale pacienților tăi.</p>
         </div>
     </div>
 
-    <div th:if="${#lists.isEmpty(notificari)}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center max-w-4xl">
-        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-check-double text-3xl text-green-400"></i>
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(notificari)}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center max-w-4xl">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
+            <!-- Iconiță Teal solidă pentru confirmarea stării de bine -->
+            <i class="fas fa-check-double text-3xl text-brand-teal"></i>
         </div>
-        <h3 class="text-lg font-bold text-gray-700">Ești la zi!</h3>
-        <p class="text-gray-500 mt-2">Nu ai nicio notificare</p>
+        <h3 class="text-lg font-bold text-brand-navy">Ești la zi!</h3>
+        <p class="text-gray-500 mt-2 font-medium">Nu ai nicio notificare</p>
     </div>
 
+    <!-- Lista de Notificări -->
     <div th:unless="${#lists.isEmpty(notificari)}" class="space-y-4 max-w-4xl">
 
         <div th:each="notif : ${notificari}"
              class="relative bg-white rounded-xl shadow-sm border p-5 flex flex-col md:flex-row md:items-center justify-between transition hover:shadow-md"
-             th:classappend="${!notif.citita} ? 'border-blue-300 border-l-4' : 'border-gray-200'">
+             th:classappend="${!notif.citita} ? 'border-brand-teal border-l-4 bg-gray-50/50' : 'border-gray-200'">
 
             <div class="flex items-start space-x-4">
-                <div class="mt-1 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-                     th:classappend="${notif.titlu.contains('Chestionar')} ? 'bg-purple-100' : 'bg-blue-100'">
-                    <i th:if="${notif.titlu.contains('Chestionar')}" class="fas fa-clipboard-list text-purple-600"></i>
-                    <i th:unless="${notif.titlu.contains('Chestionar')}" class="fas fa-file-medical text-blue-600"></i>
+
+                <!-- Diferențiere vizuală în funcție de tipul notificării -->
+                <div class="mt-1 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm"
+                     th:classappend="${notif.titlu.contains('Chestionar')} ? 'bg-brand-gold' : 'bg-brand-blue'">
+                    <i th:if="${notif.titlu.contains('Chestionar')}" class="fas fa-clipboard-list text-brand-navy"></i>
+                    <i th:unless="${notif.titlu.contains('Chestionar')}" class="fas fa-file-medical text-white"></i>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-gray-800 text-lg">
+                    <h4 class="font-bold text-brand-navy text-lg flex items-center flex-wrap gap-2">
                         <span th:text="${notif.titlu}">Titlu Notificare</span>
-                        <span th:if="${!notif.citita}" class="ml-2 px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider text-blue-700 bg-blue-100 rounded-full">Nou</span>
+                        <!-- Badge "Nou" Teal solid -->
+                        <span th:if="${!notif.citita}" class="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider text-white bg-brand-teal rounded-full shadow-sm">Nou</span>
                     </h4>
-                    <p class="text-gray-600 mt-1" th:text="${notif.mesaj}">Aici apare mesajul detaliat.</p>
+                    <p class="text-gray-600 mt-1 font-medium" th:text="${notif.mesaj}">Aici apare mesajul detaliat.</p>
 
-                    <div class="flex items-center text-xs text-gray-400 mt-2 font-medium">
-                        <i class="far fa-clock mr-1.5"></i>
+                    <div class="flex items-center text-xs text-gray-400 mt-2 font-bold uppercase tracking-wide">
+                        <i class="far fa-clock mr-1.5 text-gray-400"></i>
                         <span th:text="${#temporals.format(notif.dataCreare, 'dd MMMM yyyy, HH:mm')}">Data</span>
                     </div>
                 </div>
             </div>
 
             <div class="mt-4 md:mt-0 ml-14 md:ml-0 flex-shrink-0">
+                <!-- Buton de acces cu stil solid Navy -->
                 <a th:href="@{'/api/notificari/acceseaza/' + ${notif.id}}"
-                   class="w-full md:w-auto inline-flex items-center justify-center px-6 py-3 bg-white border border-slate-200 rounded-xl text-xs font-black text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm group">
+                   class="w-full md:w-auto inline-flex items-center justify-center px-6 py-3 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-brand-navy hover:bg-brand-navy hover:text-white transition-all shadow-sm group">
                     <span>ACCESEAZĂ</span>
                     <i class="fas fa-arrow-right ml-2 text-[10px] transform group-hover:translate-x-1 transition-transform"></i>
                 </a>
@@ -63,7 +71,6 @@
 
     </div>
 </div>
-
 
 </body>
 </html>

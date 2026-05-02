@@ -10,73 +10,79 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <div class="container mx-auto px-4 py-8">
+    <!-- Am mărit padding-ul vertical de la py-8 la py-12 -->
+    <div class="container mx-auto px-4 py-12 max-w-7xl">
         <!-- Welcome Message -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">
+        <div class="mb-10">
+            <h1 class="text-3xl font-bold text-brand-navy">
                 Bună ziua,
-                <span class="text-blue-600" th:text="${medicNumeComplet}">Dr. Medic</span>!
+                <!-- Numele este acum brand-teal, fără sublinierea gold -->
+                <span class="text-brand-teal" th:text="${medicNumeComplet}">Dr. Medic</span>!
             </h1>
-            <p class="text-gray-600 mt-2">
-                <i class="fas fa-hospital mr-2"></i>
+            <p class="text-brand-navy/70 mt-2 font-medium">
+                <i class="fas fa-hospital mr-2 text-brand-blue"></i>
                 Panoul tău personalizat de control medical
             </p>
         </div>
 
         <!-- Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
             <!-- Card: Coduri generate -->
-            <div class="bg-white p-6 rounded-xl shadow border border-blue-200">
-                <div class="flex items-center justify-between">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-navy/20 relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-16 h-16 bg-brand-navy/5 rounded-bl-full z-0"></div>
+                <div class="flex items-center justify-between relative z-10">
                     <div>
-                        <p class="text-sm text-gray-500">Coduri generate</p>
-                        <p class="text-2xl font-bold text-blue-600" th:text="${coduriGenerate}">0</p>
+                        <p class="text-sm text-brand-navy/60 font-semibold uppercase tracking-wider">Coduri generate</p>
+                        <p class="text-3xl font-black text-brand-navy mt-1" th:text="${coduriGenerate}">0</p>
                     </div>
-                    <i class="fas fa-key text-blue-500 text-2xl"></i>
+                    <i class="fas fa-key text-brand-navy/30 text-3xl"></i>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">
-                    <span th:text="${coduriActive}" class="font-bold text-green-600">0</span> active
+                <p class="text-xs text-brand-navy/60 mt-3 font-medium relative z-10">
+                    <span th:text="${coduriActive}" class="font-bold text-brand-teal">0</span> active
                 </p>
             </div>
 
             <!-- Card: Pacienți -->
-            <div class="bg-white p-6 rounded-xl shadow border border-green-200">
-                <div class="flex items-center justify-between">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-teal/40 relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-16 h-16 bg-brand-teal/10 rounded-bl-full z-0"></div>
+                <div class="flex items-center justify-between relative z-10">
                     <div>
-                        <p class="text-sm text-gray-500">Pacienți</p>
-                        <p class="text-2xl font-bold text-green-600" th:text="${numarPacienti}">0</p>
+                        <p class="text-sm text-brand-navy/60 font-semibold uppercase tracking-wider">Pacienți</p>
+                        <p class="text-3xl font-black text-brand-navy mt-1" th:text="${numarPacienti}">0</p>
                     </div>
-                    <i class="fas fa-user-injured text-green-500 text-2xl"></i>
+                    <i class="fas fa-user-injured text-brand-teal/50 text-3xl"></i>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">
+                <p class="text-xs text-brand-navy/60 mt-3 font-medium relative z-10">
                     Pacienți asociați
                 </p>
             </div>
 
             <!-- Card: Chestionare atribuite -->
-            <div class="bg-white p-6 rounded-xl shadow border border-purple-200">
-                <div class="flex items-center justify-between">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-gold/60 relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-16 h-16 bg-brand-gold/20 rounded-bl-full z-0"></div>
+                <div class="flex items-center justify-between relative z-10">
                     <div>
-                        <p class="text-sm text-gray-500">Chestionare</p>
-                        <p class="text-2xl font-bold text-purple-600" th:text="${numarChestionareAtribuite}">0</p>
+                        <p class="text-sm text-brand-navy/60 font-semibold uppercase tracking-wider">Chestionare</p>
+                        <p class="text-3xl font-black text-brand-navy mt-1" th:text="${numarChestionareAtribuite}">0</p>
                     </div>
-                    <i class="fas fa-clipboard-check text-purple-500 text-2xl"></i>
+                    <i class="fas fa-clipboard-check text-brand-gold text-3xl"></i>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">
-                    <span th:text="${numarChestionareNecompletate}" class="font-bold text-yellow-600">0</span> necompletate
+                <p class="text-xs text-brand-navy/60 mt-3 font-medium relative z-10">
+                    <span th:text="${numarChestionareNecompletate}" class="font-bold text-red-500">0</span> necompletate
                 </p>
             </div>
 
             <!-- Card: Chestionare completate -->
-            <div class="bg-white p-6 rounded-xl shadow border border-indigo-200">
-                <div class="flex items-center justify-between">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-brand-blue/40 relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-16 h-16 bg-brand-blue/10 rounded-bl-full z-0"></div>
+                <div class="flex items-center justify-between relative z-10">
                     <div>
-                        <p class="text-sm text-gray-500">Completate</p>
-                        <p class="text-2xl font-bold text-indigo-600" th:text="${numarChestionareCompletate}">0</p>
+                        <p class="text-sm text-brand-navy/60 font-semibold uppercase tracking-wider">Completate</p>
+                        <p class="text-3xl font-black text-brand-navy mt-1" th:text="${numarChestionareCompletate}">0</p>
                     </div>
-                    <i class="fas fa-check-circle text-indigo-500 text-2xl"></i>
+                    <i class="fas fa-check-circle text-brand-blue/50 text-3xl"></i>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">
+                <p class="text-xs text-brand-navy/60 mt-3 font-medium relative z-10">
                     Chestionare finalizate
                 </p>
             </div>
@@ -86,64 +92,58 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <!-- Generare Cod Card -->
             <a th:href="@{/generare-cod}"
-               class="bg-white p-6 rounded-xl shadow border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all duration-300">
+               class="bg-white p-6 rounded-xl shadow-sm border border-brand-navy/20 hover:border-brand-navy hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
                 <div class="flex flex-col items-center text-center">
-                    <div class="bg-blue-100 p-4 rounded-full mb-4">
-                        <i class="fas fa-key text-blue-600 text-2xl"></i>
+                    <div class="bg-brand-navy/5 group-hover:bg-brand-navy/10 p-4 rounded-full mb-4 transition-colors">
+                        <i class="fas fa-key text-brand-navy text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Generează Cod</h3>
-                    <p class="text-gray-600 text-sm">Coduri pentru pacienți noi</p>
+                    <h3 class="font-bold text-lg text-brand-navy mb-2">Generează Cod</h3>
+                    <p class="text-brand-navy/60 text-sm">Coduri pentru pacienți noi</p>
                 </div>
             </a>
 
-
-
-            <!-- Atribuire chestionare Card-->
-
+            <!-- Atribuire chestionare Card -->
             <a th:href="@{/medic/atribuire-chestionar/pacienti}"
-               class="bg-white p-6 rounded-xl shadow border border-purple-200 hover:border-purple-300 hover:shadow-md transition-all duration-300">
+               class="bg-white p-6 rounded-xl shadow-sm border border-brand-teal/40 hover:border-brand-teal hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
                 <div class="flex flex-col items-center text-center">
-                    <div class="bg-purple-100 p-4 rounded-full mb-4">
-                        <i class="fas fa-clipboard-list text-green-600 text-2xl"></i>
+                    <div class="bg-brand-teal/10 group-hover:bg-brand-teal/20 p-4 rounded-full mb-4 transition-colors">
+                        <i class="fas fa-clipboard-list text-brand-navy text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Atribuie Chestionar</h3>
-                    <p class="text-gray-600 text-sm">Trimite chestionare pacienților</p>
+                    <h3 class="font-bold text-lg text-brand-navy mb-2">Atribuie Chestionar</h3>
+                    <p class="text-brand-navy/60 text-sm">Trimite chestionare pacienților</p>
                 </div>
             </a>
 
             <!-- Listă Coduri Card -->
             <a th:href="@{'/api/coduri-inregistrare/medic/' + ${userId}}"
-               class="bg-white p-6 rounded-xl shadow border border-purple-200 hover:border-purple-300 hover:shadow-md transition-all duration-300">
+               class="bg-white p-6 rounded-xl shadow-sm border border-brand-gold/60 hover:border-brand-gold hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
                 <div class="flex flex-col items-center text-center">
-                    <div class="bg-purple-100 p-4 rounded-full mb-4">
-                        <i class="fas fa-list text-purple-600 text-2xl"></i>
+                    <div class="bg-brand-gold/30 group-hover:bg-brand-gold/50 p-4 rounded-full mb-4 transition-colors">
+                        <i class="fas fa-list text-brand-navy text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Codurile mele</h3>
-                    <p class="text-gray-600 text-sm">Vezi codurile generate</p>
+                    <h3 class="font-bold text-lg text-brand-navy mb-2">Codurile mele</h3>
+                    <p class="text-brand-navy/60 text-sm">Vezi codurile generate</p>
                 </div>
             </a>
 
             <!-- Profil Card -->
             <a th:href="@{'/profil/' + ${userId}}"
-               class="bg-white p-6 rounded-xl shadow border border-indigo-200 hover:border-indigo-300 hover:shadow-md transition-all duration-300">
+               class="bg-white p-6 rounded-xl shadow-sm border border-brand-blue/40 hover:border-brand-blue hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
                 <div class="flex flex-col items-center text-center">
-                    <div class="bg-indigo-100 p-4 rounded-full mb-4">
-                        <i class="fas fa-user-md text-indigo-600 text-2xl"></i>
+                    <div class="bg-brand-blue/15 group-hover:bg-brand-blue/25 p-4 rounded-full mb-4 transition-colors">
+                        <i class="fas fa-user-md text-brand-navy text-2xl"></i>
                     </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Profilul meu</h3>
-                    <p class="text-gray-600 text-sm">Gestionează profilul medical</p>
+                    <h3 class="font-bold text-lg text-brand-navy mb-2">Profilul meu</h3>
+                    <p class="text-brand-navy/60 text-sm">Gestionează profilul medical</p>
                 </div>
             </a>
         </div>
 
-
     </div>
 </div>
 
-<!-- Script pentru statistici (dacă vrei să actualizezi automat) -->
 <div layout:fragment="scripts">
     <script>
-        // Poți adăuga logica pentru refresh statistici sau notificări
         console.log("Dashboard medic încărcat");
     </script>
 </div>

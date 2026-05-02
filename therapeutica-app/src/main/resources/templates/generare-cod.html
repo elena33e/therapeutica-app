@@ -291,29 +291,24 @@
         // Configurare API
         const API_BASE = 'http://localhost:8080/api';
 
-        // Obține userId din URL sau session
-        function getUserId() {
+        // Preia userId direct din sesiunea generată de server prin Thymeleaf
+        const userId = "[[${session.userId}]]";
 
-            return localStorage.getItem('userId') || sessionStorage.getItem('userId');
-        }
-
-        // Obține token
+        // Obține token-ul (dacă folosești JWT)
         function getToken() {
             return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
         }
-
-        // Verifică autentificarea
         const token = getToken();
-        const userId = getUserId();
 
-        if (!token || !userId) {
-            console.warn('User not authenticated, redirecting to login');
+        // Validare de siguranță la nivel de client
+        if (!userId || userId === 'null' || userId === '') {
+            console.warn('Sesiune invalidă, redirecționare către login...');
             window.location.href = '/login?redirect=/generare-cod';
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Generare cod page loaded');
-            console.log('User ID:', userId);
+            console.log('User ID autentificat:', userId);
             incarcaCodurileMele();
         });
 
@@ -325,9 +320,9 @@
             const cnpDestinatar = document.getElementById('cnpDestinatar').value.trim();
             const rolDestinatar = document.getElementById('rolDestinatar').value;
             const numeDestinatar = document.getElementById('numeDestinatar').value.trim();
-const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.trim();
+            const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.trim();
 
-            // Validări
+            // Validări client-side
             if (!emailDestinatar || !rolDestinatar) {
                 alert('Completează toate câmpurile obligatorii!');
                 return;
@@ -338,19 +333,19 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
                 return;
             }
 
-            // Pregătește request
+            // Pregătire date trimise la backend
             const requestData = {
-    medicId: userId,
-    emailDestinatar: emailDestinatar,
-    cnpDestinatar: cnpDestinatar || null,
-    rolDestinatar: rolDestinatar,
-    numeDestinatar: numeDestinatar,    // ← NOU
-    prenumeDestinatar: prenumeDestinatar  // ← NOU
-};
+                medicId: userId, // Extras sigur din sesiune
+                emailDestinatar: emailDestinatar,
+                cnpDestinatar: cnpDestinatar || null,
+                rolDestinatar: rolDestinatar,
+                numeDestinatar: numeDestinatar,
+                prenumeDestinatar: prenumeDestinatar
+            };
 
-            console.log('Generare cod request:', requestData);
+            console.log('Trimitere request generare cod:', requestData);
 
-            // Loading state
+            // Stare de încărcare UI
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
             const btnSpinner = document.getElementById('btnSpinner');
@@ -370,48 +365,45 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
                 });
 
                 const data = await response.json();
-                console.log('Response:', data);
 
                 if (response.ok) {
-                    // Afișează codul generat
+                    // Afișează succes
                     document.getElementById('codGeneratAfisare').textContent = data.codUnic;
                     document.getElementById('emailAfisat').textContent = emailDestinatar;
                     document.getElementById('rolAfisat').textContent = rolDestinatar === 'PACIENT' ? 'Pacient' : 'Medic';
 
-                    // Show success message
                     const rezultatDiv = document.getElementById('rezultatCod');
                     rezultatDiv.classList.remove('hidden');
 
-                    // Reset form
+                    // Resetează formularul
                     document.getElementById('formGenerareCod').reset();
 
-                    // Scroll la rezultat
+                    // Scroll către rezultatul generat
                     setTimeout(() => {
                         rezultatDiv.scrollIntoView({ behavior: 'smooth' });
                     }, 100);
 
-                    // Reîncarcă lista
+                    // Reîmprospătează lista
                     setTimeout(incarcaCodurileMele, 500);
 
                 } else {
                     alert('Eroare: ' + (data.mesaj || 'A apărut o eroare la generare'));
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert('Eroare de conexiune la server');
+                console.error('Eroare rețea:', error);
+                alert('Eroare de conexiune la server. Vă rugăm să reîncercați.');
             } finally {
-                // Reset button
+                // Restaurare UI
                 btnText.textContent = 'Generează Cod';
                 btnSpinner.classList.add('hidden');
                 submitBtn.disabled = false;
             }
         });
 
-        // Funcție pentru copiere cod în clipboard
+        // Funcție utilitară pentru copiere
         function copyToClipboard() {
             const cod = document.getElementById('codGeneratAfisare').textContent;
             navigator.clipboard.writeText(cod).then(() => {
-                // Feedback vizual
                 const btn = document.querySelector('[onclick="copyToClipboard()"]');
                 const originalHtml = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copiat!';
@@ -424,12 +416,11 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
             });
         }
 
-        // Funcție pentru încărcarea codurilor
+        // Preluarea codurilor generate de medicul conectat
         async function incarcaCodurileMele() {
             const container = document.getElementById('listaCoduri');
             const loading = document.getElementById('loadingCoduri');
 
-            // Show loading
             container.innerHTML = '';
             loading.classList.remove('hidden');
 
@@ -442,11 +433,9 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
 
                 if (response.ok) {
                     const coduri = await response.json();
-                    console.log('Coduri loaded:', coduri);
                     afiseazaCodurile(coduri);
                     actualizeazaStatistici(coduri);
                 } else {
-                    console.error('Failed to load coduri:', response.status);
                     container.innerHTML = `
                         <div class="text-center py-8 text-yellow-500 bg-white rounded-lg border border-yellow-200">
                             <i class="fas fa-exclamation-triangle text-2xl mb-3"></i>
@@ -454,7 +443,7 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
                         </div>`;
                 }
             } catch (error) {
-                console.error('Eroare încărcare coduri:', error);
+                console.error('Eroare la preluare coduri:', error);
                 container.innerHTML = `
                     <div class="text-center py-8 text-red-500 bg-white rounded-lg border border-red-200">
                         <i class="fas fa-exclamation-circle text-2xl mb-3"></i>
@@ -468,7 +457,7 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
             }
         }
 
-        // Funcție pentru afișarea codurilor
+        // Afișează codurile în DOM
         function afiseazaCodurile(coduri) {
             const container = document.getElementById('listaCoduri');
 
@@ -488,7 +477,6 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
                 const div = document.createElement('div');
                 div.className = 'bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition';
 
-                // Formatează data
                 const data = cod.createdAt ? new Date(cod.createdAt).toLocaleDateString('ro-RO', {
                     day: '2-digit',
                     month: '2-digit',
@@ -497,7 +485,6 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
                     minute: '2-digit'
                 }) : 'N/A';
 
-                // Status badge
                 const statusClass = cod.status === 'NEUTILIZAT' ? 'status-neutilizat' : 'status-utilizat';
                 const statusText = cod.status === 'NEUTILIZAT' ? 'Activ' : 'Utilizat';
 
@@ -521,12 +508,11 @@ const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.tri
                         </div>
                     </div>
                 `;
-
                 container.appendChild(div);
             });
         }
 
-        // Actualizează statisticile
+        // Calculează și randează statisticile de pe laterală
         function actualizeazaStatistici(coduri) {
             const total = coduri.length;
             const active = coduri.filter(c => c.status === 'NEUTILIZAT').length;

@@ -3,12 +3,19 @@ package com.therapeutica.therapeutica_app.pacienti;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 
 public interface PacientiRepository extends JpaRepository<Pacienti, UUID> {
+
+    boolean existsByUser(Utilizatori user);
+
+    // Verificare alternativă după ID
+    boolean existsByUserId(UUID userId);
 
     Optional<Pacienti> findFirstByUserId(UUID userId);
     // Caută pacient după user_id (nu utilizator_id)
