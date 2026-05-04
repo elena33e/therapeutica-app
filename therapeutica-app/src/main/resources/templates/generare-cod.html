@@ -6,194 +6,174 @@
     <title>Generare Cod Înregistrare</title>
 
     <div layout:fragment="head">
-        <!-- Scripturi suplimentare pentru această pagină -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <style>
-            .fade-in {
-                animation: fadeIn 0.3s ease-in;
-            }
-
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(-10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-
-            .status-badge {
-                padding: 0.25rem 0.75rem;
-                border-radius: 9999px;
-                font-size: 0.75rem;
-                font-weight: 600;
-            }
-
-            .status-neutilizat {
-                background-color: #d1fae5;
-                color: #065f46;
-            }
-
-            .status-utilizat {
-                background-color: #f3f4f6;
-                color: #4b5563;
-            }
-
-            .loading-spinner {
-                display: inline-block;
-                width: 20px;
-                height: 20px;
-                border: 3px solid rgba(255,255,255,.3);
-                border-radius: 50%;
-                border-top-color: #fff;
-                animation: spin 1s ease-in-out infinite;
-            }
-
-            @keyframes spin {
-                to { transform: rotate(360deg); }
-            }
-        </style>
     </div>
 </head>
-<body>
+<body class="bg-gray-50">
 
 <div layout:fragment="content">
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-12 max-w-7xl">
+
         <!-- Breadcrumb -->
         <nav class="flex mb-8" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li class="inline-flex items-center">
-                    <a th:href="@{/}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-home mr-2"></i>
-                        Acasă
+                    <a th:href="@{/}" class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-brand-navy transition-colors">
+                        <i class="fas fa-home mr-2"></i> Acasă
                     </a>
                 </li>
                 <li class="inline-flex items-center">
-                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <i class="fas fa-chevron-right text-gray-300 mx-2 text-xs"></i>
                     <a th:href="@{'/medic/dashboard/' + ${session.userId}}"
-                       class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                       class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-brand-navy transition-colors">
                         Dashboard Medic
                     </a>
                 </li>
                 <li aria-current="page">
                     <div class="flex items-center">
-                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                        <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Generare Cod</span>
+                        <i class="fas fa-chevron-right text-gray-300 mx-2 text-xs"></i>
+                        <span class="ml-1 text-sm font-bold text-brand-teal md:ml-2">Generare Cod</span>
                     </div>
                 </li>
             </ol>
         </nav>
 
         <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Generare Cod Înregistrare</h1>
-            <p class="text-gray-600 mt-2">Generează coduri unice pentru pacienții tăi sau colegii medici.</p>
+        <div class="mb-10">
+            <h1 class="text-3xl font-bold text-brand-navy">Generare Cod Înregistrare</h1>
+            <p class="text-gray-500 mt-2 font-medium">Generează coduri unice și sigure pentru accesul pacienților tăi sau al colegilor medici în platformă.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
             <!-- Formular Generare -->
-            <div class="lg:col-span-2 fade-in">
-                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Generează cod nou</h2>
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+                    <h2 class="text-xl font-bold text-brand-navy mb-8 flex items-center">
+                        <i class="fas fa-plus-circle mr-3 text-brand-teal"></i> Generează un cod nou
+                    </h2>
 
                     <form id="formGenerareCod" class="space-y-6">
-                        <!-- Email Destinatar -->
-                        <div>
-                            <label for="emailDestinatar" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-envelope mr-2"></i>Email destinatar *
-                            </label>
-                            <input type="email"
-                                   id="emailDestinatar"
-                                   required
-                                   placeholder="exemplu@email.com"
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                        <!-- CNP Destinatar -->
-                        <div>
-                            <label for="cnpDestinatar" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-id-card mr-2"></i>CNP destinatar (opțional)
-                            </label>
-                            <input type="text"
-                                   id="cnpDestinatar"
-                                   maxlength="13"
-                                   placeholder="1234567890123"
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                            <p class="text-xs text-gray-500 mt-1">13 cifre, fără spații</p>
-                        </div>
+                            <!-- Email Destinatar -->
+                            <div class="md:col-span-2">
+                                <label for="emailDestinatar" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                    Email destinatar *
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" id="emailDestinatar" required placeholder="exemplu@email.com"
+                                           class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
+                                </div>
+                            </div>
 
+                            <!-- Nume Destinatar -->
+                            <div>
+                                <label for="numeDestinatar" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                    Nume *
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" id="numeDestinatar" required placeholder="Nume de familie"
+                                           class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
+                                </div>
+                            </div>
 
-                        <div>
-                            <label for="numeDestinatar" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-user mr-2"></i>Nume destinatar *
-                            </label>
-                            <input type="text"
-                                   id="numeDestinatar"
-                                   required
-                                   placeholder="Popescu"
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                        </div>
+                            <!-- Prenume Destinatar -->
+                            <div>
+                                <label for="prenumeDestinatar" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                    Prenume *
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" id="prenumeDestinatar" required placeholder="Prenume"
+                                           class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
+                                </div>
+                            </div>
 
-                        <div>
-                            <label for="prenumeDestinatar" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-user mr-2"></i>Prenume destinatar *
-                            </label>
-                            <input type="text"
-                                   id="prenumeDestinatar"
-                                   required
-                                   placeholder="Ion"
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                        </div>
+                            <!-- Rol Destinatar -->
+                            <div>
+                                <label for="rolDestinatar" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                    Rol *
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+                                        <i class="fas fa-user-tag"></i>
+                                    </span>
+                                    <select id="rolDestinatar" required
+                                            class="w-full pl-11 pr-10 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy appearance-none cursor-pointer">
+                                        <option value="" disabled selected>Selectează rol...</option>
+                                        <option value="PACIENT">Pacient</option>
+                                        <option value="MEDIC">Medic</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                        <i class="fas fa-chevron-down text-xs"></i>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <!-- Rol Destinatar -->
-                        <div>
-                            <label for="rolDestinatar" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-user-tag mr-2"></i>Rol destinatar *
-                            </label>
-                            <select id="rolDestinatar"
-                                    required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                                <option value="">Selectează rol...</option>
-                                <option value="PACIENT">Pacient</option>
-                                <option value="MEDIC">Medic</option>
-                            </select>
+                            <!-- CNP Destinatar -->
+                            <div>
+                                <label for="cnpDestinatar" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                    CNP (Opțional)
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+                                        <i class="fas fa-id-card"></i>
+                                    </span>
+                                    <input type="text" id="cnpDestinatar" maxlength="13" placeholder="13 cifre"
+                                           class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Buton Generare -->
-                        <div>
+                        <div class="pt-4 mt-8 border-t border-gray-100">
                             <button type="submit" id="submitBtn"
-                                    class="w-full bg-blue-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center">
-                                <i class="fas fa-key mr-2"></i>
-                                <span id="btnText">Generează Cod</span>
+                                    class="w-full bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center group">
+                                <i class="fas fa-key mr-2 group-hover:scale-110 transition-transform"></i>
+                                <span id="btnText" class="uppercase tracking-widest text-xs">Generează Cod</span>
                                 <span id="btnSpinner" class="hidden ml-2">
-                                    <div class="loading-spinner"></div>
+                                    <i class="fas fa-circle-notch fa-spin"></i>
                                 </span>
                             </button>
                         </div>
                     </form>
 
-                    <!-- Rezultat Cod Generat -->
-                    <div id="rezultatCod" class="hidden mt-8 p-6 bg-green-50 border border-green-200 rounded-xl">
+                    <!-- Rezultat Cod Generat (Stil Teal Solid) -->
+                    <div id="rezultatCod" class="hidden mt-8 bg-brand-teal rounded-2xl p-6 shadow-md text-white transition-all duration-300 transform scale-95 opacity-0">
                         <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 text-xl mr-3 mt-1"></i>
-                            <div>
-                                <h3 class="font-bold text-green-800 mb-2 text-lg">✓ Cod generat cu succes!</h3>
-                                <p class="text-gray-700 mb-4">Codul a fost trimis pe email-ul destinatarului.</p>
+                            <i class="fas fa-check-circle text-2xl mr-4 mt-0.5 opacity-90"></i>
+                            <div class="w-full">
+                                <h3 class="font-bold text-lg mb-1 tracking-wide">Cod generat cu succes!</h3>
+                                <p class="text-white/80 font-medium text-sm mb-4">Un email conținând acest cod a fost trimis destinatarului.</p>
 
-                                <div class="p-4 bg-white border border-gray-200 rounded-lg">
-                                    <p class="text-sm text-gray-600 font-medium">Cod generat:</p>
-                                    <div class="flex items-center justify-between mt-2">
-                                        <p id="codGeneratAfisare" class="text-2xl font-mono font-bold text-blue-600"></p>
-                                        <button onclick="copyToClipboard()"
-                                                class="text-blue-600 hover:text-blue-800 flex items-center text-sm">
-                                            <i class="fas fa-copy mr-1"></i> Copiază
+                                <div class="bg-white/10 border border-white/20 p-5 rounded-xl mt-4">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div>
+                                            <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Codul Unic de Acces</p>
+                                            <p id="codGeneratAfisare" class="text-3xl font-mono font-black tracking-widest text-white"></p>
+                                        </div>
+                                        <button onclick="copyToClipboard()" id="copyBtn"
+                                                class="px-4 py-2 bg-white text-brand-teal hover:bg-gray-50 font-bold rounded-lg text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center">
+                                            <i class="fas fa-copy mr-2"></i> Copiază
                                         </button>
                                     </div>
-
-                                    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                    <div class="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/10">
                                         <div>
-                                            <p class="text-gray-500">Destinatar:</p>
-                                            <p id="emailAfisat" class="font-medium"></p>
+                                            <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Destinatar</p>
+                                            <p id="emailAfisat" class="font-bold text-sm truncate"></p>
                                         </div>
                                         <div>
-                                            <p class="text-gray-500">Rol:</p>
-                                            <p id="rolAfisat" class="font-medium"></p>
+                                            <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Rol</p>
+                                            <p id="rolAfisat" class="font-bold text-sm uppercase tracking-wide"></p>
                                         </div>
                                     </div>
                                 </div>
@@ -204,52 +184,45 @@
             </div>
 
             <!-- Informații laterale -->
-            <div class="fade-in">
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-6">
-                    <h3 class="font-bold text-blue-800 mb-3">
-                        <i class="fas fa-info-circle mr-2"></i>Informații importante
+            <div>
+                <!-- Informații Card -->
+                <div class="bg-white border-l-4 border-l-brand-blue rounded-xl p-6 mb-6 shadow-sm border-t border-r border-b border-gray-200">
+                    <h3 class="font-bold text-brand-navy mb-4 flex items-center">
+                        <i class="fas fa-info-circle mr-2 text-brand-gold"></i> Detalii operaționale
                     </h3>
-                    <ul class="space-y-3 text-sm text-gray-700">
+                    <ul class="space-y-3 text-sm font-medium text-gray-600">
                         <li class="flex items-start">
-                            <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
-                            <span>Codul este valabil o singură dată</span>
+                            <i class="fas fa-check mt-1 mr-2 text-brand-teal text-xs"></i>
+                            <span>Codul este valabil pentru o singură înregistrare.</span>
                         </li>
                         <li class="flex items-start">
-                            <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
-                            <span>Expiră automat după 7 zile</span>
+                            <i class="fas fa-check mt-1 mr-2 text-brand-teal text-xs"></i>
+                            <span>Expiră automat după 7 zile de la generare.</span>
                         </li>
                         <li class="flex items-start">
-                            <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
-                            <span>Codul se trimite automat pe email</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
-                            <span>Poți anula codul neutilizat oricând</span>
+                            <i class="fas fa-check mt-1 mr-2 text-brand-teal text-xs"></i>
+                            <span>Codul neutilizat poate fi anulat oricând.</span>
                         </li>
                     </ul>
                 </div>
 
-                <!-- Statistici -->
-                <div class="bg-white rounded-xl shadow p-6 border border-gray-200">
-                    <h3 class="font-bold text-gray-800 mb-4">Statistici coduri</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between mb-1">
-                                <span class="text-sm text-gray-600">Total coduri</span>
-                                <span id="totalCoduri" class="font-bold">0</span>
-                            </div>
+                <!-- Statistici Card -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <h3 class="font-bold text-brand-navy mb-5 pb-3 border-b border-gray-100 flex items-center">
+                        <i class="fas fa-chart-pie mr-2 text-brand-blue"></i> Sinteză utilizare
+                    </h3>
+                    <div class="space-y-4 font-medium">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total generate</span>
+                            <span id="totalCoduri" class="font-black text-brand-navy text-lg">0</span>
                         </div>
-                        <div>
-                            <div class="flex justify-between mb-1">
-                                <span class="text-sm text-gray-600">Coduri active</span>
-                                <span id="coduriActive" class="font-bold text-green-600">0</span>
-                            </div>
+                        <div class="flex justify-between items-center p-3 bg-brand-teal/5 border border-brand-teal/10 rounded-lg">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Active (Neutilizate)</span>
+                            <span id="coduriActive" class="font-black text-brand-teal text-lg">0</span>
                         </div>
-                        <div>
-                            <div class="flex justify-between mb-1">
-                                <span class="text-sm text-gray-600">Coduri utilizate</span>
-                                <span id="coduriUtilizate" class="font-bold text-gray-600">0</span>
-                            </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Utilizate</span>
+                            <span id="coduriUtilizate" class="font-black text-gray-400 text-lg">0</span>
                         </div>
                     </div>
                 </div>
@@ -257,62 +230,48 @@
         </div>
 
         <!-- Lista codurile generate recent -->
-        <div class="mt-12 fade-in">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Codurile mele generate</h2>
-                <div class="flex space-x-3">
-                    <button onclick="incarcaCodurileMele()"
-                            class="text-blue-600 hover:text-blue-800 flex items-center">
-                        <i class="fas fa-sync-alt mr-2"></i> Reîncarcă
-                    </button>
+        <div class="mt-12">
+            <div class="flex justify-between items-end mb-6 border-b border-gray-200 pb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-brand-navy">Istoric Coduri Generate</h2>
+                    <p class="text-sm font-medium text-gray-500 mt-1">Lista tuturor codurilor alocate din acest cont.</p>
                 </div>
+                <button onclick="incarcaCodurileMele()"
+                        class="text-xs font-bold text-brand-blue hover:text-brand-navy uppercase tracking-widest transition-colors flex items-center px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <i class="fas fa-sync-alt mr-2"></i> Reîncarcă
+                </button>
             </div>
 
-            <div id="loadingCoduri" class="hidden text-center py-8">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p class="text-gray-500 mt-2">Se încarcă codurile...</p>
+            <div id="loadingCoduri" class="hidden text-center py-12">
+                <i class="fas fa-circle-notch fa-spin text-3xl text-brand-teal mb-3"></i>
+                <p class="text-gray-500 font-bold uppercase tracking-widest text-xs">Se încarcă datele...</p>
             </div>
 
-            <div id="listaCoduri" class="space-y-4">
-                <!-- Se va popula dinamic -->
-                <div class="text-center py-8 text-gray-500 bg-white rounded-lg border border-gray-200">
-                    <i class="fas fa-key text-3xl mb-3 text-gray-300"></i>
-                    <p class="text-gray-600">Nu ai generat încă niciun cod.</p>
-                    <p class="text-sm text-gray-500 mt-1">Folosește formularul de mai sus pentru a genera primul cod.</p>
-                </div>
+            <div id="listaCoduri" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Populare dinamică -->
             </div>
         </div>
     </div>
 </div>
 
-<!-- Scripturi specifice paginii -->
 <div layout:fragment="scripts">
     <script>
-        // Configurare API
         const API_BASE = 'http://localhost:8080/api';
-
-        // Preia userId direct din sesiunea generată de server prin Thymeleaf
         const userId = "[[${session.userId}]]";
 
-        // Obține token-ul (dacă folosești JWT)
         function getToken() {
             return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
         }
         const token = getToken();
 
-        // Validare de siguranță la nivel de client
         if (!userId || userId === 'null' || userId === '') {
-            console.warn('Sesiune invalidă, redirecționare către login...');
             window.location.href = '/login?redirect=/generare-cod';
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Generare cod page loaded');
-            console.log('User ID autentificat:', userId);
             incarcaCodurileMele();
         });
 
-        // Formular generare cod
         document.getElementById('formGenerareCod').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -322,7 +281,6 @@
             const numeDestinatar = document.getElementById('numeDestinatar').value.trim();
             const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.trim();
 
-            // Validări client-side
             if (!emailDestinatar || !rolDestinatar) {
                 alert('Completează toate câmpurile obligatorii!');
                 return;
@@ -333,9 +291,8 @@
                 return;
             }
 
-            // Pregătire date trimise la backend
             const requestData = {
-                medicId: userId, // Extras sigur din sesiune
+                medicId: userId,
                 emailDestinatar: emailDestinatar,
                 cnpDestinatar: cnpDestinatar || null,
                 rolDestinatar: rolDestinatar,
@@ -343,14 +300,11 @@
                 prenumeDestinatar: prenumeDestinatar
             };
 
-            console.log('Trimitere request generare cod:', requestData);
-
-            // Stare de încărcare UI
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
             const btnSpinner = document.getElementById('btnSpinner');
 
-            btnText.textContent = 'Se generează...';
+            btnText.textContent = 'SE GENEREAZĂ...';
             btnSpinner.classList.remove('hidden');
             submitBtn.disabled = true;
 
@@ -367,25 +321,21 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Afișează succes
                     document.getElementById('codGeneratAfisare').textContent = data.codUnic;
                     document.getElementById('emailAfisat').textContent = emailDestinatar;
-                    document.getElementById('rolAfisat').textContent = rolDestinatar === 'PACIENT' ? 'Pacient' : 'Medic';
+                    document.getElementById('rolAfisat').textContent = rolDestinatar;
 
                     const rezultatDiv = document.getElementById('rezultatCod');
                     rezultatDiv.classList.remove('hidden');
-
-                    // Resetează formularul
-                    document.getElementById('formGenerareCod').reset();
-
-                    // Scroll către rezultatul generat
+                    // Efect de fade in simplu aplicat pe clase de tailwind
                     setTimeout(() => {
-                        rezultatDiv.scrollIntoView({ behavior: 'smooth' });
-                    }, 100);
+                        rezultatDiv.classList.remove('scale-95', 'opacity-0');
+                        rezultatDiv.classList.add('scale-100', 'opacity-100');
+                    }, 50);
 
-                    // Reîmprospătează lista
+                    document.getElementById('formGenerareCod').reset();
+                    setTimeout(() => { rezultatDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
                     setTimeout(incarcaCodurileMele, 500);
-
                 } else {
                     alert('Eroare: ' + (data.mesaj || 'A apărut o eroare la generare'));
                 }
@@ -393,30 +343,29 @@
                 console.error('Eroare rețea:', error);
                 alert('Eroare de conexiune la server. Vă rugăm să reîncercați.');
             } finally {
-                // Restaurare UI
-                btnText.textContent = 'Generează Cod';
+                btnText.textContent = 'GENEREAZĂ COD';
                 btnSpinner.classList.add('hidden');
                 submitBtn.disabled = false;
             }
         });
 
-        // Funcție utilitară pentru copiere
         function copyToClipboard() {
             const cod = document.getElementById('codGeneratAfisare').textContent;
             navigator.clipboard.writeText(cod).then(() => {
-                const btn = document.querySelector('[onclick="copyToClipboard()"]');
+                const btn = document.getElementById('copyBtn');
                 const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copiat!';
-                btn.classList.add('text-green-600');
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i> COPIAT';
+                btn.classList.add('bg-green-100', 'text-green-800');
+                btn.classList.remove('bg-white', 'text-brand-teal');
 
                 setTimeout(() => {
                     btn.innerHTML = originalHtml;
-                    btn.classList.remove('text-green-600');
+                    btn.classList.remove('bg-green-100', 'text-green-800');
+                    btn.classList.add('bg-white', 'text-brand-teal');
                 }, 2000);
             });
         }
 
-        // Preluarea codurilor generate de medicul conectat
         async function incarcaCodurileMele() {
             const container = document.getElementById('listaCoduri');
             const loading = document.getElementById('loadingCoduri');
@@ -426,9 +375,7 @@
 
             try {
                 const response = await fetch(`${API_BASE}/coduri-inregistrare/medic/${userId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (response.ok) {
@@ -436,94 +383,75 @@
                     afiseazaCodurile(coduri);
                     actualizeazaStatistici(coduri);
                 } else {
-                    container.innerHTML = `
-                        <div class="text-center py-8 text-yellow-500 bg-white rounded-lg border border-yellow-200">
-                            <i class="fas fa-exclamation-triangle text-2xl mb-3"></i>
-                            <p>Nu s-au putut încărca codurile.</p>
-                        </div>`;
+                    container.innerHTML = `<div class="col-span-full text-center py-10 text-brand-gold bg-white rounded-xl border border-gray-200">Nu s-au putut încărca codurile.</div>`;
                 }
             } catch (error) {
-                console.error('Eroare la preluare coduri:', error);
-                container.innerHTML = `
-                    <div class="text-center py-8 text-red-500 bg-white rounded-lg border border-red-200">
-                        <i class="fas fa-exclamation-circle text-2xl mb-3"></i>
-                        <p>Eroare la încărcarea codurilor.</p>
-                        <button onclick="incarcaCodurileMele()" class="text-blue-600 mt-2 hover:underline">
-                            Reîncearcă
-                        </button>
-                    </div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 bg-white rounded-xl border border-gray-200">Eroare de conexiune.</div>`;
             } finally {
                 loading.classList.add('hidden');
             }
         }
 
-        // Afișează codurile în DOM
         function afiseazaCodurile(coduri) {
             const container = document.getElementById('listaCoduri');
 
             if (!coduri || coduri.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-8 text-gray-500 bg-white rounded-lg border border-gray-200">
-                        <i class="fas fa-key text-3xl mb-3 text-gray-300"></i>
-                        <p class="text-gray-600">Nu ai generat încă niciun cod.</p>
-                        <p class="text-sm text-gray-500 mt-1">Folosește formularul de mai sus pentru a genera primul cod.</p>
+                    <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
+                        <div class="mx-auto w-16 h-16 mb-4 bg-gray-50 rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                            <i class="fas fa-key text-2xl text-gray-300"></i>
+                        </div>
+                        <h3 class="text-brand-navy font-bold text-lg mb-1">Niciun cod generat</h3>
+                        <p class="text-gray-500 font-medium text-sm">Folosește formularul pentru a genera primul cod de acces.</p>
                     </div>`;
                 return;
             }
 
-            container.innerHTML = '';
-
             coduri.forEach(cod => {
                 const div = document.createElement('div');
-                div.className = 'bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition';
+                div.className = 'bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-brand-blue hover:shadow-md transition-all flex flex-col justify-between';
 
                 const data = cod.createdAt ? new Date(cod.createdAt).toLocaleDateString('ro-RO', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    day: '2-digit', month: '2-digit', year: 'numeric'
                 }) : 'N/A';
 
-                const statusClass = cod.status === 'NEUTILIZAT' ? 'status-neutilizat' : 'status-utilizat';
-                const statusText = cod.status === 'NEUTILIZAT' ? 'Activ' : 'Utilizat';
+                // Etichete solide
+                const isActiv = cod.status === 'NEUTILIZAT';
+                const badgeClass = isActiv ? 'bg-brand-teal text-white' : 'bg-gray-200 text-gray-500';
+                const badgeText = isActiv ? 'ACTIV' : 'UTILIZAT';
+                const codClass = isActiv ? 'text-brand-navy' : 'text-gray-400 line-through';
 
                 div.innerHTML = `
-                    <div class="flex flex-col md:flex-row md:items-center justify-between">
-                        <div class="mb-4 md:mb-0">
-                            <div class="flex items-center mb-2">
-                                <span class="font-mono text-xl font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded">${cod.codUnic}</span>
-                                <span class="status-badge ${statusClass} ml-3">${statusText}</span>
-                            </div>
-                            <div class="text-sm text-gray-600 space-y-1">
-                                <p><i class="fas fa-user mr-2"></i>Destinatar: <span class="font-medium">${cod.emailDestinatar}</span></p>
-                                <p><i class="fas fa-tag mr-2"></i>Rol: <span class="font-medium">${cod.rolDestinatar}</span></p>
-                                ${cod.cnpDestinatar ? `<p><i class="fas fa-id-card mr-2"></i>CNP: <span class="font-mono">${cod.cnpDestinatar}</span></p>` : ''}
-                            </div>
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="font-mono text-xl font-black tracking-widest ${codClass}">${cod.codUnic}</span>
+                        <span class="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <div class="space-y-2 mb-4 flex-grow border-b border-gray-100 pb-4">
+                        <div class="flex items-center text-sm">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Rol:</span>
+                            <span class="font-bold text-brand-navy ml-2">${cod.rolDestinatar}</span>
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm text-gray-500 mb-2">
-                                <i class="fas fa-calendar mr-1"></i> ${data}
-                            </p>
+                        <div class="flex items-center text-sm truncate">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Email:</span>
+                            <span class="font-medium text-gray-700 ml-2 truncate" title="${cod.emailDestinatar}">${cod.emailDestinatar}</span>
                         </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-auto">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Generat: ${data}</span>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
 
-        // Calculează și randează statisticile de pe laterală
         function actualizeazaStatistici(coduri) {
             const total = coduri.length;
             const active = coduri.filter(c => c.status === 'NEUTILIZAT').length;
-            const utilizate = total - active;
-
             document.getElementById('totalCoduri').textContent = total;
             document.getElementById('coduriActive').textContent = active;
-            document.getElementById('coduriUtilizate').textContent = utilizate;
+            document.getElementById('coduriUtilizate').textContent = total - active;
         }
     </script>
 </div>
-
 </body>
 </html>

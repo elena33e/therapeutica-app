@@ -9,62 +9,67 @@
 
 <div layout:fragment="content" class="bg-gray-50 min-h-screen pb-8">
 
+    <!-- Sticky Header -->
     <div class="bg-white border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center sticky top-0 z-20 shadow-sm gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">
-                Revizuire Analize: <span class="text-purple-600" th:text="${document.numeFisier}">fisier.pdf</span>
+            <h1 class="text-2xl font-bold text-brand-navy">
+                Revizuire Analize: <span class="text-brand-blue" th:text="${document.numeFisier}">fisier.pdf</span>
             </h1>
-            <p class="text-gray-600 mt-1">
+            <p class="text-gray-500 font-medium mt-1">
                 Verifică și asociază codurile LOINC pentru generarea fenotipului HPO.
             </p>
         </div>
         <div class="flex items-center space-x-3">
             <a th:href="@{'/medic/analize/dosar/' + ${document.pacientId}}"
-               class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-5 rounded-lg transition duration-200">
+               class="bg-white border border-gray-200 hover:bg-gray-50 text-brand-navy font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-sm">
                 Anulează
             </a>
+            <!-- Buton Principal  -->
             <button type="submit" form="revizuireForm"
-                    class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2.5 px-5 rounded-lg transition duration-200 shadow-sm flex items-center">
+                    class="bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-md flex items-center">
                 <i class="fas fa-microchip mr-2"></i> Finalizează
             </button>
         </div>
     </div>
 
+    <!-- Container Fluid pentru lucrul side-by-side -->
     <div class="container-fluid mx-auto px-6 mt-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col border border-gray-100" style="height: calc(100vh - 160px);">
+            <!-- Card PDF Viewer -->
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col border border-gray-200" style="height: calc(100vh - 160px);">
 
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                        <i class="fas fa-file-pdf text-red-500"></i>
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                        <i class="fas fa-file-pdf text-red-500 text-xl"></i>
                         Sursă Document
                     </h2>
                     <a th:href="@{'/medic/analize/view-pdf/' + ${document.id}}" target="_blank"
-                       class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-                        Deschide în tab nou <i class="fas fa-external-link-alt ml-1"></i>
+                       class="text-sm font-bold text-gray-500 hover:text-brand-blue transition-colors flex items-center">
+                        Deschide în tab nou <i class="fas fa-external-link-alt ml-1.5 text-xs"></i>
                     </a>
                 </div>
 
-                <div class="w-full flex-grow bg-gray-100 overflow-hidden flex items-center justify-center p-4">
+                <div class="w-full flex-grow bg-gray-100/50 overflow-hidden flex items-center justify-center p-4">
                     <img th:if="${isImage}"
                          th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
-                         class="max-w-full max-h-full object-contain rounded-lg shadow-sm border border-gray-200"
+                         class="max-w-full max-h-full object-contain rounded-xl shadow-sm border border-gray-200"
                          alt="Document scanat" />
 
                     <iframe th:unless="${isImage}"
                             th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
-                            class="w-full h-full border border-gray-200 rounded-lg shadow-sm bg-white"
+                            class="w-full h-full border border-gray-200 rounded-xl shadow-sm bg-white"
                             title="Vizualizator PDF">
                     </iframe>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col border border-gray-100" style="height: calc(100vh - 160px);">
+            <!-- Card Formular Mapare -->
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col border border-gray-200" style="height: calc(100vh - 160px);">
 
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                        <i class="fas fa-project-diagram text-purple-600"></i>
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <h2 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                        <i class="fas fa-project-diagram text-brand-teal text-xl"></i>
                         Mapare Semantică (LOINC)
                     </h2>
                 </div>
@@ -75,63 +80,75 @@
                         <input type="hidden" th:field="*{documentId}" />
                         <input type="hidden" th:field="*{pacientId}" />
 
-                        <th:block th:each="entry : *{sectiuni}">
+                        <!-- Iterăm prin lista de secțiuni adăugând secStat pentru index -->
+                        <th:block th:each="sectiune, secStat : *{sectiuni}">
 
-                            <div class="bg-gray-100 border-y border-gray-200 px-6 py-3 flex items-center sticky top-0 z-10">
-                                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider" th:text="${entry.key}">
+                            <!-- CÂMP ASCUNS CRITIC: Păstrăm numele secțiunii la submit -->
+                            <input type="hidden" th:field="*{sectiuni[__${secStat.index}__].nume}" />
+
+                            <!-- Antet Secțiune -->
+                            <div class="bg-gray-100 border-y border-gray-200 px-6 py-3 flex items-center sticky top-0 z-10 shadow-sm">
+                                <h3 class="text-[10px] font-bold text-brand-navy uppercase tracking-widest" th:text="${sectiune.nume}">
                                     Nume Secțiune
                                 </h3>
                             </div>
 
-                            <table class="w-full text-left border-collapse mb-4">
-                                <thead class="bg-gray-50/50">
+                            <table class="w-full text-left border-collapse mb-6">
+                                <thead class="bg-gray-50/80 border-b border-gray-100">
                                 <tr>
-                                    <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 w-2/5">Analiză Extrasă</th>
-                                    <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 w-1/5">Valoare</th>
-                                    <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 w-2/5">Cod LOINC Final</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-2/5">Analiză Extrasă</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-1/5 text-center">Valoare</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-2/5">Cod LOINC Final</th>
                                 </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
 
-                                <tr th:each="ind, stat : ${entry.value.indicatori}" class="hover:bg-gray-50 transition-colors">
+                                <!-- Iterăm prin indicatorii secțiunii -->
+                                <tr th:each="ind, stat : ${sectiune.indicatori}" class="hover:bg-gray-50 transition-colors">
 
-                                    <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].nume}" />
-                                    <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].metoda_detectata}" />
-                                    <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].valoare}" />
-                                    <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].um}" />
-                                    <input type="hidden" th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].interval}" />
+                                    <!-- Hidden Inputs FOLOSIND INDEXUL SECȚIUNII: [__${secStat.index}__] -->
+                                    <input type="hidden" th:field="*{sectiuni[__${secStat.index}__].indicatori[__${stat.index}__].nume}" />
+                                    <input type="hidden" th:field="*{sectiuni[__${secStat.index}__].indicatori[__${stat.index}__].metoda_detectata}" />
+                                    <input type="hidden" th:field="*{sectiuni[__${secStat.index}__].indicatori[__${stat.index}__].valoare}" />
+                                    <input type="hidden" th:field="*{sectiuni[__${secStat.index}__].indicatori[__${stat.index}__].um}" />
+                                    <input type="hidden" th:field="*{sectiuni[__${secStat.index}__].indicatori[__${stat.index}__].interval}" />
 
-                                    <td class="px-6 py-4 align-top">
-                                        <div class="text-sm font-medium text-gray-900" th:text="${ind.nume}">Glucoza</div>
+                                    <!-- Coloana Extrasă -->
+                                    <td class="px-6 py-5 align-top">
+                                        <div class="text-sm font-bold text-brand-navy leading-snug" th:text="${ind.nume}">Glucoza</div>
 
-                                        <div class="text-xs text-blue-600 font-medium mt-1" th:if="${ind.metoda_detectata != null and ind.metoda_detectata != ''}">
+                                        <div class="text-[10px] text-brand-blue font-bold uppercase tracking-widest mt-1.5" th:if="${ind.metoda_detectata != null and ind.metoda_detectata != ''}">
                                             <i class="fas fa-vial mr-1"></i> <span th:text="${ind.metoda_detectata}">Spectrometrie</span>
                                         </div>
 
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            Ref: <span class="font-medium text-gray-700" th:text="${ind.interval}">70-100</span>
+                                        <div class="text-xs text-gray-400 mt-2 font-medium">
+                                            Ref: <span class="font-bold text-gray-600" th:text="${ind.interval}">70-100</span>
                                             <span th:text="${ind.um}">mg/dL</span>
                                         </div>
                                     </td>
 
-                                    <td class="px-6 py-4 align-top">
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold bg-gray-100 border border-gray-200 text-gray-800" th:text="${ind.valoare}">
-                                                95
-                                            </span>
+                                    <!-- Coloana Valoare -->
+                                    <td class="px-6 py-5 align-top text-center">
+                                        <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-black bg-white border border-gray-200 text-brand-navy shadow-sm" th:text="${ind.valoare}">
+                                            95
+                                        </span>
                                     </td>
 
-                                    <td class="px-6 py-4 align-top">
+                                    <!-- Coloana Decizie LOINC -->
+                                    <td class="px-6 py-5 align-top">
                                         <div class="relative">
+                                            <!-- Hidden pentru loincNume -->
                                             <input type="hidden"
-                                                   th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].loincNume}"
+                                                   th:field="*{sectiuni[__${secStat.index}__].indicatori[__${stat.index}__].loincNume}"
                                                    class="loinc-name-hidden" />
 
-                                            <select th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].loincNum}"
+                                            <!-- Dropdown LOINC cu noul binding -->
+                                            <select th:field="*{sectiuni[__${secStat.index}__].indicatori[__${stat.index}__].loincNum}"
                                                     onchange="handleLoincChange(this)"
-                                                    th:classappend="${ind.loincNum == 'Pending' or ind.loincNum == null or ind.loincNum == '' ? 'border-amber-400 bg-amber-50 text-amber-800 focus:ring-amber-500 focus:border-amber-500' : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500 bg-white'}"
-                                                    class="block w-full text-sm rounded-lg border py-2 px-3 outline-none transition-colors shadow-sm cursor-pointer">
+                                                    th:classappend="${ind.loincNum == 'Pending' or ind.loincNum == null or ind.loincNum == '' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-navy focus:ring-brand-gold focus:border-brand-gold' : 'border-gray-300 focus:ring-brand-blue focus:border-brand-blue bg-white text-brand-navy'}"
+                                                    class="block w-full text-xs font-bold rounded-xl border py-2.5 px-3 outline-none transition-colors shadow-sm cursor-pointer appearance-none pr-8">
 
-                                                <option value="Pending" th:if="${ind.loincNum == 'Pending'}" selected>⚠ Alege din sugestii...</option>
+                                                <option value="Pending" th:if="${ind.loincNum == 'Pending'}" selected>⚠ Verificare Necesară...</option>
 
                                                 <option th:each="cand : ${ind.candidati}"
                                                         th:value="${cand.code}"
@@ -139,12 +156,15 @@
                                                         th:selected="${cand.code == ind.loincNum}">
                                                 </option>
                                             </select>
+                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                                <i class="fas fa-chevron-down text-xs"></i>
+                                            </div>
                                         </div>
 
-                                        <div class="mt-2 flex justify-between items-center px-1">
-                                                <span class="text-xs text-gray-500 font-medium">
-                                                    LOINC: <span class="loinc-code-display text-gray-900 font-bold" th:text="${ind.loincNum}">-</span>
-                                                </span>
+                                        <div class="mt-2.5 flex justify-between items-center px-1">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                ID LOINC: <span class="loinc-code-display text-brand-teal font-black tracking-normal" th:text="${ind.loincNum}">-</span>
+                                            </span>
                                         </div>
                                     </td>
                                 </tr>
@@ -152,13 +172,14 @@
                             </table>
                         </th:block>
 
-                        <div th:if="${buletin.sectiuni == null or buletin.sectiuni.isEmpty()}" class="py-16 text-center">
-                            <div class="mx-auto w-16 h-16 mb-4 text-red-400 bg-red-50 rounded-full flex items-center justify-center">
+                        <!-- Empty State -->
+                        <div th:if="${buletin.sectiuni == null or buletin.sectiuni.isEmpty()}" class="py-20 text-center bg-gray-50 m-6 rounded-2xl border border-dashed border-gray-300">
+                            <div class="mx-auto w-16 h-16 mb-4 text-red-500 bg-white border border-red-200 rounded-full flex items-center justify-center shadow-sm">
                                 <i class="fas fa-exclamation-triangle text-2xl"></i>
                             </div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Nu s-au găsit date extrase</h3>
-                            <p class="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">
-                                Sistemul nu a reușit să mapeze indicatorii pentru acest document. Verificați dacă documentul sursă conține date valide.
+                            <h3 class="text-lg font-bold text-brand-navy mb-2">Nu s-au găsit date extrase</h3>
+                            <p class="text-gray-500 font-medium max-w-md mx-auto text-sm leading-relaxed">
+                                Sistemul nu a reușit să mapeze automat indicatorii pentru acest document. Verificați calitatea imaginii sau formatul documentului.
                             </p>
                         </div>
 
@@ -176,22 +197,23 @@
             const container = selectElement.closest('td');
             const selectedOption = selectElement.options[selectElement.selectedIndex];
 
-            // 1. Actualizăm numele în input-ul hidden
             const nameHidden = container.querySelector('.loinc-name-hidden');
             if (nameHidden) {
                 nameHidden.value = selectedOption.text;
             }
 
-            // 2. Actualizăm ID-ul afișat vizual
             const codeDisplay = container.querySelector('.loinc-code-display');
             if (codeDisplay) {
                 codeDisplay.textContent = selectElement.value;
+                // Când o selecție validă este făcută, textul devine Teal
+                codeDisplay.classList.remove('text-gray-900', 'text-amber-800');
+                codeDisplay.classList.add('text-brand-teal');
             }
 
-            // 3. Eliminăm stilul de avertizare (chihlimbar/roșu) dacă s-a făcut o selecție
+            // Eliminăm clasele de "Pending" (Gold/Amber)
             if (selectElement.value !== 'Pending') {
-                selectElement.classList.remove('border-amber-400', 'bg-amber-50', 'text-amber-800', 'focus:ring-amber-500', 'focus:border-amber-500');
-                selectElement.classList.add('border-gray-300', 'bg-white', 'focus:ring-purple-500', 'focus:border-purple-500');
+                selectElement.classList.remove('border-brand-gold/60', 'bg-brand-gold/10');
+                selectElement.classList.add('border-gray-300', 'bg-white', 'focus:ring-brand-blue', 'focus:border-brand-blue');
             }
         }
     </script>

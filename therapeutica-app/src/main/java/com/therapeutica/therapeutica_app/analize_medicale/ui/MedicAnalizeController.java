@@ -65,7 +65,6 @@ public class MedicAnalizeController {
         DocumentMedical doc = documentMedicalRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Documentul cu ID-ul " + docId + " nu a fost găsit."));
 
-        // --- LOGICA NOUĂ PENTRU IMAGINE ---
         boolean isImage = false;
         try {
             // Detectăm tipul de fișier de pe disc (ex: image/png, application/pdf)
@@ -76,7 +75,7 @@ public class MedicAnalizeController {
         } catch (java.io.IOException e) {
             // Dacă e o eroare de citire, lăsăm isImage = false (va încerca să încarce iframe-ul default)
         }
-        // ---------------------------------
+
 
         BuletinEditabilDTO dto = analizeService.mapeazaDinDocumentValidat(doc);
 
@@ -240,15 +239,12 @@ public class MedicAnalizeController {
         Pacienti pacient = pacientiRepository.findById(pacientId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Pacientul nu a fost găsit în baza de date."));
 
-        // 2. Extragem ID-ul utilizatorului din cont (deoarece documentele sunt salvate cu acest ID)
+        // Extragem ID-ul utilizatorului din cont
         UUID userId = pacient.getUser().getId();
 
-        // 3. Căutăm documentele folosind userId-ul
         List<DocumentMedical> documente = documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(userId);
 
         model.addAttribute("documente", documente);
-
-        // Păstrăm pacientId în model pentru că interfața (butoane de back, URL-uri) are nevoie de el, nu de userId
         model.addAttribute("pacientId", pacientId);
 
         return "medic/analize-pacient/dosar-pacient";

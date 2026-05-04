@@ -43,17 +43,20 @@
                 </thead>
 
                 <tbody class="divide-y divide-gray-100 bg-white">
-                <th:block th:each="entry : ${buletin.sectiuni}">
+                <!-- Modificat 'entry' în 'sectiune', deoarece acum iterăm printr-o listă de SectiuneWrapperDTO -->
+                <th:block th:each="sectiune : ${buletin.sectiuni}">
                     <tr class="bg-blue-50/70">
                         <td colspan="4" class="px-8 py-4 border-y border-blue-100">
                             <h2 class="text-sm font-black text-blue-900 uppercase tracking-wider flex items-center">
                                 <i class="fas fa-microscope mr-3 text-blue-600"></i>
-                                <span th:text="${entry.key}">NUME SECȚIUNE</span>
+                                <!-- Aici se accesează direct .nume, nu .key -->
+                                <span th:text="${sectiune.nume}">NUME SECȚIUNE</span>
                             </h2>
                         </td>
                     </tr>
 
-                    <tr th:each="ind : ${entry.value.indicatori}" class="hover:bg-gray-50/80 transition-colors">
+                    <!-- Aici se accesează direct .indicatori, nu .value.indicatori -->
+                    <tr th:each="ind : ${sectiune.indicatori}" class="hover:bg-gray-50/80 transition-colors">
                         <td class="px-8 py-3">
                             <span class="text-sm font-semibold text-gray-800 block" th:text="${ind.nume}">Analiză</span>
                             <span th:if="${ind.metoda_detectata != null and !ind.metoda_detectata.isEmpty()}"
@@ -70,7 +73,8 @@
                     </tr>
                 </th:block>
 
-                <tr th:if="${#maps.isEmpty(buletin.sectiuni)}">
+                <!-- Modificat din #maps.isEmpty în #lists.isEmpty -->
+                <tr th:if="${#lists.isEmpty(buletin.sectiuni)}">
                     <td colspan="4" class="p-20 text-center">
                         <i class="fas fa-file-medical-alt text-6xl text-gray-200 mb-4 block"></i>
                         <p class="text-gray-400 font-medium">Nu au fost găsite date în acest document.</p>

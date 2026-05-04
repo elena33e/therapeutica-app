@@ -175,5 +175,26 @@
         </div>
     </div>
 </div>
+
+<div layout:fragment="scripts">
+    <script th:inline="javascript">
+        function verificaActualizariMedic() {
+            // Căutăm elementele care indică faptul că un proces rulează (iconița fa-spin)
+            // În codul tău, aceasta apare la statusul VALIDAT
+            const procesariActive = document.querySelectorAll('.fa-spin');
+
+            if (procesariActive.length > 0) {
+                console.log("Medicul așteaptă finalizarea standardizării... Reîncărcare în 5 secunde.");
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
+            }
+        }
+
+        // Pornim verificarea când pagina este gata
+        document.addEventListener('DOMContentLoaded', verificaActualizariMedic);
+    </script>
+</div>
 </body>
 </html>

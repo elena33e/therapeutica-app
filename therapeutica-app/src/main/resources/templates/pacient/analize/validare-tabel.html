@@ -13,7 +13,7 @@
         <div class="mb-8 flex justify-between items-end">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800 mb-2">Validare Date Extrase</h1>
-                <p class="text-gray-600">Verifică și corectează datele identificate de sistemul AI înainte de salvare</p>
+                <p class="text-gray-600">Verifică și corectează datele identificate înainte de salvare</p>
             </div>
             <a th:href="@{/analize/pacient/documente/{id}(id=${pacientId})}"
                class="text-gray-500 hover:text-gray-700 font-medium pb-1 border-b-2 border-transparent hover:border-gray-300 transition-all">
@@ -37,13 +37,18 @@
                     </tr>
                     </thead>
                     <tbody class="bg-white">
-                    <th:block th:each="entry : *{sectiuni}">
-                        <tr class="bg-blue-50/50 section-row" th:data-section="${entry.key}">
+                    <!-- Iterăm prin LISTA de secțiuni, folosind secStat pentru index -->
+                    <th:block th:each="sec, secStat : *{sectiuni}">
+
+                        <tr class="bg-blue-50/50 section-row" th:data-section-index="${secStat.index}">
                             <td colspan="5" class="px-6 py-3">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 w-1/2">
                                         <i class="fas fa-microscope text-blue-500"></i>
-                                        <span class="font-bold text-blue-700 uppercase" th:text="${entry.key}"></span>
+
+                                        <input type="text"
+                                               class="w-full font-bold text-blue-700 uppercase bg-transparent border-b border-dashed border-blue-300 focus:border-blue-500 outline-none p-1"
+                                               th:field="*{sectiuni[__${secStat.index}__].nume}" />
                                     </div>
                                     <div class="flex gap-2">
                                         <button type="button" onclick="addIndicator(this)" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">
@@ -57,31 +62,34 @@
                             </td>
                         </tr>
 
-                        <tr th:each="ind, stat : ${entry.value.indicatori}" class="hover:bg-gray-50 transition-colors indicator-row">
+                        <!-- Iterăm prin indicatorii sectiunii
+                         -->
+                        <tr th:each="ind, indStat : ${sec.indicatori}" class="hover:bg-gray-50 transition-colors indicator-row">
                             <td class="px-6 py-2">
+                                <!-- Folosim indexul secțiunii și indexul indicatorului -->
                                 <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-blue-500 p-1 text-sm font-medium"
-                                       th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].nume}" />
+                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].nume}" />
                             </td>
 
                             <td class="px-6 py-2">
                                 <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[11px] italic text-gray-600 focus:bg-white focus:border-blue-400"
                                        placeholder="Ex: Strip, Spectrometrie..."
-                                       th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].metoda_detectata}" />
+                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].metoda_detectata}" />
                             </td>
 
                             <td class="px-6 py-2">
                                 <input type="text" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm font-bold text-blue-600 text-center"
-                                       th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].valoare}" />
+                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].valoare}" />
                             </td>
 
                             <td class="px-6 py-2">
                                 <input type="text" class="w-full bg-transparent border-b border-transparent p-1 text-sm text-center"
-                                       th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].um}" />
+                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].um}" />
                             </td>
 
                             <td class="px-6 py-2 flex items-center gap-2">
                                 <input type="text" class="w-full bg-transparent border-b border-transparent p-1 text-sm italic"
-                                       th:field="*{sectiuni['__${entry.key}__'].indicatori[__${stat.index}__].interval}" />
+                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].interval}" />
                                 <button type="button" onclick="removeRow(this)" class="text-red-400 hover:text-red-600 p-1">
                                     <i class="fas fa-times"></i>
                                 </button>
@@ -114,8 +122,17 @@
         function removeRow(button) {
             if(confirm('Sigur vrei să ștergi acest indicator?')) {
                 const row = button.closest('tr');
+                // Găsim secțiunea de care aparține rândul pentru a reindexa doar acea secțiune
+                let prevRow = row.previousElementSibling;
+                while (prevRow && !prevRow.classList.contains('section-row')) {
+                    prevRow = prevRow.previousElementSibling;
+                }
+                const sectionIndex = prevRow ? prevRow.getAttribute('data-section-index') : null;
+
                 row.remove();
-                renumberRows();
+                if(sectionIndex !== null) {
+                    renumberIndicatorsForSection(prevRow);
+                }
             }
         }
 
@@ -131,14 +148,14 @@
                     nextRow = temp;
                 }
                 sectionHeader.remove();
-                renumberRows();
+                renumberAllSections(); // Reindexăm toate secțiunile rămase
             }
         }
 
-        // Adăugare rând nou - REFĂCUT PENTRU 5 COLOANE
+        // Adăugare rând nou
         function addIndicator(button) {
             const sectionRow = button.closest('tr.section-row');
-            const sectionName = sectionRow.getAttribute('data-section');
+            const sectionIndex = sectionRow.getAttribute('data-section-index');
 
             let lastRow = sectionRow;
             while (lastRow.nextElementSibling && lastRow.nextElementSibling.classList.contains('indicator-row')) {
@@ -148,27 +165,27 @@
             const newRow = document.createElement('tr');
             newRow.className = 'hover:bg-gray-50 transition-colors indicator-row';
 
-            // Template actualizat cu 5 coloane (include metoda_detectata)
+            // Template actualizat - folosim sectionIndex pentru prima parte a numelui, și 999 temporar pentru indicator
             newRow.innerHTML = `
                 <td class="px-6 py-2">
                     <input type="text" class="w-full bg-transparent border-b border-gray-200 p-1 text-sm font-medium"
-                           name="sectiuni['${sectionName}'].indicatori[999].nume" value="Indicator Nou">
+                           name="sectiuni[${sectionIndex}].indicatori[999].nume" value="Indicator Nou">
                 </td>
                 <td class="px-6 py-2">
                     <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[11px] italic text-gray-600"
-                           name="sectiuni['${sectionName}'].indicatori[999].metoda_detectata" placeholder="Metodă...">
+                           name="sectiuni[${sectionIndex}].indicatori[999].metoda_detectata" placeholder="Metodă...">
                 </td>
                 <td class="px-6 py-2">
                     <input type="text" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm font-bold text-blue-600 text-center"
-                           name="sectiuni['${sectionName}'].indicatori[999].valoare" value="">
+                           name="sectiuni[${sectionIndex}].indicatori[999].valoare" value="">
                 </td>
                 <td class="px-6 py-2">
                     <input type="text" class="w-full bg-transparent border-b border-gray-200 p-1 text-sm text-center"
-                           name="sectiuni['${sectionName}'].indicatori[999].um" value="">
+                           name="sectiuni[${sectionIndex}].indicatori[999].um" value="">
                 </td>
                 <td class="px-6 py-2 flex items-center gap-2">
                     <input type="text" class="w-full bg-transparent border-b border-gray-200 p-1 text-sm italic"
-                           name="sectiuni['${sectionName}'].indicatori[999].interval" value="">
+                           name="sectiuni[${sectionIndex}].indicatori[999].interval" value="">
                     <button type="button" onclick="removeRow(this)" class="text-red-400 hover:text-red-600 p-1">
                         <i class="fas fa-times"></i>
                     </button>
@@ -176,31 +193,60 @@
             `;
 
             lastRow.after(newRow);
-            renumberRows();
+            renumberIndicatorsForSection(sectionRow);
         }
 
-        // Reindexarea rândurilor - Neschimbat, regex-ul este suficient de robust
-        function renumberRows() {
-            const sections = document.querySelectorAll('.section-row');
-            sections.forEach(section => {
-                const sectionName = section.getAttribute('data-section');
-                let rows = [];
-                let next = section.nextElementSibling;
+        // Reindexare doar pentru indicatorii dintr-o anumită secțiune
+        function renumberIndicatorsForSection(sectionRow) {
+            const sectionIndex = sectionRow.getAttribute('data-section-index');
+            let next = sectionRow.nextElementSibling;
+            let indicatorIndex = 0;
 
-                while(next && next.classList.contains('indicator-row')) {
-                    rows.push(next);
-                    next = next.nextElementSibling;
+            while(next && next.classList.contains('indicator-row')) {
+                next.querySelectorAll('input').forEach(input => {
+                    const name = input.getAttribute('name');
+                    if(name) {
+                        // Înlocuim partea cu indicatori[X]
+                        input.setAttribute('name', name.replace(/indicatori\[\d+\]/, `indicatori[${indicatorIndex}]`));
+                    }
+                });
+                indicatorIndex++;
+                next = next.nextElementSibling;
+            }
+        }
+
+        // Reindexare completă a secțiunilor și indicatorilor (necesară la ștergerea unei secțiuni)
+        function renumberAllSections() {
+            const sections = document.querySelectorAll('.section-row');
+
+            sections.forEach((sectionRow, newSectionIndex) => {
+                // Actualizăm indexul secțiunii în atributul data
+                sectionRow.setAttribute('data-section-index', newSectionIndex);
+
+                // Actualizăm inputul care conține numele secțiunii
+                const nameInput = sectionRow.querySelector('input[type="text"]');
+                if (nameInput) {
+                    nameInput.setAttribute('name', `sectiuni[${newSectionIndex}].nume`);
                 }
 
-                rows.forEach((row, index) => {
-                    row.querySelectorAll('input').forEach(input => {
+                // Acum reindexăm toți indicatorii de sub această secțiune
+                let next = sectionRow.nextElementSibling;
+                let indicatorIndex = 0;
+
+                while(next && next.classList.contains('indicator-row')) {
+                    next.querySelectorAll('input').forEach(input => {
                         const name = input.getAttribute('name');
                         if(name) {
-                            // Înlocuim indexul fals [999] sau cel vechi cu noul index secvențial
-                            input.setAttribute('name', name.replace(/indicatori\[\d+\]/, `indicatori[${index}]`));
+                            // Actualizăm ATÂT indexul secțiunii, CÂT ȘI indexul indicatorului
+                            // Exemplu vechi: sectiuni[2].indicatori[0].valoare
+                            // Exemplu nou:  sectiuni[1].indicatori[0].valoare
+                            const baseName = name.split('.').pop(); // ia 'valoare', 'nume', etc.
+                            input.setAttribute('name', `sectiuni[${newSectionIndex}].indicatori[${indicatorIndex}].${baseName}`);
                         }
                     });
-                });
+                    indicatorIndex++;
+                    next = next.nextElementSibling;
+                }
             });
         }
     </script>
@@ -208,3 +254,4 @@
 
 </body>
 </html>
+```</SectiuneWrapperDTO>

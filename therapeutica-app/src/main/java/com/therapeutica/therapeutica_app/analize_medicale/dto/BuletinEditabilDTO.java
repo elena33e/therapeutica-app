@@ -12,7 +12,6 @@ public class BuletinEditabilDTO {
     private UUID pacientId;
 
     @Builder.Default
-    // Specificăm tipul concret LinkedHashMap în loc de interfața Map
-    private LinkedHashMap<String, SectiuneWrapperDTO> sectiuni = new LinkedHashMap<>();
+    private List<SectiuneWrapperDTO> sectiuni = new ArrayList<>();
 }
 

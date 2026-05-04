@@ -64,11 +64,9 @@ public class BuletinAnalizeController {
             log.info("Inițializare document și lansare procesare asincronă pentru pacientul: {}", pacientId);
 
             // 1. Salvare fizică și creare record în DB (Status: INCARCAT)
-            // Această metodă este sincronă și rapidă.
             DocumentMedical doc = analizeService.initializeazaDocument(file, pacientId);
 
-            // 2. Lansare procesare OCR în fundal (Status se va schimba în PROCESAT când termină)
-            // Se returnează controlul AICI imediat, fără să aștepte după Python.
+            // 2. Lansare procesare OCR în fundal
             analizeService.proceseazaDocumentAsincron(doc);
 
             // 3. Notificăm utilizatorul și îl trimitem la dosar

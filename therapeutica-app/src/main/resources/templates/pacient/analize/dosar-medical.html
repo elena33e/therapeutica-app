@@ -175,27 +175,38 @@
 </div>
 
 <div layout:fragment="scripts">
-    <script>
-        // Corecție: Script-ul acum găsește formularul prin id-ul "uploadForm"
+    <script th:inline="javascript">
+        // 1. Gestionarea formularului de upload (existent în codul tău)
         const uploadForm = document.getElementById('uploadForm');
         if (uploadForm) {
             uploadForm.addEventListener('submit', function(e) {
                 const btn = document.getElementById('submitBtn');
-                const modal = document.getElementById('uploadModal');
-
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Se trimite...';
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-
-                setTimeout(() => {
-                    modal.classList.add('opacity-0');
-                    setTimeout(() => {
-                        modal.classList.add('hidden');
-                        modal.classList.remove('opacity-0');
-                    }, 300);
-                }, 1000);
+                // Modalul se va închide automat după ce serverul procesează cererea (POST redirect)
             });
         }
+
+        // 2. LOGICA DE POLLING (Nouă)
+        function verificaStatusProcesare() {
+            // Verificăm dacă există cel puțin un rând în tabel care are statusul "INCARCAT" (Procesare OCR)
+            // Căutăm iconița de spin care indică procesarea activă
+            const documenteInProcesare = document.querySelectorAll('.fa-spin');
+
+            if (documenteInProcesare.length > 0) {
+                console.log("Se verifică actualizări pentru documentele în procesare...");
+
+                // Facem refresh la pagină automat după 5 secunde pentru a vedea statusul nou
+                // Într-o aplicație complexă am face un apel AJAX, dar window.location.reload()
+                // este cea mai sigură metodă pentru a re-executa toată logica Thymeleaf de butoane.
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
+            }
+        }
+
+        // Pornim verificarea la încărcarea paginii
+        document.addEventListener('DOMContentLoaded', verificaStatusProcesare);
     </script>
 </div>
 </body>

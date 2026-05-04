@@ -9,5 +9,6 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SectiuneWrapperDTO {
+    private String nume;
     private List<IndicatorDTO> indicatori = new ArrayList<>();
 }

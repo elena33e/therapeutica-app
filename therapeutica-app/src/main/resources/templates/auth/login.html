@@ -5,71 +5,78 @@
     <title>Autentificare - Therapeutica</title>
 </head>
 <body>
-<div layout:fragment="content">
-    <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Autentificare</h1>
-            <p class="text-gray-500 mt-2">Introduceți datele pentru a accesa platforma</p>
-        </div>
+<div layout:fragment="content" class="container mx-auto px-4 py-12 flex items-center justify-center min-h-[75vh]">
 
-        <div th:if="${param.error}" class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-circle mr-2"></i>
-                <span>Email sau parolă incorecte. Vă rugăm să încercați din nou.</span>
+    <!-- Card Autentificare -->
+    <div class="w-full max-w-md bg-white p-10 rounded-3xl shadow-sm border border-gray-200">
+
+        <div class="text-center mb-10">
+            <!-- Element grafic de ancorare -->
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 border border-gray-200 mb-6 shadow-sm">
+                <i class="fas fa-lock text-2xl text-brand-teal"></i>
             </div>
+            <h1 class="text-3xl font-black text-brand-navy tracking-tight">Autentificare</h1>
+            <p class="text-gray-500 mt-3 font-medium">Introduceți datele pentru a accesa platforma</p>
         </div>
 
-        <div th:if="${param.logout}" class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                <span>V-ați deconectat cu succes.</span>
-            </div>
+        <!-- Alertă Eroare -->
+        <div th:if="${param.error}" class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-bold rounded-xl flex items-center shadow-sm">
+            <i class="fas fa-exclamation-triangle mr-3 text-red-500 text-lg"></i>
+            <span>Email sau parolă incorecte.</span>
         </div>
 
-        <form th:action="@{/process-login}" method="POST" class="space-y-5">
+        <!-- Alertă Succes (Logout) pe Teal Solid -->
+        <div th:if="${param.logout}" class="mb-8 p-4 bg-brand-teal text-white text-sm font-bold rounded-xl flex items-center shadow-sm">
+            <i class="fas fa-check-circle mr-3 text-lg"></i>
+            <span>V-ați deconectat cu succes.</span>
+        </div>
+
+        <form th:action="@{/process-login}" method="POST" class="space-y-6">
             <div>
-                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Adresă Email</label>
+                <label for="username" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Adresă Email</label>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                         <i class="fas fa-envelope"></i>
                     </span>
                     <input type="email" id="username" name="username" required
-                           class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                           class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy bg-gray-50 focus:bg-white"
                            placeholder="nume@exemplu.com">
                 </div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-1">
-                    <label for="password" class="block text-sm font-medium text-gray-700">Parolă</label>
-                    <a href="#" class="text-xs text-green-600 hover:underline">Ați uitat parola?</a>
+                <div class="flex justify-between items-center mb-2">
+                    <label for="password" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">Parolă</label>
+                    <a href="#" class="text-[10px] font-bold text-brand-teal uppercase tracking-widest hover:text-brand-navy transition-colors">Ați uitat parola?</a>
                 </div>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                         <i class="fas fa-lock"></i>
                     </span>
                     <input type="password" id="password" name="password" required
-                           class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                           class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy bg-gray-50 focus:bg-white"
                            placeholder="••••••••">
                 </div>
             </div>
 
+            <!-- Buton Principal Navy -->
             <button type="submit"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-200 transform active:scale-95">
-                Autentifică-te
+                    class="w-full bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center group mt-2">
+                <span class="uppercase tracking-widest text-xs">Autentifică-te</span>
+                <i class="fas fa-arrow-right ml-2 text-[10px] group-hover:translate-x-1 transition-transform"></i>
             </button>
         </form>
 
-        <div class="mt-8 pt-6 border-t border-gray-100 text-center text-sm">
-            <p class="text-gray-600">
+        <div class="mt-8 pt-8 border-t border-gray-100 text-center text-sm">
+            <p class="text-gray-500 font-medium">
                 Nu aveți un cont creat?
-                <a th:href="@{/api/auth/inregistrare}" class="text-green-600 font-semibold hover:text-green-800 underline-offset-4 hover:underline">
+                <a th:href="@{/api/auth/inregistrare}" class="text-brand-teal font-bold hover:text-brand-navy transition-colors ml-1">
                     Înregistrați-vă acum
                 </a>
             </p>
-            <div class="mt-4">
-                <a th:href="@{/}" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-arrow-left mr-1"></i> Înapoi la pagina principală
+            <div class="mt-6">
+                <a th:href="@{/}" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-brand-navy transition-colors flex items-center justify-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Înapoi la pagina principală
                 </a>
             </div>
         </div>
@@ -78,7 +85,6 @@
 
 <div layout:fragment="scripts">
     <script>
-        // Păstrăm doar o mică logică pentru a prelua email-ul din URL dacă userul tocmai s-a înregistrat
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const registeredEmail = urlParams.get('email');
