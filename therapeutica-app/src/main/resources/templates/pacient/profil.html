@@ -3,279 +3,297 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <head>
-    <title>Profil Pacient</title>
+    <title>Profil Pacient | Therapeutica</title>
 </head>
 <body class="bg-gray-50">
-<div layout:fragment="content">
-    <div class="container mx-auto max-w-4xl px-4 py-8 md:ml-64">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
-                    <span th:if="${mode == 'view'}">Profilul meu</span>
-                    <span th:if="${mode == 'edit'}">Editare Profil</span>
-                </h1>
-                <p class="text-gray-500 mt-1">
-                    <span th:if="${mode == 'view'}">Informațiile tale personale și biometrice</span>
-                    <span th:if="${mode == 'edit'}">Actualizează datele pentru dosarul tău medical</span>
-                </p>
-            </div>
+<div layout:fragment="content" class="container mx-auto px-4 py-12 max-w-7xl">
 
-            <div class="flex space-x-3">
-                <a th:if="${mode == 'view'}"
-                   th:href="@{'/pacient/profil/' + ${pacientId} + '/editare'}"
-                   class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md">
-                    <i class="fas fa-edit mr-2"></i>
-                    Editare profil
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-brand-navy tracking-tight">
+                <span th:if="${mode == 'view'}">Profilul meu</span>
+                <span th:if="${mode == 'edit'}">Editare Profil</span>
+            </h1>
+            <p class="text-gray-500 font-medium mt-2">
+                <span th:if="${mode == 'view'}">Informațiile tale personale și biometrice.</span>
+                <span th:if="${mode == 'edit'}">Actualizează datele pentru dosarul tău medical.</span>
+            </p>
+        </div>
+
+        <div class="flex space-x-3">
+            <!-- Acțiuni View -->
+            <a th:if="${mode == 'view'}"
+               th:href="@{'/pacient/profil/' + ${pacientId} + '/editare'}"
+               class="inline-flex items-center px-6 py-3 bg-brand-navy hover:bg-brand-navy/90 text-white font-bold rounded-xl transition-all shadow-sm">
+                <i class="fas fa-edit mr-2 text-brand-gold"></i>
+                Editare profil
+            </a>
+
+            <!-- Acțiuni Edit -->
+            <th:block th:if="${mode == 'edit'}">
+                <a th:href="@{'/pacient/profil/' + ${pacientId}}"
+                   class="px-6 py-3 bg-white border border-gray-200 text-brand-navy font-bold rounded-xl hover:bg-gray-50 transition-all shadow-sm">
+                    Anulare
                 </a>
+                <button type="submit" form="profilForm"
+                        class="inline-flex items-center px-6 py-3 bg-brand-teal hover:bg-brand-teal/90 text-white font-bold rounded-xl transition-all shadow-md">
+                    <i class="fas fa-save mr-2"></i>
+                    Salvează
+                </button>
+            </th:block>
+        </div>
+    </div>
 
-                <th:block th:if="${mode == 'edit'}">
-                    <a th:href="@{'/pacient/profil/' + ${pacientId}}"
-                       class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all">
-                        Anulare
-                    </a>
-                    <button type="submit" form="profilForm"
-                            class="inline-flex items-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md">
-                        <i class="fas fa-save mr-2"></i>
-                        Salvează
-                    </button>
-                </th:block>
+    <!-- Mesaj Succes -->
+    <div th:if="${successMessage}" class="mb-8">
+        <div class="bg-brand-teal text-white px-5 py-4 rounded-xl flex items-center shadow-sm">
+            <i class="fas fa-check-circle mr-3 text-xl"></i>
+            <span class="font-bold text-sm" th:text="${successMessage}"></span>
+        </div>
+    </div>
+
+    <!-- MOD EDITARE -->
+    <form th:if="${mode == 'edit'}"
+          id="profilForm"
+          th:action="@{'/pacient/profil/' + ${pacientId} + '/salvare'}"
+          method="post"
+          class="space-y-8 max-w-4xl mx-auto">
+
+        <!-- Card Cont Utilizator -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <h2 class="text-xl font-bold text-brand-navy mb-8 flex items-center">
+                <span class="w-10 h-10 bg-gray-50 border border-gray-200 text-brand-blue rounded-xl flex items-center justify-center mr-4 shadow-sm">
+                    <i class="fas fa-user-circle"></i>
+                </span>
+                Cont Utilizator
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nume *</label>
+                    <input type="text" name="nume" th:value="${utilizator.nume}" required
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy"
+                           th:classappend="${numeError != null} ? 'border-red-500 bg-red-50' : ''">
+                    <p th:if="${numeError}" class="mt-1.5 text-red-500 text-xs font-bold" th:text="${numeError}"></p>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Prenume *</label>
+                    <input type="text" name="prenume" th:value="${utilizator.prenume}" required
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Email *</label>
+                    <input type="email" name="email" th:value="${utilizator.email}" required
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
+                </div>
             </div>
         </div>
 
-        <div th:if="${successMessage}" class="mb-6 animate-fade-in">
-            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center">
-                <i class="fas fa-check-circle text-emerald-500 mr-3 text-xl"></i>
-                <span class="font-medium" th:text="${successMessage}"></span>
-            </div>
-        </div>
-
-        <form th:if="${mode == 'edit'}"
-              id="profilForm"
-              th:action="@{'/pacient/profil/' + ${pacientId} + '/salvare'}"
-              method="post"
-              class="space-y-6">
-
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-                <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                    <span class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-user-circle"></i>
-                    </span>
-                    Cont Utilizator
-                </h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Nume *</label>
-                        <input type="text" name="nume" th:value="${utilizator.nume}" required
-                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none"
-                               th:classappend="${numeError != null} ? 'border-red-500 bg-red-50' : ''">
-                        <p th:if="${numeError}" class="mt-1 text-red-500 text-xs font-medium" th:text="${numeError}"></p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Prenume *</label>
-                        <input type="text" name="prenume" th:value="${utilizator.prenume}" required
-                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none">
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Email *</label>
-                        <input type="email" name="email" th:value="${utilizator.email}" required
-                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none">
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-                <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                    <span class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center mr-3">
-                        <i class="fas fa-notes-medical"></i>
-                    </span>
-                    Dosar Medical
-                </h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">CNP (13 cifre)</label>
-                        <input type="text" name="cnp" th:value="${pacient.cnp}" maxlength="13"
-                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-mono">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Sex</label>
-                        <select name="sex" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none">
-                            <option th:each="s : ${T(com.therapeutica.therapeutica_app.pacienti.Sex).values()}"
-                                    th:value="${s.name()}" th:text="${s.numeAfisat}"
-                                    th:selected="${pacient.sex == s}"></option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Data Nașterii</label>
-                        <input type="date" name="dataNasterii" th:value="${pacient.dataNasterii}"
-                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Înălțime (cm)</label>
-                        <input type="number" name="inaltime" th:value="${pacient.inaltime}" placeholder="175"
-                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Greutate (kg)</label>
-                        <input type="number" step="0.1" name="greutate" th:value="${pacient.greutate}" placeholder="70.5"
-                               class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none">
-                    </div>
-
-                    <div class="md:col-span-3">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Grupa Sangvină</label>
-                        <select name="grupaSangvina" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none">
-                            <option value="">Nespecificat</option>
-                            <option th:each="g : ${ {'0 (I) Rh+', '0 (I) Rh-', 'A (II) Rh+', 'A (II) Rh-', 'B (III) Rh+', 'B (III) Rh-', 'AB (IV) Rh+', 'AB (IV) Rh-'} }"
-                                    th:value="${g}" th:text="${g}" th:selected="${pacient.grupaSangvina == g}"></option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </form>
-
-        <div th:if="${mode == 'view'}" class="space-y-6">
+        <!-- Card Date Medicale -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <h2 class="text-xl font-bold text-brand-navy mb-8 flex items-center">
+                <span class="w-10 h-10 bg-gray-50 border border-gray-200 text-brand-teal rounded-xl flex items-center justify-center mr-4 shadow-sm">
+                    <i class="fas fa-notes-medical"></i>
+                </span>
+                Date Biometrice & Istoric
+            </h2>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                    <div class="flex items-center mb-8">
-                        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg mr-5">
-                            <span th:text="${#strings.substring(utilizator.nume, 0, 1) + #strings.substring(utilizator.prenume, 0, 1)}"></span>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-black text-gray-900" th:text="${utilizator.prenume + ' ' + utilizator.nume}"></h2>
-                            <p class="text-blue-600 font-medium flex items-center">
-                                <i class="fas fa-envelope mr-2 text-sm"></i>
-                                <span th:text="${utilizator.email}"></span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-8 border-t border-gray-50 pt-8">
-                        <div>
-                            <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">CNP</p>
-                            <p class="text-lg font-mono font-bold text-gray-800" th:text="${pacient.cnp ?: 'Nespecificat'}"></p>
-                        </div>
-                        <div>
-                            <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Vârstă / Sex</p>
-                            <p class="text-lg font-bold text-gray-800">
-                                <span th:text="${pacient.dataNasterii != null ? pacient.getVarsta() + ' ani' : '-'}"></span>
-                                <span class="text-gray-300 mx-2">|</span>
-                                <span th:text="${pacient.sex != null ? pacient.sex.numeAfisat : '-'}"></span>
-                            </p>
-                        </div>
-                    </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">CNP (13 cifre)</label>
+                    <input type="text" name="cnp" th:value="${pacient.cnp}" maxlength="13"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none font-mono font-bold text-brand-navy">
                 </div>
 
-                <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 text-white shadow-xl flex flex-col justify-center items-center text-center">
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Indice Masă Corporală</p>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Sex</label>
+                    <select name="sex" class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none font-bold text-brand-navy appearance-none">
+                        <option th:each="s : ${T(com.therapeutica.therapeutica_app.pacienti.Sex).values()}"
+                                th:value="${s.name()}" th:text="${s.numeAfisat}"
+                                th:selected="${pacient.sex == s}"></option>
+                    </select>
+                </div>
 
-                    <div th:if="${pacient.inaltime != null && pacient.greutate != null}">
-                        <p class="text-5xl font-black mb-2"
-                           th:with="h=${pacient.inaltime/100.0}"
-                           th:text="${#numbers.formatDecimal(pacient.greutate/(h*h), 1, 1)}"></p>
-                        <span class="px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider"
-                              th:with="h=${pacient.inaltime/100.0}, imc=${pacient.greutate/(h*h)}"
-                              th:classappend="${imc < 18.5 ? 'bg-blue-500' : (imc < 25 ? 'bg-emerald-500' : (imc < 30 ? 'bg-orange-500' : 'bg-red-500'))}"
-                              th:text="${imc < 18.5 ? 'Subponderal' : (imc < 25 ? 'Normal' : (imc < 30 ? 'Supraponderal' : 'Obezitate'))}">
-                        </span>
-                    </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Data Nașterii</label>
+                    <input type="date" name="dataNasterii" th:value="${pacient.dataNasterii}"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none font-bold text-brand-navy">
+                </div>
 
-                    <div th:unless="${pacient.inaltime != null && pacient.greutate != null}" class="opacity-40">
-                        <i class="fas fa-calculator text-4xl mb-3"></i>
-                        <p class="text-xs leading-relaxed">Completează înălțimea și greutatea pentru calculul IMC</p>
-                    </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Înălțime (cm)</label>
+                    <input type="number" name="inaltime" th:value="${pacient.inaltime}" placeholder="175"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none font-bold text-brand-navy">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Greutate (kg)</label>
+                    <input type="number" step="0.1" name="greutate" th:value="${pacient.greutate}" placeholder="70.5"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none font-bold text-brand-navy">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grupa Sangvină</label>
+                    <select name="grupaSangvina" class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none font-bold text-brand-navy appearance-none">
+                        <option value="">Nespecificat</option>
+                        <option th:each="g : ${ {'0 (I) Rh+', '0 (I) Rh-', 'A (II) Rh+', 'A (II) Rh-', 'B (III) Rh+', 'B (III) Rh-', 'AB (IV) Rh+', 'AB (IV) Rh-'} }"
+                                th:value="${g}" th:text="${g}" th:selected="${pacient.grupaSangvina == g}"></option>
+                    </select>
                 </div>
             </div>
+        </div>
+    </form>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3">
-                    <div class="p-8 border-b md:border-b-0 md:border-r border-gray-50 flex items-center">
-                        <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center mr-4 text-xl">
-                            <i class="fas fa-ruler-vertical"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Înălțime</p>
-                            <p class="text-xl font-black text-gray-900" th:text="${pacient.inaltime != null ? pacient.inaltime + ' cm' : '-'}"></p>
-                        </div>
+    <!-- MOD VIZUALIZARE -->
+    <div th:if="${mode == 'view'}" class="space-y-8 max-w-5xl mx-auto">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Card Info Principale -->
+            <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col justify-between">
+                <div class="flex items-center mb-8">
+                    <!-- Avatar Solid Teal -->
+                    <div class="w-16 h-16 bg-brand-teal rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-sm mr-6">
+                        <span th:text="${#strings.substring(utilizator.nume, 0, 1) + #strings.substring(utilizator.prenume, 0, 1)}"></span>
                     </div>
-                    <div class="p-8 border-b md:border-b-0 md:border-r border-gray-50 flex items-center">
-                        <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center mr-4 text-xl">
-                            <i class="fas fa-weight"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Greutate</p>
-                            <p class="text-xl font-black text-gray-900" th:text="${pacient.greutate != null ? pacient.greutate + ' kg' : '-'}"></p>
-                        </div>
-                    </div>
-                    <div class="p-8 flex items-center">
-                        <div class="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center mr-4 text-xl">
-                            <i class="fas fa-tint"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Grupă Sânge</p>
-                            <p class="text-xl font-black text-gray-900" th:text="${pacient.grupaSangvina ?: 'Nespecificată'}"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div th:if="${pacient != null && pacient.medic != null}"
-                 class="bg-indigo-600 rounded-2xl p-8 text-white shadow-lg shadow-indigo-200 relative overflow-hidden group">
-
-                <i class="fas fa-user-md absolute -right-4 -bottom-4 text-9xl opacity-10 group-hover:scale-110 transition-transform duration-500"></i>
-
-                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <p class="text-indigo-100 font-bold uppercase tracking-widest text-xs mb-2">Medic Responsabil</p>
-                        <h3 class="text-2xl font-black"
-                            th:text="${'Dr. ' + (pacient.medic.user?.prenume ?: '') + ' ' + (pacient.medic.user?.nume ?: 'Nespecificat')}">
-                        </h3>
-                        <p class="text-indigo-100 flex items-center mt-1">
-                            <i class="fas fa-envelope mr-2 text-sm"></i>
-                            <span th:text="${pacient.medic.user?.email ?: 'Email indisponibil'}"></span>
+                        <h2 class="text-3xl font-bold text-brand-navy leading-tight" th:text="${utilizator.prenume + ' ' + utilizator.nume}"></h2>
+                        <p class="text-gray-500 font-bold text-sm flex items-center mt-1">
+                            <i class="fas fa-envelope mr-2 text-brand-blue"></i>
+                            <span th:text="${utilizator.email}"></span>
                         </p>
                     </div>
-                    <a th:href="@{/mesaje}" class="bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold shadow-sm hover:bg-indigo-50 transition-colors inline-flex items-center justify-center">
-                        <i class="fas fa-paper-plane mr-2 text-sm"></i>
-                        Trimite mesaj
-                    </a>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8 border-t border-gray-100 pt-6 mt-auto">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Cod Numeric Personal</p>
+                        <p class="text-lg font-mono font-bold text-brand-navy" th:text="${pacient.cnp ?: 'Nespecificat'}"></p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Vârstă / Sex</p>
+                        <p class="text-lg font-bold text-brand-navy">
+                            <span th:text="${pacient.dataNasterii != null ? pacient.getVarsta() + ' ani' : '-'}"></span>
+                            <span class="text-gray-300 mx-2">|</span>
+                            <span th:text="${pacient.sex != null ? pacient.sex.numeAfisat : '-'}"></span>
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <div th:if="${pacient == null || pacient.medic == null}" class="p-6 border-2 border-dashed border-gray-200 rounded-2xl text-center text-gray-500">
-                <p>Nu aveți încă un medic responsabil alocat.</p>
+            <!-- Card IMC curat -->
+            <div class="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm flex flex-col justify-center items-center text-center">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4"><i class="fas fa-weight scale-x-[-1] mr-1"></i> Indice Masă Corporală</p>
+
+                <div th:if="${pacient.inaltime != null && pacient.greutate != null}">
+                    <p class="text-6xl font-black text-brand-navy mb-4 tracking-tighter"
+                       th:with="h=${pacient.inaltime/100.0}"
+                       th:text="${#numbers.formatDecimal(pacient.greutate/(h*h), 1, 1)}"></p>
+                    <!-- Badge status colorat logic -->
+                    <span class="px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-sm text-white"
+                          th:with="h=${pacient.inaltime/100.0}, imc=${pacient.greutate/(h*h)}"
+                          th:classappend="${imc < 18.5 ? 'bg-brand-blue' : (imc < 25 ? 'bg-brand-teal' : (imc < 30 ? 'bg-brand-gold text-brand-navy' : 'bg-red-500'))}"
+                          th:text="${imc < 18.5 ? 'Subponderal' : (imc < 25 ? 'Normal' : (imc < 30 ? 'Supraponderal' : 'Obezitate'))}">
+                    </span>
+                </div>
+
+                <div th:unless="${pacient.inaltime != null && pacient.greutate != null}" class="text-gray-300 py-6">
+                    <i class="fas fa-calculator text-4xl mb-4"></i>
+                    <p class="text-[10px] font-bold uppercase tracking-widest leading-relaxed text-gray-400">Date insuficiente<br>pentru calcul IMC</p>
+                </div>
             </div>
+        </div>
+
+        <!-- Biometrie Listă Orizontală -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+                <div class="p-8 flex items-center justify-center md:justify-start">
+                    <div class="w-12 h-12 bg-gray-50 border border-gray-100 text-brand-blue rounded-xl flex items-center justify-center mr-5 text-xl shadow-sm">
+                        <i class="fas fa-ruler-vertical"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Înălțime</p>
+                        <p class="text-2xl font-black text-brand-navy" th:text="${pacient.inaltime != null ? pacient.inaltime + ' cm' : '-'}"></p>
+                    </div>
+                </div>
+                <div class="p-8 flex items-center justify-center md:justify-start">
+                    <div class="w-12 h-12 bg-gray-50 border border-gray-100 text-brand-teal rounded-xl flex items-center justify-center mr-5 text-xl shadow-sm">
+                        <i class="fas fa-weight"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Greutate</p>
+                        <p class="text-2xl font-black text-brand-navy" th:text="${pacient.greutate != null ? pacient.greutate + ' kg' : '-'}"></p>
+                    </div>
+                </div>
+                <div class="p-8 flex items-center justify-center md:justify-start">
+                    <div class="w-12 h-12 bg-gray-50 border border-gray-100 text-red-500 rounded-xl flex items-center justify-center mr-5 text-xl shadow-sm">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Grupă Sânge</p>
+                        <p class="text-2xl font-black text-brand-navy" th:text="${pacient.grupaSangvina ?: 'Nespecificat'}"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Medic Responsabil -->
+        <div th:if="${pacient != null && pacient.medic != null}"
+             class="bg-brand-navy rounded-2xl p-8 shadow-sm border border-brand-navy/10 relative overflow-hidden group">
+
+            <!-- Element decorativ -->
+            <i class="fas fa-stethoscope absolute -right-6 -bottom-6 text-9xl text-white opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500"></i>
+
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-brand-gold mb-2">Medic Responsabil</p>
+                    <h3 class="text-3xl font-bold text-white leading-tight"
+                        th:text="${'Dr. ' + (pacient.medic.user?.prenume ?: '') + ' ' + (pacient.medic.user?.nume ?: 'Nespecificat')}">
+                    </h3>
+                    <p class="text-white/70 font-medium text-sm flex items-center mt-2">
+                        <i class="fas fa-envelope mr-2"></i>
+                        <span th:text="${pacient.medic.user?.email ?: 'Email indisponibil'}"></span>
+                    </p>
+                </div>
+                <!-- Buton Mesaj (Secundar) -->
+                <a th:href="@{/mesaje}" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-colors inline-flex items-center justify-center backdrop-blur-sm">
+                    <i class="fas fa-paper-plane mr-2 text-sm"></i>
+                    Contactează
+                </a>
+            </div>
+        </div>
+
+        <div th:if="${pacient == null || pacient.medic == null}" class="p-10 border border-dashed border-gray-300 bg-gray-50 rounded-2xl text-center">
+            <div class="w-16 h-16 bg-white border border-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <i class="fas fa-user-md text-gray-400 text-2xl"></i>
+            </div>
+            <p class="text-brand-navy font-bold text-lg mb-1">Fără medic alocat</p>
+            <p class="text-gray-500 font-medium text-sm">Contul dumneavoastră nu este încă asociat unui medic responsabil.</p>
         </div>
     </div>
 </div>
 
 <div layout:fragment="scripts">
     <script th:inline="javascript">
-        /*<![CDATA[*/
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('profilForm');
             if (!form) return;
 
-            // Validare CNP
             const cnpInput = form.querySelector('input[name="cnp"]');
             cnpInput?.addEventListener('input', function() {
                 this.value = this.value.replace(/[^0-9]/g, '');
                 if (this.value.length > 0 && this.value.length !== 13) {
-                    this.classList.add('border-red-500', 'bg-red-50');
+                    this.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-100');
+                    this.classList.remove('focus:border-brand-blue', 'focus:ring-brand-blue');
                 } else {
-                    this.classList.remove('border-red-500', 'bg-red-50');
+                    this.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-100');
+                    this.classList.add('focus:border-brand-blue', 'focus:ring-brand-blue');
                 }
             });
 
-            // Confirmare Anulare
             const cancelBtn = document.querySelector('a[href*="/pacient/profil/"]:not([href*="/editare"])');
             cancelBtn?.addEventListener('click', function(e) {
                 const hasChanges = Array.from(form.querySelectorAll('input, select')).some(i => i.value !== i.defaultValue);
@@ -284,7 +302,6 @@
                 }
             });
         });
-        /*]]>*/
     </script>
 </div>
 </body>

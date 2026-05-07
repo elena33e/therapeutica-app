@@ -119,6 +119,20 @@
                                 </div>
                             </div>
 
+                            <!-- Telefon Destinatar -->
+                            <div>
+                                <label for="telefonDestinatar" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                    Telefon
+                                </label>
+                                <div class="relative">
+        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+            <i class="fas fa-phone"></i>
+        </span>
+                                    <input type="tel" id="telefonDestinatar" placeholder="ex: 0722123456"
+                                           class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
+                                </div>
+                            </div>
+
                             <!-- CNP Destinatar -->
                             <div>
                                 <label for="cnpDestinatar" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
@@ -147,13 +161,13 @@
                         </div>
                     </form>
 
-                    <!-- Rezultat Cod Generat (Stil Teal Solid) -->
+                    <!-- Rezultat Cod Generat -->
                     <div id="rezultatCod" class="hidden mt-8 bg-brand-teal rounded-2xl p-6 shadow-md text-white transition-all duration-300 transform scale-95 opacity-0">
                         <div class="flex items-start">
                             <i class="fas fa-check-circle text-2xl mr-4 mt-0.5 opacity-90"></i>
                             <div class="w-full">
                                 <h3 class="font-bold text-lg mb-1 tracking-wide">Cod generat cu succes!</h3>
-                                <p class="text-white/80 font-medium text-sm mb-4">Un email conținând acest cod a fost trimis destinatarului.</p>
+                                <p class="text-white/80 font-medium text-sm mb-4">Codul este gata pentru a fi trimis pacientului.</p>
 
                                 <div class="bg-white/10 border border-white/20 p-5 rounded-xl mt-4">
                                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -161,11 +175,22 @@
                                             <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Codul Unic de Acces</p>
                                             <p id="codGeneratAfisare" class="text-3xl font-mono font-black tracking-widest text-white"></p>
                                         </div>
-                                        <button onclick="copyToClipboard()" id="copyBtn"
-                                                class="px-4 py-2 bg-white text-brand-teal hover:bg-gray-50 font-bold rounded-lg text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center">
-                                            <i class="fas fa-copy mr-2"></i> Copiază
-                                        </button>
+
+                                        <!-- Zona de Butoane Actiuni -->
+                                        <div class="flex flex-col gap-2">
+                                            <button onclick="copyToClipboard()" id="copyBtn"
+                                                    class="w-full px-4 py-2 bg-white text-brand-teal hover:bg-gray-50 font-bold rounded-lg text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center justify-center">
+                                                <i class="fas fa-copy mr-2"></i> Copiază
+                                            </button>
+
+                                            <!-- Butonul Nou de WhatsApp -->
+                                            <a id="whatsappBtn" target="_blank"
+                                               class="w-full px-4 py-2 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-lg text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center justify-center cursor-pointer">
+                                                <i class="fab fa-whatsapp mr-2 text-lg"></i> Trimite WhatsApp
+                                            </a>
+                                        </div>
                                     </div>
+
                                     <div class="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/10">
                                         <div>
                                             <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Destinatar</p>
@@ -248,21 +273,44 @@
             </div>
 
             <div id="listaCoduri" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Populare dinamică -->
+                <!-- Populare dinamică via JS -->
             </div>
         </div>
+
+        <!-- Șablon HTML (Template) pentru un card din listă -->
+        <template id="codTemplate">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-brand-blue transition-all flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="element-cod font-mono text-xl font-black tracking-widest"></span>
+                    <span class="element-badge px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest"></span>
+                </div>
+                <div class="space-y-2 mb-4 border-b border-gray-100 pb-4">
+                    <div class="flex items-center text-sm">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase w-16">Rol:</span>
+                        <span class="element-rol font-bold text-brand-navy ml-2"></span>
+                    </div>
+                    <div class="flex items-center text-sm truncate">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase w-16">Email:</span>
+                        <span class="element-email font-medium text-gray-700 ml-2 truncate"></span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-auto">
+                    <span class="element-data text-[10px] font-bold text-gray-400 uppercase"></span>
+                </div>
+            </div>
+        </template>
+
     </div>
 </div>
 
 <div layout:fragment="scripts">
     <script>
-        const API_BASE = 'http://localhost:8080/api';
+        const API_BASE = '/api';
         const userId = "[[${session.userId}]]";
 
         function getToken() {
             return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
         }
-        const token = getToken();
 
         if (!userId || userId === 'null' || userId === '') {
             window.location.href = '/login?redirect=/generare-cod';
@@ -272,28 +320,32 @@
             incarcaCodurileMele();
         });
 
+        // --- GENERARE COD NOU ---
         document.getElementById('formGenerareCod').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const emailDestinatar = document.getElementById('emailDestinatar').value.trim();
+            const telefonDestinatar = document.getElementById('telefonDestinatar').value.trim();
             const cnpDestinatar = document.getElementById('cnpDestinatar').value.trim();
             const rolDestinatar = document.getElementById('rolDestinatar').value;
             const numeDestinatar = document.getElementById('numeDestinatar').value.trim();
             const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.trim();
 
-            if (!emailDestinatar || !rolDestinatar) {
+            if (!emailDestinatar || !rolDestinatar || !numeDestinatar || !prenumeDestinatar) {
                 alert('Completează toate câmpurile obligatorii!');
                 return;
             }
 
-            if (cnpDestinatar && !/^\d{13}$/.test(cnpDestinatar)) {
-                alert('CNP-ul trebuie să conțină exact 13 cifre!');
+            // Validare simplă pentru telefon
+            if (telefonDestinatar && telefonDestinatar.replace(/\D/g, '').length < 10) {
+                alert('Te rugăm să introduci un număr de telefon valid (minim 10 cifre).');
                 return;
             }
 
             const requestData = {
                 medicId: userId,
                 emailDestinatar: emailDestinatar,
+                telefonDestinatar: telefonDestinatar || null,
                 cnpDestinatar: cnpDestinatar || null,
                 rolDestinatar: rolDestinatar,
                 numeDestinatar: numeDestinatar,
@@ -313,25 +365,52 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${getToken()}`
                     },
                     body: JSON.stringify(requestData)
                 });
 
-                const data = await response.json();
+                const textResponse = await response.text();
+                let data = {};
+                try {
+                    data = JSON.parse(textResponse);
+                } catch (err) {
+                    console.warn("Răspunsul serverului nu este JSON. Se folosește fallback tip text.");
+                    data = { codUnic: textResponse, mesaj: textResponse };
+                }
 
-                if (response.ok) {
-                    document.getElementById('codGeneratAfisare').textContent = data.codUnic;
+                if (response.ok || response.status === 201) {
+                    const codFinal = data.codUnic || textResponse;
+
+                    document.getElementById('codGeneratAfisare').textContent = codFinal;
                     document.getElementById('emailAfisat').textContent = emailDestinatar;
                     document.getElementById('rolAfisat').textContent = rolDestinatar;
 
+                    // --- LOGICA WHATSAPP DIRECTĂ ---
+                    const whatsappBtn = document.getElementById('whatsappBtn');
+                    if (telefonDestinatar) {
+                        const nrCurat = telefonDestinatar.replace(/\D/g, '');
+                        const prefix = nrCurat.startsWith('40') ? '' : (nrCurat.startsWith('0') ? '4' : '40');
+                        const mesaj = encodeURIComponent(`Bună ziua! Codul dumneavoastră de înregistrare este: *${codFinal}*`);
+
+                        whatsappBtn.href = `https://wa.me/${prefix}${nrCurat}?text=${mesaj}`;
+                        whatsappBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        whatsappBtn.onclick = null;
+                    } else {
+                        whatsappBtn.removeAttribute('href');
+                        whatsappBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        whatsappBtn.onclick = (event) => {
+                            event.preventDefault();
+                            alert('Introduceți un număr de telefon în formular pentru a folosi WhatsApp.');
+                        };
+                    }
+
                     const rezultatDiv = document.getElementById('rezultatCod');
                     rezultatDiv.classList.remove('hidden');
-                    // Efect de fade in simplu aplicat pe clase de tailwind
                     setTimeout(() => {
                         rezultatDiv.classList.remove('scale-95', 'opacity-0');
                         rezultatDiv.classList.add('scale-100', 'opacity-100');
-                    }, 50);
+                    }, 10);
 
                     document.getElementById('formGenerareCod').reset();
                     setTimeout(() => { rezultatDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
@@ -340,8 +419,8 @@
                     alert('Eroare: ' + (data.mesaj || 'A apărut o eroare la generare'));
                 }
             } catch (error) {
-                console.error('Eroare rețea:', error);
-                alert('Eroare de conexiune la server. Vă rugăm să reîncercați.');
+                console.error('Eroare script/rețea:', error);
+                alert('A apărut o problemă de comunicație. Verificați istoricul.');
             } finally {
                 btnText.textContent = 'GENEREAZĂ COD';
                 btnSpinner.classList.add('hidden');
@@ -349,6 +428,7 @@
             }
         });
 
+        // --- UTILITARE ---
         function copyToClipboard() {
             const cod = document.getElementById('codGeneratAfisare').textContent;
             navigator.clipboard.writeText(cod).then(() => {
@@ -366,6 +446,7 @@
             });
         }
 
+        // --- ÎNCĂRCARE DATE ISTORIC ---
         async function incarcaCodurileMele() {
             const container = document.getElementById('listaCoduri');
             const loading = document.getElementById('loadingCoduri');
@@ -375,7 +456,7 @@
 
             try {
                 const response = await fetch(`${API_BASE}/coduri-inregistrare/medic/${userId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
                 });
 
                 if (response.ok) {
@@ -383,64 +464,50 @@
                     afiseazaCodurile(coduri);
                     actualizeazaStatistici(coduri);
                 } else {
-                    container.innerHTML = `<div class="col-span-full text-center py-10 text-brand-gold bg-white rounded-xl border border-gray-200">Nu s-au putut încărca codurile.</div>`;
+                    container.innerHTML = `<div class="col-span-full text-center py-10 text-brand-gold bg-white rounded-xl border">Nu s-au putut încărca datele.</div>`;
                 }
             } catch (error) {
-                container.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 bg-white rounded-xl border border-gray-200">Eroare de conexiune.</div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 bg-white rounded-xl border">Eroare de conexiune.</div>`;
             } finally {
                 loading.classList.add('hidden');
             }
         }
 
+        // --- AFIȘARE DIN TEMPLATE HTML ---
         function afiseazaCodurile(coduri) {
             const container = document.getElementById('listaCoduri');
+            const template = document.getElementById('codTemplate');
 
             if (!coduri || coduri.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
-                        <div class="mx-auto w-16 h-16 mb-4 bg-gray-50 rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
-                            <i class="fas fa-key text-2xl text-gray-300"></i>
-                        </div>
-                        <h3 class="text-brand-navy font-bold text-lg mb-1">Niciun cod generat</h3>
-                        <p class="text-gray-500 font-medium text-sm">Folosește formularul pentru a genera primul cod de acces.</p>
-                    </div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">Niciun cod generat încă.</div>`;
                 return;
             }
 
+            coduri.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
             coduri.forEach(cod => {
-                const div = document.createElement('div');
-                div.className = 'bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-brand-blue hover:shadow-md transition-all flex flex-col justify-between';
-
-                const data = cod.createdAt ? new Date(cod.createdAt).toLocaleDateString('ro-RO', {
-                    day: '2-digit', month: '2-digit', year: 'numeric'
-                }) : 'N/A';
-
-                // Etichete solide
+                const clone = template.content.cloneNode(true);
+                const data = cod.createdAt ? new Date(cod.createdAt).toLocaleDateString('ro-RO') : 'N/A';
                 const isActiv = cod.status === 'NEUTILIZAT';
-                const badgeClass = isActiv ? 'bg-brand-teal text-white' : 'bg-gray-200 text-gray-500';
-                const badgeText = isActiv ? 'ACTIV' : 'UTILIZAT';
-                const codClass = isActiv ? 'text-brand-navy' : 'text-gray-400 line-through';
 
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="font-mono text-xl font-black tracking-widest ${codClass}">${cod.codUnic}</span>
-                        <span class="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${badgeClass}">${badgeText}</span>
-                    </div>
-                    <div class="space-y-2 mb-4 flex-grow border-b border-gray-100 pb-4">
-                        <div class="flex items-center text-sm">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Rol:</span>
-                            <span class="font-bold text-brand-navy ml-2">${cod.rolDestinatar}</span>
-                        </div>
-                        <div class="flex items-center text-sm truncate">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Email:</span>
-                            <span class="font-medium text-gray-700 ml-2 truncate" title="${cod.emailDestinatar}">${cod.emailDestinatar}</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center mt-auto">
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Generat: ${data}</span>
-                    </div>
-                `;
-                container.appendChild(div);
+                const spanCod = clone.querySelector('.element-cod');
+                spanCod.textContent = cod.codUnic;
+                spanCod.classList.add(isActiv ? 'text-brand-navy' : 'text-gray-400');
+                if (!isActiv) spanCod.classList.add('line-through');
+
+                const spanBadge = clone.querySelector('.element-badge');
+                spanBadge.textContent = cod.status;
+                if (isActiv) {
+                    spanBadge.classList.add('bg-brand-teal', 'text-white');
+                } else {
+                    spanBadge.classList.add('bg-gray-200', 'text-gray-500');
+                }
+
+                clone.querySelector('.element-rol').textContent = cod.rolDestinatar;
+                clone.querySelector('.element-email').textContent = cod.emailDestinatar;
+                clone.querySelector('.element-data').textContent = `Generat: ${data}`;
+
+                container.appendChild(clone);
             });
         }
 

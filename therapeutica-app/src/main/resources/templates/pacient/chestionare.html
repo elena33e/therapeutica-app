@@ -6,126 +6,145 @@
 <head>
     <title>Chestionarele Mele | Therapeutica</title>
 </head>
-<body>
+<body class="bg-gray-50">
 
 <div layout:fragment="content">
-    <div class="max-w-6xl mx-auto px-4 py-10" x-data="{ activeTab: 'disponibile' }">
+    <div class="max-w-7xl mx-auto px-4 py-12" x-data="{ activeTab: 'disponibile' }">
 
+        <!-- Header -->
         <div class="mb-10">
-            <h1 class="text-3xl font-black text-slate-800 tracking-tight mb-2">Chestionarele Mele</h1>
-            <p class="text-slate-500 font-medium">Gestionează și completează evaluările medicale atribuite.</p>
+            <h1 class="text-3xl font-bold text-brand-navy tracking-tight mb-2">Chestionarele Mele</h1>
+            <p class="text-gray-500 font-medium">Gestionează și completează evaluările medicale atribuite.</p>
         </div>
 
-        <div th:if="${success}" class="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 rounded-r-xl flex items-center shadow-sm">
-            <i class="fas fa-check-circle mr-3 text-emerald-500"></i>
+        <!-- Mesaj Succes Teal Solid -->
+        <div th:if="${success}" class="mb-8 p-4 bg-brand-teal text-white rounded-xl flex items-center shadow-md">
+            <i class="fas fa-check-circle mr-3 text-lg"></i>
             <span class="text-sm font-bold" th:text="${success}"></span>
         </div>
 
-        <div class="flex p-1 bg-slate-200/50 rounded-2xl w-fit mb-8">
+        <!-- Tab-uri de Navigare -->
+        <div class="flex p-1 bg-gray-100 border border-gray-200 rounded-xl w-fit mb-10 shadow-sm">
             <button @click="activeTab = 'disponibile'"
-                    :class="activeTab === 'disponibile' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'"
-                    class="px-8 py-3 text-xs font-black rounded-xl transition-all uppercase tracking-widest flex items-center">
+                    :class="activeTab === 'disponibile' ? 'bg-white text-brand-navy shadow-sm border border-gray-200' : 'text-gray-500 hover:text-brand-navy'"
+                    class="px-6 py-2.5 text-xs font-bold rounded-lg transition-all uppercase tracking-widest flex items-center outline-none border border-transparent">
                 <i class="fas fa-inbox mr-2"></i>
                 Disponibile
                 <span th:if="${#lists.size(chestionareDisponibile) > 0}"
-                      class="ml-3 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full"
+                      class="ml-3 bg-brand-teal text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm"
                       th:text="${#lists.size(chestionareDisponibile)}">0</span>
             </button>
 
             <button @click="activeTab = 'istoric'"
-                    :class="activeTab === 'istoric' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'"
-                    class="px-8 py-3 text-xs font-black rounded-xl transition-all uppercase tracking-widest flex items-center">
+                    :class="activeTab === 'istoric' ? 'bg-white text-brand-navy shadow-sm border border-gray-200' : 'text-gray-500 hover:text-brand-navy'"
+                    class="px-6 py-2.5 text-xs font-bold rounded-lg transition-all uppercase tracking-widest flex items-center outline-none border border-transparent">
                 <i class="fas fa-history mr-2"></i>
                 Istoric
                 <span th:if="${#lists.size(istoricChestionare) > 0}"
-                      class="ml-3 bg-slate-200 text-slate-700 text-[10px] px-2 py-0.5 rounded-full"
+                      class="ml-3 bg-gray-200 text-gray-600 text-[10px] px-2 py-0.5 rounded-full"
                       th:text="${#lists.size(istoricChestionare)}">0</span>
             </button>
         </div>
 
+        <!-- Conținut Tab Disponibile -->
         <div x-show="activeTab === 'disponibile'" x-transition:enter="transition ease-out duration-300">
-            <div th:if="${not #lists.isEmpty(chestionareDisponibile)}" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div th:if="${not #lists.isEmpty(chestionareDisponibile)}" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Card Chestionar -->
                 <div th:each="rc : ${chestionareDisponibile}"
-                     class="bg-white rounded-[2rem] shadow-sm p-8 border border-slate-100 flex flex-col hover:shadow-xl transition-all border-b-4 border-b-blue-500">
+                     class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200 flex flex-col hover:border-brand-teal hover:shadow-md transition-all group">
 
                     <div class="flex justify-between items-start mb-6">
-                        <span class="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-blue-100">
+                        <!-- Badge Gold pentru accent -->
+                        <span class="px-3 py-1 bg-brand-gold text-brand-navy text-[10px] font-bold rounded-lg uppercase tracking-widest shadow-sm">
                             Evaluare Nouă
                         </span>
-                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            <i class="far fa-clock mr-1"></i> ~15 MIN
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center">
+                            <i class="far fa-clock mr-1.5 text-brand-blue"></i> ~15 MIN
                         </div>
                     </div>
 
-                    <h3 class="text-xl font-black text-slate-800 mb-3" th:text="${rc.chestionar.nume}">Nume</h3>
-                    <p class="text-slate-500 text-sm mb-8 flex-grow leading-relaxed" th:text="${rc.chestionar.descriere}">Descriere</p>
+                    <h3 class="text-xl font-bold text-brand-navy mb-3 group-hover:text-brand-teal transition-colors leading-snug" th:text="${rc.chestionar.nume}">Nume</h3>
+                    <p class="text-gray-500 text-sm mb-8 flex-grow leading-relaxed font-medium" th:text="${rc.chestionar.descriere}">Descriere</p>
 
-                    <div class="flex items-center gap-4 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 border border-slate-100">
-                            <i class="fas fa-user-md"></i>
+                    <div class="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <div class="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center border border-gray-200 flex-shrink-0">
+                            <i class="fas fa-user-md text-brand-blue"></i>
                         </div>
-                        <div>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Atribuit de</p>
-                            <p class="text-sm font-bold text-slate-700" th:text="${rc.medic.user.nume + ' ' + rc.medic.user.prenume}">Dr. Medic</p>
+                        <div class="truncate">
+                            <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Atribuit de</p>
+                            <p class="text-sm font-bold text-brand-navy truncate" th:text="${rc.medic.user.nume + ' ' + rc.medic.user.prenume}">Dr. Medic</p>
                         </div>
                     </div>
 
+                    <!-- Buton Principal Teal -->
                     <a th:href="@{/chestionare/completare/{id}(id=${rc.id})}"
-                       class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-2xl transition-all shadow-lg shadow-blue-100 text-center uppercase tracking-widest">
-                        Începe Evaluarea
+                       class="w-full py-3.5 bg-brand-teal hover:bg-brand-teal/90 text-white text-xs font-bold rounded-xl transition-all shadow-md text-center uppercase tracking-widest flex justify-center items-center">
+                        Începe Evaluarea <i class="fas fa-arrow-right ml-2 text-[10px]"></i>
                     </a>
                 </div>
             </div>
 
-            <div th:if="${#lists.isEmpty(chestionareDisponibile)}" class="py-20 text-center bg-white rounded-[3rem] border border-dashed border-slate-200">
-                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-check text-slate-300 text-3xl"></i>
+            <!-- Empty State Disponibile -->
+            <div th:if="${#lists.isEmpty(chestionareDisponibile)}" class="py-24 text-center bg-white rounded-2xl border border-dashed border-gray-300">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-5 border border-gray-200 shadow-sm">
+                    <i class="fas fa-check-double text-brand-teal text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-bold text-slate-700">Ești la zi!</h3>
-                <p class="text-slate-400 text-sm">Nu ai niciun chestionar de completat momentan.</p>
+                <h3 class="text-lg font-bold text-brand-navy mb-1">Ești la zi!</h3>
+                <p class="text-gray-500 text-sm font-medium">Nu ai niciun chestionar medical de completat momentan.</p>
             </div>
         </div>
 
+        <!-- Conținut Tab Istoric -->
         <div x-show="activeTab === 'istoric'" x-transition:enter="transition ease-out duration-300" style="display: none;">
-            <div th:if="${not #lists.isEmpty(istoricChestionare)}" class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-                <table class="w-full text-left">
-                    <thead>
-                    <tr class="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                        <th class="px-8 py-5">Evaluare</th>
-                        <th class="px-8 py-5">Data Completării</th>
-                        <th class="px-8 py-5 text-center">Status</th>
-                        <th class="px-8 py-5 text-right">Acțiuni</th>
-                    </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                    <tr th:each="ri : ${istoricChestionare}" class="hover:bg-slate-50/80 transition-colors">
-                        <td class="px-8 py-5">
-                            <p class="font-bold text-slate-800" th:text="${ri.chestionar.nume}">Nume</p>
-                            <p class="text-[10px] text-slate-400 font-medium" th:text="'Dr. ' + ${ri.medic.user.nume}"></p>
-                        </td>
-                        <td class="px-8 py-5 text-sm text-slate-600">
-                            <span th:text="${#temporals.format(ri.completatLa, 'dd.MM.yyyy')}"></span>
-                            <span class="text-[10px] text-slate-400 ml-1 font-bold" th:text="${#temporals.format(ri.completatLa, 'HH:mm')}"></span>
-                        </td>
-                        <td class="px-8 py-5 text-center">
-                                <span class="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-lg border border-emerald-100 uppercase tracking-tighter">
+            <div th:if="${not #lists.isEmpty(istoricChestionare)}" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left">
+                        <thead class="bg-gray-100 border-b border-gray-200">
+                        <tr class="text-[10px] font-bold text-brand-navy uppercase tracking-widest">
+                            <th class="px-8 py-4">Evaluare & Medic</th>
+                            <th class="px-8 py-4 text-center">Data Completării</th>
+                            <th class="px-8 py-4 text-center">Status</th>
+                            <th class="px-8 py-4 text-right">Acțiuni</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                        <tr th:each="ri : ${istoricChestionare}" class="hover:bg-gray-50 transition-colors">
+                            <td class="px-8 py-5">
+                                <p class="font-bold text-brand-navy mb-1" th:text="${ri.chestionar.nume}">Nume</p>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" th:text="'Dr. ' + ${ri.medic.user.nume}"></p>
+                            </td>
+                            <td class="px-8 py-5 text-center">
+                                <div class="inline-flex flex-col items-center">
+                                    <span class="text-sm font-bold text-gray-700" th:text="${#temporals.format(ri.completatLa, 'dd.MM.yyyy')}"></span>
+                                    <span class="text-[10px] text-gray-400 font-bold" th:text="${#temporals.format(ri.completatLa, 'HH:mm')}"></span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5 text-center">
+                                <!-- Badge Neutral/Navy pentru istoric -->
+                                <span class="px-3 py-1.5 bg-gray-100 border border-gray-200 text-gray-600 text-[9px] font-bold rounded-lg uppercase tracking-widest shadow-sm">
                                     Finalizat
                                 </span>
-                        </td>
-                        <td class="px-8 py-5 text-right">
-                            <a th:href="@{/chestionare/rezultate/{id}(id=${ri.id})}"
-                               class="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest">
-                                Vezi Rezultate <i class="fas fa-chevron-right ml-1"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                            </td>
+                            <td class="px-8 py-5 text-right">
+                                <!-- Buton Acțiune secundară -->
+                                <a th:href="@{/chestionare/rezultate/{id}(id=${ri.id})}"
+                                   class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 text-brand-navy text-[10px] font-bold rounded-lg hover:bg-gray-50 transition-colors shadow-sm uppercase tracking-widest">
+                                    Vezi Rezultate <i class="fas fa-arrow-right ml-2 text-[10px] text-brand-blue"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div th:if="${#lists.isEmpty(istoricChestionare)}" class="py-20 text-center bg-white rounded-[3rem] border border-dashed border-slate-200">
-                <i class="fas fa-history text-slate-200 text-5xl mb-4"></i>
-                <p class="text-slate-400 text-sm font-bold uppercase tracking-widest">Istoricul este gol</p>
+            <!-- Empty State Istoric -->
+            <div th:if="${#lists.isEmpty(istoricChestionare)}" class="py-24 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-5 border border-gray-200 shadow-sm">
+                    <i class="fas fa-history text-gray-300 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-brand-navy mb-1">Istoricul este gol</h3>
+                <p class="text-gray-500 text-sm font-medium">Nu ai finalizat încă nicio evaluare medicală.</p>
             </div>
         </div>
     </div>

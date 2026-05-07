@@ -44,12 +44,15 @@ public class CodInregistrare {
     @JoinColumn(name = "atribuit")
     private Utilizatori atribuit;
 
-
     @Column(name = "email_destinatar", nullable = false, columnDefinition = "text")
     private String emailDestinatar;
 
     @Column(name = "cnp_destinatar", columnDefinition = "text")
     private String cnpDestinatar;
+
+    // Coloana nou adăugată
+    @Column(name = "telefon_destinatar", columnDefinition = "text")
+    private String telefonDestinatar;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "rol_destinatar", nullable = false, columnDefinition = "role_type")

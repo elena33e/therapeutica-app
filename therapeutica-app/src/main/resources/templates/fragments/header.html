@@ -4,35 +4,39 @@
 <div th:fragment="header">
     <header class="bg-white shadow-sm border-b border-gray-200" th:unless="${session != null and session.userId != null}">
 
-        <nav class="container mx-auto px-4 py-4 max-w-7xl">
+        <!-- S-a modificat px-4 in lg:px-8 pentru aliniere mai buna cu contentul -->
+        <nav class="container mx-auto px-4 lg:px-8 py-4 max-w-7xl">
             <div class="flex justify-between items-center">
 
+
                 <!-- Logo -->
-                <div class="flex items-center space-x-3">
-                    <div class="bg-brand-teal/10 p-2 rounded-lg border border-brand-teal/20">
-                        <svg class="w-6 h-6 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center">
+                    <!-- Folosim o margine negativă (lg:-ml-[52px]) pe desktop pentru a scoate iconița în stânga, lăsând textul să înceapă de la linia de padding -->
+                    <div class="bg-brand-teal/10 p-2 rounded-lg border border-brand-teal/20 -ml-2 lg:-ml-[52px] mr-3">
+                        <svg class="w-6 h-6 lg:w-7 lg:h-7 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z"></path>
                         </svg>
                     </div>
-                    <span class="text-xl font-black text-brand-navy tracking-tight">Therapeutica</span>
+                    <span class="text-xl lg:text-2xl font-black text-brand-navy tracking-tight">Therapeutica</span>
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="flex items-center space-x-6">
-                    <a th:href="@{/}" class="text-sm font-bold text-gray-500 hover:text-brand-navy uppercase tracking-widest transition-colors">
+                <div class="flex items-center space-x-8">
+                    <!-- S-a modificat dimensiunea textului pt "Acasă" pt a fi mai vizibil, dar ramanand subtil -->
+                    <a th:href="@{/}" class="text-[13px] font-black text-gray-400 hover:text-brand-navy uppercase tracking-[0.2em] transition-colors">
                         Acasă
                     </a>
 
                     <!-- Butoane autentificare -->
-                    <div class="flex items-center space-x-3 border-l border-gray-200 pl-6">
-                        <!-- Acțiune Secundară -->
+                    <div class="flex items-center space-x-4 border-l border-gray-200 pl-8">
+                        <!-- Acțiune Secundară: padding crescut (py-2.5 px-6), font-medium -> font-bold -->
                         <a th:href="@{/login}"
-                           class="text-brand-navy font-bold py-2 px-5 rounded-xl border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all text-sm">
+                           class="text-brand-navy font-bold py-2.5 px-6 rounded-xl border-2 border-gray-100 hover:border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all text-[15px]">
                             Autentificare
                         </a>
-                        <!-- Acțiune Principală -->
+                        <!-- Acțiune Principală: padding crescut (py-2.5 px-6), text-[15px] -->
                         <a th:href="@{/inregistrare}"
-                           class="bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-2 px-5 rounded-xl shadow-sm hover:shadow-md transition-all text-sm">
+                           class="bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-2.5 px-6 rounded-xl shadow-sm hover:shadow-md transition-all text-[15px]">
                             Înregistrare
                         </a>
                     </div>

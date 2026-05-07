@@ -52,29 +52,110 @@ public class BuletinAnalizeService {
     @Value("${external.services.python-interpret.path}")
     private String interpretPath;
 
+
     private final Path rootLocation = Paths.get("upload-dir/analize");
 
     @Transactional
-    public DocumentMedical initializeazaDocument(MultipartFile file, UUID userIdDinSesiune) throws Exception {
-        if (file.isEmpty()) throw new IllegalArgumentException("Fișierul este gol.");
+    public DocumentMedical initializeazaDocument(MultipartFile[] files, UUID userIdDinSesiune) throws Exception {
+        if (files == null || files.length == 0) throw new IllegalArgumentException("Nu au fost selectate fișiere.");
 
-        String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-        String sanitizedName = sanitizeFilename(originalFilename);
+        // Generăm un ID unic pentru acest set de documente (buletin)
+        UUID documentId = UUID.randomUUID();
+        Path folderDocument = rootLocation.resolve(documentId.toString());
+        Files.createDirectories(folderDocument);
 
-        Files.createDirectories(rootLocation);
-        String uniqueFileName = UUID.randomUUID().toString() + "_" + sanitizedName;
-        Path destinationFile = rootLocation.resolve(uniqueFileName);
-        Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
+        String numeAfisat = files[0].getOriginalFilename();
+        if (files.length > 1) {
+            numeAfisat += " (+ încă " + (files.length - 1) + " imagini)";
+        }
+
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
+
+            String sanitizedName = sanitizeFilename(Objects.requireNonNull(file.getOriginalFilename()));
+            Path destinationFile = folderDocument.resolve(sanitizedName);
+
+            // Copiem fiecare fișier în folderul dedicat
+            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
+        }
 
         DocumentMedical doc = new DocumentMedical();
+        doc.setId(documentId); // Forțăm ID-ul generat de noi pentru folder
         doc.setPacientId(userIdDinSesiune);
-        doc.setNumeFisier(originalFilename);
-        doc.setCaleFisierStocare(destinationFile.toAbsolutePath().toString());
+        doc.setNumeFisier(numeAfisat);
+        // Salvăm calea către DIRECTORUL care conține imaginile
+        doc.setCaleFisierStocare(folderDocument.toAbsolutePath().toString());
         doc.setStatus(DocumentMedical.StatusDocument.INCARCAT);
 
-        DocumentMedical savedDoc = documentMedicalRepository.save(doc);
-        log.info("Document salvat în DB. ID Document: {}", savedDoc.getId());
-        return savedDoc;
+        return documentMedicalRepository.save(doc);
+    }
+
+    @Async
+    @Transactional
+    public void proceseazaDocumentAsincron(UUID documentId) {
+        log.info("--- [START ASYNC] Inițiere procesare pentru documentul: {} ---", documentId);
+
+        //  Prima citire: extragem doar metadatele necesare pentru request-ul extern
+        // Nu vom păstra acest obiect 'doc' în memorie pe durata apelului REST
+        String caleStocare;
+        UUID pacientId;
+
+        try {
+            DocumentMedical initialDoc = documentMedicalRepository.findById(documentId)
+                    .orElseThrow(() -> new RuntimeException("Documentul nu mai există în DB."));
+            caleStocare = initialDoc.getCaleFisierStocare();
+            pacientId = initialDoc.getPacientId();
+        } catch (Exception e) {
+            log.error("Eroare la citirea inițială a documentului {}: {}", documentId, e.getMessage());
+            return;
+        }
+
+        try {
+            // 2. Pregătirea request-ului către Python
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+
+            Path path = Paths.get(caleStocare);
+            if (Files.isDirectory(path)) {
+                try (var stream = Files.list(path)) {
+                    stream.filter(Files::isRegularFile).forEach(f -> {
+                        body.add("file", new FileSystemResource(f.toFile()));
+                    });
+                }
+            } else {
+                body.add("file", new FileSystemResource(path.toFile()));
+            }
+
+            body.add("pacientId", pacientId.toString());
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // 3. APELUL EXTERN (Aici aplicația "așteaptă" după Python, uneori minute întregi)
+            // În acest timp, versiunea documentului în DB se poate schimba.
+            log.info("Trimitere fișiere către Python OCR pentru documentul: {}", documentId);
+            ResponseEntity<String> response = ocrRestTemplate.postForEntity(pythonBaseUrl + ocrPath, requestEntity, String.class);
+
+            // 4. FETCH-LAST: Re-căutăm documentul DOAR acum, pentru a avea versiunea ultra-proaspătă
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                documentMedicalRepository.findById(documentId).ifPresentOrElse(doc -> {
+                    doc.setDateBrute(response.getBody());
+                    doc.setStatus(DocumentMedical.StatusDocument.PROCESAT);
+
+                    // saveAndFlush forțează Hibernate să scrie imediat, reducând riscul de conflict
+                    documentMedicalRepository.saveAndFlush(doc);
+                    log.info("--- [SUCCESS] OCR finalizat și salvat pentru ID: {} ---", documentId);
+                }, () -> log.error("Documentul a dispărut din DB în timpul procesării OCR!"));
+            }
+
+        } catch (Exception e) {
+            log.error("Eroare critică în thread-ul async pentru documentul {}: {}", documentId, e.getMessage());
+
+            // În caz de eroare, facem un ultim efort să marcăm statusul de EROARE
+            documentMedicalRepository.findById(documentId).ifPresent(doc -> {
+                doc.setStatus(DocumentMedical.StatusDocument.EROARE);
+                documentMedicalRepository.saveAndFlush(doc);
+            });
+        }
     }
 
     @Transactional
@@ -101,39 +182,6 @@ public class BuletinAnalizeService {
             }
             documentMedicalRepository.delete(doc);
             log.info("Documentul {} a fost șters definitiv din DB.", documentId);
-        }
-    }
-
-    @Async
-    public void proceseazaDocumentAsincron(DocumentMedical doc) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-            File fileToSend = new File(doc.getCaleFisierStocare());
-            if (!fileToSend.exists()) return;
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", new FileSystemResource(fileToSend));
-            body.add("pacientId", doc.getPacientId().toString());
-
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            String fullOcrUrl = pythonBaseUrl + ocrPath;
-
-            log.info("--- [THREAD: {}] Începe OCR la {} ---", Thread.currentThread().getName(), fullOcrUrl);
-
-            ResponseEntity<String> response = ocrRestTemplate.postForEntity(fullOcrUrl, requestEntity, String.class);
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                doc.setDateBrute(response.getBody());
-                doc.setStatus(DocumentMedical.StatusDocument.PROCESAT);
-                documentMedicalRepository.save(doc);
-                log.info("--- OCR Finalizat cu succes ---");
-            }
-        } catch (Exception e) {
-            log.error("Eroare în procesul OCR: {}", e.getMessage());
-            doc.setStatus(DocumentMedical.StatusDocument.EROARE);
-            documentMedicalRepository.save(doc);
         }
     }
 

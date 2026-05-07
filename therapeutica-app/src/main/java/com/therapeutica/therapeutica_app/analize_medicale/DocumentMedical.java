@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,12 +14,18 @@ import java.util.UUID;
 @Table(name = "documente_medicale")
 @Getter
 @Setter
-public class DocumentMedical {
+public class DocumentMedical implements Persistable<UUID> {
 
     @Id
-    @GeneratedValue
+    // @GeneratedValue // ELIMINĂ ACEASTA dacă setezi UUID-ul manual în Service
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
+
+    @Version // CRUCIAL pentru a rezolva OptimisticLockException
+    private Long version;
+
+    @Transient
+    private boolean isNew = true; // Flag pentru Spring Data JPA
 
     @Column(name = "pacient_id", nullable = false)
     private UUID pacientId;
@@ -26,7 +33,6 @@ public class DocumentMedical {
     @Column(name = "nume_fisier")
     private String numeFisier;
 
-    // ACEASTA ESTE LINIA CARE TREBUIE ADĂUGATĂ:
     @Column(name = "cale_fisier_stocare", nullable = false)
     private String caleFisierStocare;
 
@@ -51,15 +57,28 @@ public class DocumentMedical {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "date_interpretate_fhir", columnDefinition = "jsonb")
-    private String dateInterpretate; // Rezultatul final (LOINC + HPO + FHIR)
+    private String dateInterpretate;
 
+    // --- LOGICA PERSISTABLE ---
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @Override
+    public UUID getId() {
+        return id;
+    }
+
+    @PostLoad
+    @PostPersist
+    protected void markNotNew() {
+        this.isNew = false;
+    }
+
+    // --- ENUM ---
     public enum StatusDocument {
-        INCARCAT,
-        VALIDAT,
-        PROCESAT,
-        STANDARDIZAT,
-        INTERPRETAT,
-        EROARE,
-        STERS_DE_PACIENT
+        INCARCAT, VALIDAT, PROCESAT, STANDARDIZAT, INTERPRETAT, EROARE, STERS_DE_PACIENT
     }
 }

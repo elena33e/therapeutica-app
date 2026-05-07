@@ -5,19 +5,20 @@
 <head>
     <title>Validare Analize Medicale</title>
 </head>
-<body>
+<body class="bg-gray-50">
 
 <div layout:fragment="content">
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-12 max-w-7xl">
 
-        <div class="mb-8 flex justify-between items-end">
+        <!-- Header -->
+        <div class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">Validare Date Extrase</h1>
-                <p class="text-gray-600">Verifică și corectează datele identificate înainte de salvare</p>
+                <h1 class="text-3xl font-bold text-brand-navy mb-2">Validare Date Extrase</h1>
+                <p class="text-gray-500 font-medium">Verifică și corectează datele identificate din document înainte de salvarea în dosar.</p>
             </div>
             <a th:href="@{/analize/pacient/documente/{id}(id=${pacientId})}"
-               class="text-gray-500 hover:text-gray-700 font-medium pb-1 border-b-2 border-transparent hover:border-gray-300 transition-all">
-                <i class="fas fa-arrow-left mr-2"></i>Anulează
+               class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-brand-navy transition-colors px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Anulează revizuirea
             </a>
         </div>
 
@@ -25,90 +26,94 @@
             <input type="hidden" th:field="*{documentId}" />
             <input type="hidden" th:field="*{pacientId}" />
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/4">Indicator</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/5">Metodă Detectată</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/6">Valoare</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/8">U.M.</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/5">Interval Referință</th>
-                    </tr>
-                    </thead>
-                    <tbody class="bg-white">
-                    <!-- Iterăm prin LISTA de secțiuni, folosind secStat pentru index -->
-                    <th:block th:each="sec, secStat : *{sectiuni}">
-
-                        <tr class="bg-blue-50/50 section-row" th:data-section-index="${secStat.index}">
-                            <td colspan="5" class="px-6 py-3">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 w-1/2">
-                                        <i class="fas fa-microscope text-blue-500"></i>
-
-                                        <input type="text"
-                                               class="w-full font-bold text-blue-700 uppercase bg-transparent border-b border-dashed border-blue-300 focus:border-blue-500 outline-none p-1"
-                                               th:field="*{sectiuni[__${secStat.index}__].nume}" />
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button type="button" onclick="addIndicator(this)" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">
-                                            <i class="fas fa-plus mr-1"></i> Adaugă Rând
-                                        </button>
-                                        <button type="button" onclick="removeSection(this)" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
-                                            <i class="fas fa-trash"></i> Șterge Secțiunea
-                                        </button>
-                                    </div>
-                                </div>
-                            </td>
+            <!-- Tabel Secțiuni -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left">
+                        <thead class="bg-gray-100 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest w-1/4">Indicator</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest w-1/5">Metodă Detectată</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest w-1/6 text-center">Valoare</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest w-1/8 text-center">U.M.</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest w-1/5">Interval Referință</th>
                         </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
 
-                        <!-- Iterăm prin indicatorii sectiunii
-                         -->
-                        <tr th:each="ind, indStat : ${sec.indicatori}" class="hover:bg-gray-50 transition-colors indicator-row">
-                            <td class="px-6 py-2">
-                                <!-- Folosim indexul secțiunii și indexul indicatorului -->
-                                <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-blue-500 p-1 text-sm font-medium"
-                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].nume}" />
-                            </td>
+                        <th:block th:each="sec, secStat : *{sectiuni}">
 
-                            <td class="px-6 py-2">
-                                <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[11px] italic text-gray-600 focus:bg-white focus:border-blue-400"
-                                       placeholder="Ex: Strip, Spectrometrie..."
-                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].metoda_detectata}" />
-                            </td>
+                            <!-- Header Secțiune -->
+                            <tr class="bg-gray-50 section-row border-y border-gray-200" th:data-section-index="${secStat.index}">
+                                <td colspan="5" class="px-6 py-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3 w-1/2">
+                                            <div class="bg-white p-2 rounded-lg border border-gray-200 shadow-sm flex-shrink-0">
+                                                <i class="fas fa-microscope text-brand-blue"></i>
+                                            </div>
+                                            <input type="text"
+                                                   class="w-full text-sm font-bold text-brand-navy uppercase tracking-wide bg-transparent border-b-2 border-dashed border-gray-300 focus:border-brand-teal outline-none py-1 transition-colors"
+                                                   th:field="*{sectiuni[__${secStat.index}__].nume}" />
+                                        </div>
+                                        <div class="flex gap-3">
+                                            <button type="button" onclick="addIndicator(this)" class="inline-flex items-center text-[10px] font-bold uppercase tracking-widest bg-white border border-gray-200 text-brand-teal px-3 py-2 rounded-lg hover:bg-brand-teal/5 transition-colors shadow-sm outline-none">
+                                                <i class="fas fa-plus mr-1.5 text-brand-teal"></i> Adaugă Rând
+                                            </button>
+                                            <button type="button" onclick="removeSection(this)" class="inline-flex items-center text-[10px] font-bold uppercase tracking-widest bg-red-50 text-red-600 px-3 py-2 rounded-lg border border-red-100 hover:bg-red-100 transition-colors shadow-sm outline-none">
+                                                <i class="fas fa-trash-alt mr-1.5"></i> Șterge Secțiunea
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
 
-                            <td class="px-6 py-2">
-                                <input type="text" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm font-bold text-blue-600 text-center"
-                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].valoare}" />
-                            </td>
+                            <!-- Indicatori -->
+                            <tr th:each="ind, indStat : ${sec.indicatori}" class="hover:bg-gray-50 transition-colors indicator-row">
+                                <td class="px-6 py-3">
+                                    <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-bold text-brand-navy transition-colors"
+                                           th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].nume}" />
+                                </td>
 
-                            <td class="px-6 py-2">
-                                <input type="text" class="w-full bg-transparent border-b border-transparent p-1 text-sm text-center"
-                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].um}" />
-                            </td>
+                                <td class="px-6 py-3">
+                                    <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[10px] uppercase tracking-widest font-bold text-gray-500 focus:bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition-all"
+                                           placeholder="Ex: Spectrometrie"
+                                           th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].metoda_detectata}" />
+                                </td>
 
-                            <td class="px-6 py-2 flex items-center gap-2">
-                                <input type="text" class="w-full bg-transparent border-b border-transparent p-1 text-sm italic"
-                                       th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].interval}" />
-                                <button type="button" onclick="removeRow(this)" class="text-red-400 hover:text-red-600 p-1">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </th:block>
-                    </tbody>
-                </table>
+                                <td class="px-6 py-3">
+                                    <input type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-black text-brand-navy text-center shadow-sm focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all"
+                                           th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].valoare}" />
+                                </td>
+
+                                <td class="px-6 py-3">
+                                    <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-medium text-gray-600 text-center transition-colors"
+                                           th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].um}" />
+                                </td>
+
+                                <td class="px-6 py-3 flex items-center justify-between gap-2">
+                                    <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-medium text-gray-600 transition-colors"
+                                           th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].interval}" />
+                                    <button type="button" onclick="removeRow(this)" class="text-gray-300 hover:text-red-500 p-2 outline-none transition-colors" title="Șterge indicator">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </th:block>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="flex items-center justify-end gap-4 bg-gray-50 p-6 rounded-xl border border-gray-200">
-                <p class="text-sm text-gray-500 mr-auto">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Modifică orice câmp dacă identifici erori de citire. Metoda ajută la maparea corectă LOINC.
-                </p>
+            <!-- Footer Acțiuni -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mt-8">
+                <div class="flex items-center text-sm font-medium text-gray-500 bg-gray-50 py-2 px-4 rounded-xl border border-gray-100">
+                    <i class="fas fa-info-circle mr-2 text-brand-blue"></i>
+                    Corectitudinea datelor asigură precizia mapării LOINC.
+                </div>
                 <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center">
-                    <i class="fas fa-save mr-2"></i>
-                    Salvează în Dosarul Medical
+                        class="w-full sm:w-auto bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-3.5 px-8 rounded-xl shadow-md transition-all flex items-center justify-center uppercase tracking-widest text-xs active:scale-95 group">
+                    <i class="fas fa-save mr-2 text-white group-hover:scale-110 transition-transform"></i>
+                    Salvează în Dosar
                 </button>
             </div>
 
@@ -118,11 +123,9 @@
 
 <div layout:fragment="scripts">
     <script>
-        // Ștergere rând indicator
         function removeRow(button) {
             if(confirm('Sigur vrei să ștergi acest indicator?')) {
                 const row = button.closest('tr');
-                // Găsim secțiunea de care aparține rândul pentru a reindexa doar acea secțiune
                 let prevRow = row.previousElementSibling;
                 while (prevRow && !prevRow.classList.contains('section-row')) {
                     prevRow = prevRow.previousElementSibling;
@@ -136,7 +139,6 @@
             }
         }
 
-        // Ștergere secțiune întreagă
         function removeSection(button) {
             if(confirm('Sigur vrei să ștergi TOATĂ secțiunea?')) {
                 const sectionHeader = button.closest('tr.section-row');
@@ -148,11 +150,10 @@
                     nextRow = temp;
                 }
                 sectionHeader.remove();
-                renumberAllSections(); // Reindexăm toate secțiunile rămase
+                renumberAllSections();
             }
         }
 
-        // Adăugare rând nou
         function addIndicator(button) {
             const sectionRow = button.closest('tr.section-row');
             const sectionIndex = sectionRow.getAttribute('data-section-index');
@@ -163,30 +164,30 @@
             }
 
             const newRow = document.createElement('tr');
-            newRow.className = 'hover:bg-gray-50 transition-colors indicator-row';
+            newRow.className = 'hover:bg-gray-50 transition-colors indicator-row border-t border-gray-50';
 
-            // Template actualizat - folosim sectionIndex pentru prima parte a numelui, și 999 temporar pentru indicator
+            // Template HTML actualizat la noul design
             newRow.innerHTML = `
-                <td class="px-6 py-2">
-                    <input type="text" class="w-full bg-transparent border-b border-gray-200 p-1 text-sm font-medium"
-                           name="sectiuni[${sectionIndex}].indicatori[999].nume" value="Indicator Nou">
+                <td class="px-6 py-3">
+                    <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-bold text-brand-navy transition-colors"
+                           name="sectiuni[${sectionIndex}].indicatori[999].nume" value="Nume Indicator">
                 </td>
-                <td class="px-6 py-2">
-                    <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[11px] italic text-gray-600"
-                           name="sectiuni[${sectionIndex}].indicatori[999].metoda_detectata" placeholder="Metodă...">
+                <td class="px-6 py-3">
+                    <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[10px] uppercase tracking-widest font-bold text-gray-500 focus:bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition-all"
+                           name="sectiuni[${sectionIndex}].indicatori[999].metoda_detectata" placeholder="Ex: Spectrometrie">
                 </td>
-                <td class="px-6 py-2">
-                    <input type="text" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm font-bold text-blue-600 text-center"
+                <td class="px-6 py-3">
+                    <input type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-black text-brand-navy text-center shadow-sm focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all"
                            name="sectiuni[${sectionIndex}].indicatori[999].valoare" value="">
                 </td>
-                <td class="px-6 py-2">
-                    <input type="text" class="w-full bg-transparent border-b border-gray-200 p-1 text-sm text-center"
+                <td class="px-6 py-3">
+                    <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-medium text-gray-600 text-center transition-colors"
                            name="sectiuni[${sectionIndex}].indicatori[999].um" value="">
                 </td>
-                <td class="px-6 py-2 flex items-center gap-2">
-                    <input type="text" class="w-full bg-transparent border-b border-gray-200 p-1 text-sm italic"
+                <td class="px-6 py-3 flex items-center justify-between gap-2">
+                    <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-medium text-gray-600 transition-colors"
                            name="sectiuni[${sectionIndex}].indicatori[999].interval" value="">
-                    <button type="button" onclick="removeRow(this)" class="text-red-400 hover:text-red-600 p-1">
+                    <button type="button" onclick="removeRow(this)" class="text-gray-300 hover:text-red-500 p-2 outline-none transition-colors" title="Șterge indicator">
                         <i class="fas fa-times"></i>
                     </button>
                 </td>
@@ -196,7 +197,6 @@
             renumberIndicatorsForSection(sectionRow);
         }
 
-        // Reindexare doar pentru indicatorii dintr-o anumită secțiune
         function renumberIndicatorsForSection(sectionRow) {
             const sectionIndex = sectionRow.getAttribute('data-section-index');
             let next = sectionRow.nextElementSibling;
@@ -206,7 +206,6 @@
                 next.querySelectorAll('input').forEach(input => {
                     const name = input.getAttribute('name');
                     if(name) {
-                        // Înlocuim partea cu indicatori[X]
                         input.setAttribute('name', name.replace(/indicatori\[\d+\]/, `indicatori[${indicatorIndex}]`));
                     }
                 });
@@ -215,21 +214,17 @@
             }
         }
 
-        // Reindexare completă a secțiunilor și indicatorilor (necesară la ștergerea unei secțiuni)
         function renumberAllSections() {
             const sections = document.querySelectorAll('.section-row');
 
             sections.forEach((sectionRow, newSectionIndex) => {
-                // Actualizăm indexul secțiunii în atributul data
                 sectionRow.setAttribute('data-section-index', newSectionIndex);
 
-                // Actualizăm inputul care conține numele secțiunii
                 const nameInput = sectionRow.querySelector('input[type="text"]');
                 if (nameInput) {
                     nameInput.setAttribute('name', `sectiuni[${newSectionIndex}].nume`);
                 }
 
-                // Acum reindexăm toți indicatorii de sub această secțiune
                 let next = sectionRow.nextElementSibling;
                 let indicatorIndex = 0;
 
@@ -237,10 +232,7 @@
                     next.querySelectorAll('input').forEach(input => {
                         const name = input.getAttribute('name');
                         if(name) {
-                            // Actualizăm ATÂT indexul secțiunii, CÂT ȘI indexul indicatorului
-                            // Exemplu vechi: sectiuni[2].indicatori[0].valoare
-                            // Exemplu nou:  sectiuni[1].indicatori[0].valoare
-                            const baseName = name.split('.').pop(); // ia 'valoare', 'nume', etc.
+                            const baseName = name.split('.').pop();
                             input.setAttribute('name', `sectiuni[${newSectionIndex}].indicatori[${indicatorIndex}].${baseName}`);
                         }
                     });
@@ -254,4 +246,3 @@
 
 </body>
 </html>
-```</SectiuneWrapperDTO>

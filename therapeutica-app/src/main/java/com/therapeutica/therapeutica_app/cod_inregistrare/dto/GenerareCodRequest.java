@@ -22,6 +22,9 @@ public class GenerareCodRequest {
     @Size(min = 13, max = 13, message = "CNP-ul trebuie să aibă exact 13 caractere")
     private String cnpDestinatar;
 
+    @Size(max = 20, message = "Numărul de telefon este prea lung")
+    private String telefonDestinatar;
+
     @NotNull(message = "Rolul destinatarului este obligatoriu")
     private RoleType rolDestinatar;
 

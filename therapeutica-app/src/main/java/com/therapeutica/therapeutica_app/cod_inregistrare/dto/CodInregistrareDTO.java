@@ -33,6 +33,8 @@ public class CodInregistrareDTO {
 
     private String cnpDestinatar;
 
+    private String telefonDestinatar;
+
     @NotNull
     private RoleType rolDestinatar;
 

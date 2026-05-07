@@ -51,34 +51,30 @@ public class BuletinAnalizeController {
      * POST - Trimite fișierul către Pipeline-ul Python (Docker)
      */
     @PostMapping("/incarca")
-    public String incarcaSiProceseaza(@RequestParam("file") MultipartFile file,
+    public String incarcaSiProceseaza(@RequestParam("files") MultipartFile[] files, // Observă pluralul și array-ul
                                       @RequestParam("pacientId") UUID pacientId,
                                       RedirectAttributes redirectAttributes) {
 
-        if (file.isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Fișierul este gol. Te rugăm să încarci un PDF valid.");
+        if (files == null || files.length == 0 || files[0].isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Nu ai selectat niciun fișier.");
             return "redirect:/analize/upload/" + pacientId;
         }
 
         try {
-            log.info("Inițializare document și lansare procesare asincronă pentru pacientul: {}", pacientId);
+            log.info("Încărcare {} fișiere pentru pacientul: {}", files.length, pacientId);
 
-            // 1. Salvare fizică și creare record în DB (Status: INCARCAT)
-            DocumentMedical doc = analizeService.initializeazaDocument(file, pacientId);
+            // Opțiunea A: Dacă vrei să le unești într-un singur record DocumentMedical
+            // Va trebui să modifici 'initializeazaDocument' să accepte MultipartFile[]
+            DocumentMedical doc = analizeService.initializeazaDocument(files, pacientId);
 
-            // 2. Lansare procesare OCR în fundal
-            analizeService.proceseazaDocumentAsincron(doc);
+            analizeService.proceseazaDocumentAsincron(doc.getId());
 
-            // 3. Notificăm utilizatorul și îl trimitem la dosar
-            redirectAttributes.addFlashAttribute("success",
-                    "Fișierul '" + file.getOriginalFilename() + "' a fost încărcat cu succes. " +
-                            "Procesarea AI a început și poate dura 1-2 minute pentru documente mari.");
-
+            redirectAttributes.addFlashAttribute("success", "Cele " + files.length + " fișiere sunt în curs de procesare.");
             return "redirect:/analize/pacient/documente/" + pacientId;
 
         } catch (Exception e) {
-            log.error("Eroare la inițierea încărcării: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Eroare la încărcare: " + e.getMessage());
+            log.error("Eroare la încărcare: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Eroare: " + e.getMessage());
             return "redirect:/analize/pacient/documente/" + pacientId;
         }
     }

@@ -1,70 +1,71 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<aside class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-blue-50 to-white border-r border-gray-200 shadow-lg z-50 hidden md:block">
-    <div class="p-6 border-b border-gray-100 bg-white">
+<aside class="fixed left-0 top-0 h-full w-64 bg-brand-navy shadow-xl z-50 hidden md:block">
+
+    <div class="p-6 border-b border-white/10">
         <div class="flex items-center space-x-3 mb-4">
-            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <i class="fas fa-user-injured text-blue-600 text-2xl"></i>
+            <div class="w-12 h-12 bg-brand-gold/10 rounded-xl flex items-center justify-center border border-brand-gold/30 shadow-sm">
+                <i class="fas fa-user-injured text-brand-gold text-2xl"></i>
             </div>
             <div>
-                <h2 class="font-bold text-gray-800">Pacient</h2>
+                <h2 class="font-bold text-brand-gold text-lg uppercase tracking-wider">Pacient</h2>
             </div>
         </div>
         <div class="mt-2">
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-white font-bold tracking-wide">
                 <span th:text="${session.userNume != null} ? ${session.userNume} : 'Nume'"></span>
                 <span th:text="${session.userPrenume != null} ? ${session.userPrenume} : 'Prenume'"></span>
             </p>
-            <p class="text-xs text-gray-500" th:text="${session.userEmail}"></p>
+            <p class="text-xs text-white/60 font-medium mt-0.5" th:text="${session.userEmail}"></p>
         </div>
     </div>
 
-    <nav class="p-4 space-y-1">
+    <nav class="p-4 space-y-2">
         <a th:href="@{'/pacient/dashboard/' + ${session.userId}}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition duration-200">
-            <i class="fas fa-tachometer-alt w-5 text-center"></i>
-            <span>Dashboard</span>
+           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-brand-gold/10 text-white/70 hover:text-white transition-all duration-200 group">
+            <i class="fas fa-tachometer-alt w-5 text-center text-brand-gold/80 group-hover:text-brand-gold transition-colors"></i>
+            <span class="font-medium tracking-wide">Dashboard</span>
         </a>
 
+        <a th:href="@{'/pacient/profil/' + ${session.userId}}"
+           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-brand-gold/10 text-white/70 hover:text-white transition-all duration-200 group">
+            <i class="fas fa-user-circle w-5 text-center text-brand-gold/80 group-hover:text-brand-gold transition-colors"></i>
+            <span class="font-medium tracking-wide">Profil</span>
+        </a>
+
+        <a th:href="@{'/chestionare/pacient/' + ${session.userId} + '/disponibile'}"
+           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-brand-gold/10 text-white/70 hover:text-white transition-all duration-200 group">
+            <i class="fas fa-clipboard-list w-5 text-center text-brand-gold/80 group-hover:text-brand-gold transition-colors"></i>
+            <span class="font-medium tracking-wide">Chestionare Medicale</span>
+        </a>
+
+        <a th:href="@{'/analize/pacient/documente/' + ${session.userId}}"
+           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-brand-gold/10 text-white/70 hover:text-white transition-all duration-200 group">
+            <i class="fas fa-file-medical w-5 text-center text-brand-gold/80 group-hover:text-brand-gold transition-colors"></i>
+            <span class="font-medium tracking-wide">Documente Medicale</span>
+        </a>
+
+        <div class="border-t border-white/10 my-4"></div>
+
         <a th:href="@{'/pacient/notificari/' + ${session.userId}}"
-           class="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-amber-50 text-gray-700 hover:text-amber-700 transition duration-200 group">
+           class="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-brand-gold/10 text-white/70 hover:text-white transition-all duration-200 group">
             <div class="flex items-center space-x-3">
-                <i class="fas fa-bell w-5 text-center"></i>
-                <span>Notificări</span>
+                <i class="fas fa-bell w-5 text-center text-brand-gold/80 group-hover:text-brand-gold transition-colors"></i>
+                <span class="font-medium tracking-wide">Notificări</span>
             </div>
             <div id="pacient-notif-wrapper" class="hidden items-center">
-                <span id="pacient-notif-count" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                <span id="pacient-notif-count" class="bg-brand-teal text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md border border-brand-teal">
                     0
                 </span>
             </div>
         </a>
 
-        <a th:href="@{'/pacient/profil/' + ${session.userId}}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition duration-200">
-            <i class="fas fa-user-circle w-5 text-center"></i>
-            <span>Profil</span>
-        </a>
-
-        <a th:href="@{'/chestionare/pacient/' + ${session.userId} + '/disponibile'}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-green-100 text-gray-700 hover:text-green-700 transition duration-200">
-            <i class="fas fa-clipboard-list w-5 text-center"></i>
-            <span>Chestionare Medicale</span>
-        </a>
-
-        <a th:href="@{'/analize/pacient/documente/' + ${session.userId}}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-purple-100 text-gray-700 hover:text-purple-700 transition duration-200">
-            <i class="fas fa-file-medical w-5 text-center"></i>
-            <span>Documente Medicale</span>
-        </a>
-
-        <div class="border-t border-gray-200 my-2"></div>
-
-        <form th:action="@{/api/auth/logout-web}" method="post" class="m-0 p-0">
+        <form th:action="@{/api/auth/logout-web}" method="post" class="m-0 p-0 mt-2">
             <button type="submit"
-                    class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-50 text-gray-700 hover:text-red-600 transition duration-200 mt-2 text-left">
-                <i class="fas fa-sign-out-alt w-5 text-center"></i>
-                <span>Deconectare</span>
+                    class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-rose-500/20 text-white/70 hover:text-rose-100 transition-all duration-200 text-left group">
+                <i class="fas fa-sign-out-alt w-5 text-center text-white/40 group-hover:text-rose-400 transition-colors"></i>
+                <span class="font-medium tracking-wide">Deconectare</span>
             </button>
         </form>
     </nav>
@@ -77,7 +78,6 @@
         function updatePacientNotifications() {
             if (!userId) return;
 
-            // Folosim endpoint-ul optimizat de count
             fetch('/api/notificari/necitite-count/' + userId)
                 .then(response => response.json())
                 .then(count => {
