@@ -47,12 +47,14 @@
         <span th:text="${successMessage}"></span>
     </div>
 
+    <!-- MOD EDITARE -->
     <form th:if="${mode == 'edit'}"
           id="profilForm"
           th:action="@{'/medic/profil/' + ${medicId} + '/salvare'}"
           method="post"
           class="space-y-6 max-w-4xl">
 
+        <!-- Card Informații Personale -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
                 <h2 class="text-xl font-bold text-brand-navy">
@@ -88,6 +90,7 @@
             </div>
         </div>
 
+        <!-- Card Informații Profesionale -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
                 <h2 class="text-xl font-bold text-brand-navy">
@@ -95,17 +98,35 @@
                     Informații Profesionale
                 </h2>
             </div>
-            <div class="p-6">
-                <label class="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Specializare</label>
-                <input type="text" name="specializare" th:value="${medic?.specializare}"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-medium text-brand-navy"
-                       placeholder="Ex: Cardiologie, Medicină Funcțională">
+
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Specializare -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Specializare</label>
+                    <input type="text" name="specializare" th:value="${medic?.specializare}"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-medium text-brand-navy"
+                           placeholder="Ex: Cardiologie">
+                </div>
+
+                <!-- Telefon Medic -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Telefon de contact</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+                            <i class="fas fa-phone"></i>
+                        </span>
+                        <input type="tel" name="telefon" th:value="${medic?.telefon}" placeholder="Ex: 0722123456"
+                               class="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-medium text-brand-navy">
+                    </div>
+                </div>
             </div>
         </div>
     </form>
 
+    <!-- MOD VIZUALIZARE -->
     <div th:if="${mode == 'view'}" class="space-y-6 max-w-4xl">
 
+        <!-- Card Date Identitate -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
                 <h2 class="text-xl font-bold text-brand-navy">
@@ -132,6 +153,7 @@
             </div>
         </div>
 
+        <!-- Card Detalii Activitate -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
                 <h2 class="text-xl font-bold text-brand-navy">
@@ -141,19 +163,33 @@
             </div>
 
             <div class="p-6">
-                <div th:if="${medic?.specializare != null && !medic.specializare.isEmpty()}" class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Specializare Principală</p>
-                    <p class="text-lg font-bold text-brand-navy" th:text="${medic.specializare}"></p>
+                <!-- Conținut afișat dacă există cel puțin o informație setată -->
+                <div th:if="${(medic?.specializare != null && !medic.specializare.isEmpty()) || (medic?.telefon != null && !medic.telefon.isEmpty())}"
+                     class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Specializare Principală</p>
+                        <p class="text-lg font-bold text-brand-navy" th:text="${medic?.specializare ?: 'Nesetată'}"></p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Telefon Cabinet</p>
+                        <p class="text-lg font-bold text-brand-navy flex items-center">
+                            <i class="fas fa-phone text-brand-blue mr-2 text-sm" th:if="${medic?.telefon != null && !medic.telefon.isEmpty()}"></i>
+                            <span th:text="${medic?.telefon != null && !medic.telefon.isEmpty() ? medic.telefon : 'Necompletat'}"></span>
+                        </p>
+                    </div>
                 </div>
 
-                <div th:if="${medic == null || medic.specializare == null || medic.specializare.isEmpty()}"
+                <!-- Fallback pentru profil complet gol -->
+                <div th:if="${(medic == null) || ((medic.specializare == null || medic.specializare.isEmpty()) && (medic.telefon == null || medic.telefon.isEmpty()))}"
                      class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                     <div class="mx-auto w-16 h-16 mb-4 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
                         <i class="fas fa-user-md text-3xl text-brand-blue"></i>
                     </div>
                     <h3 class="text-lg font-bold text-brand-navy mb-2">Profil Incomplet</h3>
                     <p class="text-gray-500 mb-5 max-w-sm mx-auto font-medium">
-                        Nu ați adăugat încă o specializare profesională.
+                        Nu ați adăugat încă o specializare profesională sau date de contact.
                     </p>
                     <a th:href="@{'/medic/profil/' + ${medicId} + '/editare'}"
                        class="inline-flex items-center bg-white border border-gray-200 text-brand-navy hover:text-brand-blue font-bold py-2 px-4 rounded-lg shadow-sm transition-colors">

@@ -4,6 +4,7 @@ import com.therapeutica.therapeutica_app.cod_inregistrare.dto.CodInregistrareDTO
 import com.therapeutica.therapeutica_app.cod_inregistrare.dto.GenerareCodRequest;
 import com.therapeutica.therapeutica_app.cod_inregistrare.dto.GenerareCodResponse;
 import com.therapeutica.therapeutica_app.events.BeforeDeleteUtilizatori;
+import com.therapeutica.therapeutica_app.notificari.external.WhatsAppService;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import com.therapeutica.therapeutica_app.util.ReferencedException;
 import com.therapeutica.therapeutica_app.utilizatori.RoleType;
@@ -15,6 +16,8 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -24,14 +27,15 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class CodInregistrareService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CodInregistrareService.class);
+
     private final CodInregistrareRepository codInregistrareRepository;
     private final UtilizatoriRepository utilizatoriRepository;
-
-    // --- LOGICA SPECIALĂ ---
+    private final WhatsAppService whatsappService;
 
     @Transactional
     public GenerareCodResponse generareCodInregistrare(GenerareCodRequest request) {
-        System.out.println("=== START SERVICE: Generare cod pentru " + request.getEmailDestinatar() + " ===");
+        logger.info("=== START SERVICE: Generare cod pentru {} ===", request.getEmailDestinatar());
 
         Utilizatori medicUser = utilizatoriRepository.findById(request.getMedicId())
                 .orElseThrow(() -> new NotFoundException("Medicul nu a fost găsit."));
@@ -40,14 +44,13 @@ public class CodInregistrareService {
             return new GenerareCodResponse("Eroare: Lipsă permisiuni medic.");
         }
 
-        // Verificăm dacă adresa de email este deja folosită de un cont activ
         Optional<Utilizatori> utilizatorExistent = utilizatoriRepository.findByEmail(request.getEmailDestinatar());
         if (utilizatorExistent.isPresent()) {
             return new GenerareCodResponse("Eroare: Există deja un cont înregistrat cu acest email.");
         }
 
         if (!codInregistrareRepository.findNeutilizatByEmail(request.getEmailDestinatar()).isEmpty()) {
-            return new GenerareCodResponse("Există deja un cod activ pentru acest email.");
+            return new GenerareCodResponse("Eroare: Există deja un cod activ pentru acest email.");
         }
 
         String codUnicStr = generareCodUnic();
@@ -55,29 +58,32 @@ public class CodInregistrareService {
         codEntity.setCodUnic(codUnicStr);
         codEntity.setStatus(CodInregistrare.StatusCod.NEUTILIZAT);
         codEntity.setGeneratDe(medicUser);
-
-        // Nu setăm 'atribuit' încă. Acel câmp se va completa doar CÂND pacientul folosește codul și își creează contul.
         codEntity.setAtribuit(null);
-
         codEntity.setEmailDestinatar(request.getEmailDestinatar());
         codEntity.setCnpDestinatar(request.getCnpDestinatar());
-
-        // Maparea noului câmp
         codEntity.setTelefonDestinatar(request.getTelefonDestinatar());
-
         codEntity.setRolDestinatar(request.getRolDestinatar());
 
         codInregistrareRepository.save(codEntity);
 
-        return new GenerareCodResponse(
-                codUnicStr,
-                request.getEmailDestinatar(),
-                CodInregistrare.StatusCod.NEUTILIZAT,
-                "Cod generat cu succes"
-        );
-    }
+        GenerareCodResponse response = GenerareCodResponse.builder()
+                .codUnic(codUnicStr)
+                .emailDestinatar(request.getEmailDestinatar())
+                .status(CodInregistrare.StatusCod.NEUTILIZAT)
+                .mesaj("Cod generat cu succes")
+                .build();
 
-    // --- LOGICA CRUD ---
+        if (request.getTelefonDestinatar() != null && !request.getTelefonDestinatar().trim().isEmpty()) {
+            try {
+                String link = whatsappService.genereazaLinkMesaj(request.getTelefonDestinatar(), codUnicStr);
+                response.setWhatsappLink(link);
+            } catch (IllegalArgumentException e) {
+                logger.warn("Eșec la generarea link-ului WhatsApp pentru {}: {}", request.getTelefonDestinatar(), e.getMessage());
+            }
+        }
+
+        return response;
+    }
 
     public UUID create(final CodInregistrareDTO codInregistrareDTO) {
         final CodInregistrare codInregistrare = new CodInregistrare();
@@ -114,8 +120,6 @@ public class CodInregistrareService {
                 .collect(Collectors.toList());
     }
 
-    // --- METODE PRIVATE / HELPER ---
-
     private String generareCodUnic() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         Random random = new Random();
@@ -136,7 +140,7 @@ public class CodInregistrareService {
         dto.setAtribuit(cod.getAtribuit() != null ? cod.getAtribuit().getId() : null);
         dto.setEmailDestinatar(cod.getEmailDestinatar());
         dto.setCnpDestinatar(cod.getCnpDestinatar());
-        dto.setTelefonDestinatar(cod.getTelefonDestinatar()); // Mapare DTO
+        dto.setTelefonDestinatar(cod.getTelefonDestinatar());
         dto.setRolDestinatar(cod.getRolDestinatar());
         return dto;
     }
@@ -152,7 +156,7 @@ public class CodInregistrareService {
         }
         cod.setEmailDestinatar(dto.getEmailDestinatar());
         cod.setCnpDestinatar(dto.getCnpDestinatar());
-        cod.setTelefonDestinatar(dto.getTelefonDestinatar()); // Mapare Entity
+        cod.setTelefonDestinatar(dto.getTelefonDestinatar());
         cod.setRolDestinatar(dto.getRolDestinatar());
     }
 

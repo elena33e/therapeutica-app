@@ -98,6 +98,7 @@ public class MedicProfilController {
                                 @RequestParam String prenume,
                                 @RequestParam String email,
                                 @RequestParam(required = false) String specializare,
+                                @RequestParam(required = false) String telefon, // 1. Adăugat parametrul telefon
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes,
                                 Model model) {
@@ -149,11 +150,11 @@ public class MedicProfilController {
 
         // 4. Tratare Erori: Reafișăm formularul cu datele "murdare" (ce a scris userul)
         if (hasErrors) {
-            // Actualizăm obiectele temporar pentru ca Thymeleaf să afișeze ce a scris userul în input-uri
             utilizator.setNume(nume);
             utilizator.setPrenume(prenume);
             utilizator.setEmail(email);
             medic.setSpecializare(specializare);
+            medic.setTelefon(telefon); // 2. Păstrăm telefonul introdus în caz de eroare
 
             model.addAttribute("medicId", userIdStr);
             model.addAttribute("utilizator", utilizator);
@@ -170,6 +171,7 @@ public class MedicProfilController {
         utilizatoriRepository.save(utilizator);
 
         medic.setSpecializare(specializare != null ? specializare.trim() : null);
+        medic.setTelefon(telefon != null && !telefon.trim().isEmpty() ? telefon.trim() : null); // 3. Salvăm telefonul curățat
         mediciRepository.save(medic);
 
         // 6. Actualizare Sesiune (Să se schimbe numele în header imediat)

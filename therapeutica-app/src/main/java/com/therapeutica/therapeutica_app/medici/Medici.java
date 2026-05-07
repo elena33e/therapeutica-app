@@ -24,6 +24,9 @@ public class Medici {
     @Column(nullable = false, columnDefinition = "text")
     private String specializare;
 
+    @Column(name = "telefon", length = 20)
+    private String telefon;
+
     @OneToMany(mappedBy = "medic", fetch = FetchType.LAZY)
     private Set<Pacienti> pacienti;
 }

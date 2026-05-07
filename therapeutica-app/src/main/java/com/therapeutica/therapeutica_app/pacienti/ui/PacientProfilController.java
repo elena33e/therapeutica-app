@@ -4,6 +4,7 @@ import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
+import com.therapeutica.therapeutica_app.notificari.external.WhatsAppService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,6 +24,9 @@ public class PacientProfilController {
 
     @Autowired
     private PacientiRepository pacientiRepository;
+
+    @Autowired
+    private WhatsAppService whatsappService;
 
     // Vizualizare profil (F5)
     @GetMapping("/{id}")
@@ -56,7 +60,22 @@ public class PacientProfilController {
                     return p;
                 });
 
-        model.addAttribute("pacient", pacient);
+        // --- LOGICA WHATSAPP ---
+        // Verificăm dacă pacientul are medic și dacă medicul are un telefon înregistrat
+        if (pacient.getMedic() != null && pacient.getMedic().getTelefon() != null) {
+            String numeMedic = pacient.getMedic().getUser() != null ? pacient.getMedic().getUser().getNume() : "";
+
+            // Construim un mesaj politicos de start
+            String mesajStart = "Bună ziua, Dr. " + numeMedic + ". Vă contactez din portalul Therapeutica. " +
+                    "Sunt pacientul dumneavoastră, " + utilizator.getNume() + " " + utilizator.getPrenume() + ".";
+
+            // Generăm link-ul prin serviciu
+            String linkWa = whatsappService.genereazaLinkContactPersonalizat(pacient.getMedic().getTelefon(), mesajStart);
+
+            // Punem link-ul în model pentru Thymeleaf
+            model.addAttribute("whatsappLinkMedic", linkWa);
+        }
+        // -----------------------
 
         // Adaugă datele în model
         model.addAttribute("pacientId", userIdStr);
