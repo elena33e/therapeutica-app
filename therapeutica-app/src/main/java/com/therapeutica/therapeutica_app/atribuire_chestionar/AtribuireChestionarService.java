@@ -35,7 +35,6 @@ public class AtribuireChestionarService {
     private final ChestionareRepository chestionareRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-
     /**
      * Atribuie unul sau mai multe chestionare unui pacient
      */
@@ -69,10 +68,10 @@ public class AtribuireChestionarService {
         List<UUID> raspunsuriCreateIds = new ArrayList<>();
 
         for (UUID chestionarId : requestDTO.getChestionareIds()) {
-            // Evităm duplicatele (chestionare deja atribuite și necompletate)
+            // Evităm duplicatele active aruncând excepția așteptată de Controller
             if (existaChestionarNecompletat(pacient.getId(), chestionarId)) {
-                log.debug("Chestionarul {} este deja atribuit pacientului {}. Skip.", chestionarId, pacient.getId());
-                continue;
+                log.warn("Tentativă de duplicare: Chestionarul {} este deja atribuit și necompletat pentru pacientul {}", chestionarId, pacient.getId());
+                throw new IllegalStateException("Pacientul are deja o instanță activă și necompletată pentru unul dintre chestionarele selectate.");
             }
 
             chestionareRepository.findById(chestionarId).ifPresent(chestionar -> {
@@ -98,8 +97,7 @@ public class AtribuireChestionarService {
         return raspunsuriCreateIds;
     }
 
-
-     //Metodă notificare
+    //Metodă notificare
     private void triggerNotificarePacient(Pacienti pacient, int numarChestionare) {
         try {
             if (pacient.getUser() != null) {
@@ -115,6 +113,7 @@ public class AtribuireChestionarService {
             log.error("Eroare silențioasă la trimiterea notificării: {}", e.getMessage());
         }
     }
+
     /**
      * Verifică dacă pacientul este asociat medicului
      */
@@ -128,36 +127,25 @@ public class AtribuireChestionarService {
      */
     private boolean existaChestionarNecompletat(UUID pacientId, UUID chestionarId) {
         return raspunsuriChestionareRepository
-                .existsByPacientIdAndChestionarIdAndStatusNecompletat(pacientId, chestionarId);
+                .existsByPacientIdAndChestionarIdAndStatus(pacientId, chestionarId, RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
     }
 
     /**
      * Obține chestionarele disponibile pentru atribuire (care nu sunt deja atribuite și necompletate)
      */
     public List<Chestionare> getChestionareDisponibilePentruPacient(UUID pacientId) {
-        System.out.println("Getting available questionnaires for patient: " + pacientId);
+        log.info("Getting available questionnaires for patient: {}", pacientId);
 
-        // Folosește metoda corectă din repository
-        // Obține chestionarele deja atribuite (indiferent de status)
-        List<UUID> chestionareAtribuite = raspunsuriChestionareRepository
-                .findByPacientIdOrderByCompletatLa(pacientId)
-                .stream()
-                .map(rc -> rc.getChestionar().getId())
-                .distinct() // Elimină duplicatele
-                .toList();
-
-        System.out.println("   - Already assigned: " + chestionareAtribuite.size() + " questionnaires");
-
-        // Obține toate chestionarele
+        // Obținem toate chestionarele din sistem
         List<Chestionare> toateChestionarele = chestionareRepository.findAll();
-        System.out.println("   - Total questionnaires in system: " + toateChestionarele.size());
+        log.info("   - Total questionnaires in system: {}", toateChestionarele.size());
 
-        // Filtrează cele care nu sunt deja atribuite
+        // Filtrăm: un chestionar este disponibil DOAR dacă NU are deja o instanță NECOMPLETATĂ activă
         List<Chestionare> disponibile = toateChestionarele.stream()
-                .filter(c -> !chestionareAtribuite.contains(c.getId()))
+                .filter(chestionar -> !existaChestionarNecompletat(pacientId, chestionar.getId()))
                 .toList();
 
-        System.out.println("   - Available for assignment: " + disponibile.size() + " questionnaires");
+        log.info("   - Available for assignment: {} questionnaires", disponibile.size());
 
         return disponibile;
     }
@@ -178,11 +166,8 @@ public class AtribuireChestionarService {
     /**
      * Obține istoricul chestionarelor pentru un pacient
      */
-
     public List<RaspunsuriChestionare> getIstoricChestionarePacient(UUID pacientId) {
-
         return raspunsuriChestionareRepository.findByPacientIdWithRelations(pacientId);
     }
-
 
 }

@@ -91,16 +91,15 @@ public class BuletinAnalizeService {
     }
 
     @Async
-    @Transactional
+
     public void proceseazaDocumentAsincron(UUID documentId) {
         log.info("--- [START ASYNC] Inițiere procesare pentru documentul: {} ---", documentId);
 
-        //  Prima citire: extragem doar metadatele necesare pentru request-ul extern
-        // Nu vom păstra acest obiect 'doc' în memorie pe durata apelului REST
         String caleStocare;
         UUID pacientId;
 
         try {
+            // Acest findById își deschide singur o tranzacție scurtă, citește și o închide instant.
             DocumentMedical initialDoc = documentMedicalRepository.findById(documentId)
                     .orElseThrow(() -> new RuntimeException("Documentul nu mai există în DB."));
             caleStocare = initialDoc.getCaleFisierStocare();
@@ -111,7 +110,6 @@ public class BuletinAnalizeService {
         }
 
         try {
-            // 2. Pregătirea request-ului către Python
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -130,18 +128,16 @@ public class BuletinAnalizeService {
             body.add("pacientId", pacientId.toString());
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // 3. APELUL EXTERN (Aici aplicația "așteaptă" după Python, uneori minute întregi)
-            // În acest timp, versiunea documentului în DB se poate schimba.
             log.info("Trimitere fișiere către Python OCR pentru documentul: {}", documentId);
+            // Aici aplicația așteaptă după Python, DAR conexiunea la baza de date este LIBERĂ pentru restul sistemului!
             ResponseEntity<String> response = ocrRestTemplate.postForEntity(pythonBaseUrl + ocrPath, requestEntity, String.class);
 
-            // 4. FETCH-LAST: Re-căutăm documentul DOAR acum, pentru a avea versiunea ultra-proaspătă
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                // Când Python a terminat, mai deschidem o micro-tranzacție doar pentru salvare
                 documentMedicalRepository.findById(documentId).ifPresentOrElse(doc -> {
                     doc.setDateBrute(response.getBody());
                     doc.setStatus(DocumentMedical.StatusDocument.PROCESAT);
 
-                    // saveAndFlush forțează Hibernate să scrie imediat, reducând riscul de conflict
                     documentMedicalRepository.saveAndFlush(doc);
                     log.info("--- [SUCCESS] OCR finalizat și salvat pentru ID: {} ---", documentId);
                 }, () -> log.error("Documentul a dispărut din DB în timpul procesării OCR!"));
@@ -150,7 +146,6 @@ public class BuletinAnalizeService {
         } catch (Exception e) {
             log.error("Eroare critică în thread-ul async pentru documentul {}: {}", documentId, e.getMessage());
 
-            // În caz de eroare, facem un ultim efort să marcăm statusul de EROARE
             documentMedicalRepository.findById(documentId).ifPresent(doc -> {
                 doc.setStatus(DocumentMedical.StatusDocument.EROARE);
                 documentMedicalRepository.saveAndFlush(doc);
@@ -279,42 +274,73 @@ public class BuletinAnalizeService {
     public void salveazaCorectiiMedic(UUID docId, BuletinEditabilDTO dto) {
         DocumentMedical doc = documentMedicalRepository.findById(docId).orElseThrow();
         try {
-            // Conversie List -> Map pentru consistență DB
             Map<String, SectiuneWrapperDTO> mapSectiuni = dto.getSectiuni().stream()
-                    .collect(Collectors.toMap(SectiuneWrapperDTO::getNume, s -> s, (v1, v2) -> v1, LinkedHashMap::new));
+                    .collect(Collectors.toMap(
+                            SectiuneWrapperDTO::getNume,
+                            s -> s,
+                            (v1, v2) -> v1,
+                            LinkedHashMap::new
+                    ));
 
-            Map<String, Object> wrapper = new HashMap<>();
-            wrapper.put("documentId", docId.toString());
-            wrapper.put("pacientId", dto.getPacientId().toString());
-            wrapper.put("sectiuni", mapSectiuni);
-            wrapper.put("status", "medic_validated");
-
-            doc.setDateStandardizate(objectMapper.writeValueAsString(wrapper));
+            // Salvăm direct map-ul, fără wrapper — format consistent cu restul aplicației
+            String jsonFinal = objectMapper.writeValueAsString(mapSectiuni);
+            doc.setDateStandardizate(jsonFinal);
             doc.setStatus(DocumentMedical.StatusDocument.STANDARDIZAT);
             documentMedicalRepository.save(doc);
+
+            log.info("Date salvate cu succes pentru documentul: {}", docId);
+
+            // Declanșăm interpretarea clinică async
+            finalizeazaInterpretareClinica(docId);
+
         } catch (Exception e) {
+            log.error("Eroare la salvarea medicului", e);
             throw new RuntimeException("Eroare salvare medic: " + e.getMessage());
         }
     }
 
     @Async
     public void finalizeazaInterpretareClinica(UUID documentId) {
-        DocumentMedical doc = documentMedicalRepository.findById(documentId).orElseThrow();
         try {
-            String payloadHpo = pregatestePayloadHpo(doc.getDateStandardizate(), doc.getId(), doc.getPacientId());
+            DocumentMedical doc = documentMedicalRepository.findById(documentId)
+                    .orElseThrow(() -> new RuntimeException("Document negăsit: " + documentId));
+
+            String payloadHpo = pregatestePayloadHpo(
+                    doc.getDateStandardizate(),
+                    doc.getId(),
+                    doc.getPacientId()
+            );
+
+            log.info("Trimitere payload HPO către Python pentru documentul: {}", documentId);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<String> request = new HttpEntity<>(payloadHpo, headers);
 
-            ResponseEntity<String> response = ocrRestTemplate.postForEntity(pythonBaseUrl + interpretPath, request, String.class);
+            ResponseEntity<String> response = ocrRestTemplate.postForEntity(
+                    pythonBaseUrl + interpretPath,
+                    request,
+                    String.class
+            );
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                doc.setDateInterpretate(response.getBody());
-                doc.setStatus(DocumentMedical.StatusDocument.INTERPRETAT);
-                documentMedicalRepository.save(doc);
-            }
+            documentMedicalRepository.findById(documentId).ifPresent(d -> {
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    d.setDateInterpretate(response.getBody());
+                    d.setStatus(DocumentMedical.StatusDocument.INTERPRETAT);
+                    log.info("Interpretare clinică salvată pentru documentul: {}", documentId);
+                } else {
+                    d.setStatus(DocumentMedical.StatusDocument.EROARE);
+                    log.error("Python a returnat {} pentru documentul {}", response.getStatusCode(), documentId);
+                }
+                documentMedicalRepository.saveAndFlush(d);
+            });
+
         } catch (Exception e) {
-            log.error("Eroare la interpretarea HPO: {}", e.getMessage());
+            log.error("Eroare la interpretarea HPO pentru documentul {}: {}", documentId, e.getMessage());
+            documentMedicalRepository.findById(documentId).ifPresent(d -> {
+                d.setStatus(DocumentMedical.StatusDocument.EROARE);
+                documentMedicalRepository.saveAndFlush(d);
+            });
         }
     }
 
@@ -385,7 +411,15 @@ public class BuletinAnalizeService {
 
     private String pregatestePayloadHpo(String jsonStandardizat, UUID documentId, UUID pacientId) throws Exception {
         Map<String, Object> sursaMap = objectMapper.readValue(jsonStandardizat, new TypeReference<>() {});
-        Map<String, Object> sectiuniMap = (Map<String, Object>) sursaMap.get("sectiuni");
+
+        // Suportă atât formatul direct {sectiune: {...}} cât și wrapper-ul {"sectiuni": {...}}
+        Map<String, Object> sectiuniMap;
+        if (sursaMap.containsKey("sectiuni")) {
+            sectiuniMap = (Map<String, Object>) sursaMap.get("sectiuni");
+        } else {
+            sectiuniMap = sursaMap;
+        }
+
         List<Map<String, Object>> indicatoriCurati = new ArrayList<>();
 
         for (Object sectiuneObj : sectiuniMap.values()) {
@@ -406,6 +440,7 @@ public class BuletinAnalizeService {
                 }
             }
         }
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("documentId", documentId.toString());
         payload.put("pacientId", pacientId.toString());

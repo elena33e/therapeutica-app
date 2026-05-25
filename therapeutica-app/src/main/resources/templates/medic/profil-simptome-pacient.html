@@ -28,7 +28,7 @@
             <div class="flex items-center space-x-3">
                 <a th:href="@{'/medic/' + ${pacient.medic.user.id} + '/pacient/' + ${pacient.id}}"
                    class="px-5 py-2 text-sm font-bold text-brand-navy bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors shadow-sm">
-                    <i class="fas fa-arrow-left mr-2"></i> Înapoi la Dosar
+                    <i class="fas fa-arrow-left mr-2"></i> Înapoi la profil
                 </a>
 
                 <form th:action="@{'/medic/pacienti/' + ${pacient.id} + '/ruleaza-diagnoza'}" method="post">
@@ -37,7 +37,7 @@
                             class="px-6 py-2.5 bg-brand-gold text-brand-navy text-sm rounded-xl hover:bg-brand-gold/90 font-bold shadow-md transition-all flex items-center group"
                             th:classappend="${!diagnosticRulat} ? 'animate-pulse' : ''">
                         <i class="fas fa-brain mr-2 group-hover:scale-110 transition-transform text-brand-navy"></i>
-                        <span th:text="${diagnosticRulat ? 'Reevaluează Diagnoza' : 'Rulează Motorul Bayesian'}"></span>
+                        <span th:text="${diagnosticRulat ? 'Actualizează Diagnoza' : 'Generează Diagnostic'}"></span>
                     </button>
                 </form>
             </div>

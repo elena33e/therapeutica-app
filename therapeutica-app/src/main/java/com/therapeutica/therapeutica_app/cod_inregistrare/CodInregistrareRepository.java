@@ -16,6 +16,8 @@ public interface CodInregistrareRepository extends JpaRepository<CodInregistrare
 
     Optional<CodInregistrare> findByCodUnicAndStatus(String codUnic, CodInregistrare.StatusCod status);
 
+    boolean existsByCnpDestinatarAndStatus(String cnpDestinatar, CodInregistrare.StatusCod status);
+
 
     // Verifică dacă un cod există
     boolean existsByCodUnic(String codUnic);

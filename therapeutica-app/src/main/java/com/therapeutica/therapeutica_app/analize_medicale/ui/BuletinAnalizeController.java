@@ -4,14 +4,25 @@ import com.therapeutica.therapeutica_app.analize_medicale.BuletinAnalizeService;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedical;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedicalRepository;
 import com.therapeutica.therapeutica_app.analize_medicale.dto.BuletinEditabilDTO;
+import com.therapeutica.therapeutica_app.pacienti.Pacienti;
+import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +35,7 @@ public class BuletinAnalizeController {
 
     private final BuletinAnalizeService analizeService;
     private final DocumentMedicalRepository documentMedicalRepository;
+    private final PacientiRepository pacientiRepository;
 
 
     /**
@@ -47,11 +59,49 @@ public class BuletinAnalizeController {
         return "pacient/analize/upload-pdf";
     }
 
+    @GetMapping("/view-pdf/{documentId}")
+    public ResponseEntity<Resource> vizualizeazaFisierFizic(@PathVariable UUID documentId) {
+        try {
+            DocumentMedical doc = documentMedicalRepository.findById(documentId)
+                    .orElseThrow(() -> new RuntimeException("Document negăsit"));
+
+            Path caleFolder = Paths.get(doc.getCaleFisierStocare());
+
+            // Cautăm primul fișier din folderul documentului
+            Optional<Path> fisierOptional = Files.list(caleFolder)
+                    .filter(Files::isRegularFile)
+                    .findFirst();
+
+            if (fisierOptional.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Path fisier = fisierOptional.get();
+            Resource resource = new UrlResource(fisier.toUri());
+
+            // Determinăm automat dacă e PDF, JPG, PNG etc.
+            String contentType = Files.probeContentType(fisier);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    // "inline" îi spune browserului să îl afișeze în pagină, nu să îl descarce
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("Eroare la servirea fișierului pentru documentul {}: {}", documentId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     /**
      * POST - Trimite fișierul către Pipeline-ul Python (Docker)
      */
     @PostMapping("/incarca")
-    public String incarcaSiProceseaza(@RequestParam("files") MultipartFile[] files, // Observă pluralul și array-ul
+    public String incarcaSiProceseaza(@RequestParam("files") MultipartFile[] files,
                                       @RequestParam("pacientId") UUID pacientId,
                                       RedirectAttributes redirectAttributes) {
 
@@ -62,9 +112,6 @@ public class BuletinAnalizeController {
 
         try {
             log.info("Încărcare {} fișiere pentru pacientul: {}", files.length, pacientId);
-
-            // Opțiunea A: Dacă vrei să le unești într-un singur record DocumentMedical
-            // Va trebui să modifici 'initializeazaDocument' să accepte MultipartFile[]
             DocumentMedical doc = analizeService.initializeazaDocument(files, pacientId);
 
             analizeService.proceseazaDocumentAsincron(doc.getId());
@@ -113,6 +160,46 @@ public class BuletinAnalizeController {
             model.addAttribute("buletin", dto);
             model.addAttribute("error", "Eroare la salvare: " + e.getMessage());
             return "pacient/analize/validare-tabel";
+        }
+    }
+
+    /**
+     * POST - Salvarea corecțiilor LOINC făcute de MEDIC
+     */
+    /**
+     * POST - Salvarea corecțiilor LOINC făcute de MEDIC
+     */
+    @PostMapping("/medic/finalizeaza/{documentId}")
+    public String finalizeazaMapareMedic(@PathVariable UUID documentId,
+                                         @ModelAttribute("buletin") BuletinEditabilDTO dto,
+                                         RedirectAttributes redirectAttributes) {
+        log.info("Medic salvează maparea LOINC pentru documentul: {}", documentId);
+
+        // Căutăm entitatea Pacient
+        log.info("PacientId primit din DTO: {}", dto.getPacientId());
+        Optional<Pacienti> pacientOptional = pacientiRepository.findByUserId(dto.getPacientId());
+
+        if (pacientOptional.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Eroare: Pacientul nu a fost găsit în baza de date.");
+            return "redirect:/medic/analize/dosar/" + dto.getPacientId();
+        }
+
+        // Extragem entitatea din Optional și obținem ID-ul ei real
+        Pacienti pacient = pacientOptional.get();
+        UUID pacientIdReal = pacient.getId();
+
+        try {
+            analizeService.salveazaCorectiiMedic(documentId, dto);
+            redirectAttributes.addFlashAttribute("success", "Maparea LOINC a fost validată cu succes!");
+
+            // 3. Redirecționăm folosind ID-ul corect (cheia primară a tabelului Pacienti)
+            return "redirect:/medic/analize/dosar/" + pacientIdReal;
+
+        } catch (Exception e) {
+            log.error("Eroare la salvarea mapării de către medic: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Eroare la validare: " + e.getMessage());
+
+            return "redirect:/medic/analize/dosar/" + pacientIdReal;
         }
     }
 

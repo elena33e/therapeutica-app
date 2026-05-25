@@ -63,7 +63,8 @@
             <h3 class="font-bold text-lg text-brand-navy mb-2">Evaluări & Chestionare</h3>
             <p class="text-gray-500 text-sm mb-8 flex-grow font-medium">Completează chestionarele medicale atribuite de medicul tău pentru un diagnostic precis.</p>
 
-            <a th:href="@{'/pacient/chestionare/' + ${session.userId}}"
+
+            <a th:href="@{'/chestionare/pacient/' + ${session.userId} + '/disponibile'}"
                class="inline-flex items-center justify-between w-full px-4 py-3 bg-gray-50 border border-gray-200 text-brand-navy text-[10px] font-bold uppercase tracking-widest rounded-xl group-hover:bg-brand-gold group-hover:text-brand-navy group-hover:border-brand-gold transition-all">
                 <span>Vezi Chestionarele</span>
                 <i class="fas fa-arrow-right"></i>

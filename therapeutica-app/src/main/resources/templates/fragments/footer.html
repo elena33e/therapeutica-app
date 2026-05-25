@@ -3,9 +3,10 @@
 <body>
 <!-- Fragment footer -->
 <div th:fragment="footer">
-    <footer class="bg-gray-800 text-white py-6 mt-auto"> <!-- Schimbat aici -->
+    <!-- Am scos mt-auto. Nu e nevoie de el dacă flex-1 e pe <main> -->
+    <footer class="bg-gray-800 text-white py-6 w-full">
         <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2024 Therapeutica. Toate drepturile rezervate.</p>
+            <p>&copy; 2026 Therapeutica. Toate drepturile rezervate.</p>
             <p class="text-gray-400 text-sm mt-2" th:if="${session != null and session.userId != null}">
                 Autentificat ca: <span class="font-medium" th:text="${session.userRole}"></span>
             </p>

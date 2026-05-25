@@ -8,45 +8,7 @@
 <body>
 
 <div layout:fragment="content" class="container mx-auto px-4 py-12 max-w-7xl">
-    <!-- Breadcrumb -->
-    <nav class="flex mb-8" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
-            <li class="inline-flex items-center">
-                <a th:href="@{'/medic/dashboard/' + ${userId}}"
-                   class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-brand-navy transition-colors">
-                    <i class="fas fa-home mr-2"></i>
-                    Dashboard
-                </a>
-            </li>
-            <li>
-                <div class="flex items-center">
-                    <i class="fas fa-chevron-right text-gray-300 mx-2 text-xs"></i>
-                    <a th:href="@{/medic/pacienti}"
-                       class="ml-1 text-sm font-bold text-gray-500 hover:text-brand-navy transition-colors">
-                        Pacienții mei
-                    </a>
-                </div>
-            </li>
-            <li>
-                <div class="flex items-center">
-                    <i class="fas fa-chevron-right text-gray-300 mx-2 text-xs"></i>
-                    <a th:href="@{'/medic/pacienti/' + ${pacient.id}}"
-                       class="ml-1 text-sm font-bold text-gray-500 hover:text-brand-navy transition-colors">
-                        <span th:text="${pacientNume}"></span>
-                        <span th:text="${pacientPrenume}"></span>
-                    </a>
-                </div>
-            </li>
-            <li aria-current="page">
-                <div class="flex items-center">
-                    <i class="fas fa-chevron-right text-gray-300 mx-2 text-xs"></i>
-                    <span class="ml-1 text-sm font-bold text-brand-teal md:ml-2">
-                        Atribuire chestionar
-                    </span>
-                </div>
-            </li>
-        </ol>
-    </nav>
+
 
     <!-- Header -->
     <div class="mb-10">
@@ -181,11 +143,6 @@
                             <p class="text-gray-500 mb-6 font-medium">
                                 Pacientul are deja toate chestionarele din sistem atribuite.
                             </p>
-                            <a th:href="@{'/medic/pacienti/' + ${pacient.id}}"
-                               class="inline-flex items-center text-brand-navy bg-white border border-gray-200 hover:bg-gray-50 font-bold px-5 py-2.5 rounded-lg shadow-sm transition-all">
-                                <i class="fas fa-arrow-left mr-2"></i>
-                                Înapoi la dosar
-                            </a>
                         </div>
                     </div>
                 </form>
@@ -230,27 +187,6 @@
                 </div>
             </div>
 
-            <!-- Card instrucțiuni (Curățat cu border stânga de accent) -->
-            <div class="bg-white border border-gray-200 border-l-4 border-l-brand-blue rounded-xl p-6 mb-6 shadow-sm">
-                <h3 class="font-bold text-brand-navy mb-4 flex items-center">
-                    <i class="fas fa-lightbulb mr-2 text-brand-gold"></i>
-                    Informații importante
-                </h3>
-                <ul class="space-y-3 text-sm font-medium text-gray-600">
-                    <li class="flex items-start">
-                        <i class="fas fa-check mt-1 mr-2 text-brand-teal text-xs"></i>
-                        <span>Puteți selecta concomitent unul sau mai multe chestionare.</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="fas fa-check mt-1 mr-2 text-brand-teal text-xs"></i>
-                        <span>Pacientul va primi o notificare de alertă pe adresa de e-mail.</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="fas fa-check mt-1 mr-2 text-brand-teal text-xs"></i>
-                        <span>Puteți urmări statusul completării din dashboard.</span>
-                    </li>
-                </ul>
-            </div>
 
             <!-- Card confirmare -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">

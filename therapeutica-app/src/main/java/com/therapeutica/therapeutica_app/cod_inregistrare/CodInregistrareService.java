@@ -5,6 +5,7 @@ import com.therapeutica.therapeutica_app.cod_inregistrare.dto.GenerareCodRequest
 import com.therapeutica.therapeutica_app.cod_inregistrare.dto.GenerareCodResponse;
 import com.therapeutica.therapeutica_app.events.BeforeDeleteUtilizatori;
 import com.therapeutica.therapeutica_app.notificari.external.WhatsAppService;
+import com.therapeutica.therapeutica_app.pacienti.PacientiRepository; // Adăugat import
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import com.therapeutica.therapeutica_app.util.ReferencedException;
 import com.therapeutica.therapeutica_app.utilizatori.RoleType;
@@ -31,6 +32,7 @@ public class CodInregistrareService {
 
     private final CodInregistrareRepository codInregistrareRepository;
     private final UtilizatoriRepository utilizatoriRepository;
+    private final PacientiRepository pacientiRepository; // Adăugat inject
     private final WhatsAppService whatsappService;
 
     @Transactional
@@ -44,6 +46,7 @@ public class CodInregistrareService {
             return new GenerareCodResponse("Eroare: Lipsă permisiuni medic.");
         }
 
+        // 1. Validare Email
         Optional<Utilizatori> utilizatorExistent = utilizatoriRepository.findByEmail(request.getEmailDestinatar());
         if (utilizatorExistent.isPresent()) {
             return new GenerareCodResponse("Eroare: Există deja un cont înregistrat cu acest email.");
@@ -51,6 +54,22 @@ public class CodInregistrareService {
 
         if (!codInregistrareRepository.findNeutilizatByEmail(request.getEmailDestinatar()).isEmpty()) {
             return new GenerareCodResponse("Eroare: Există deja un cod activ pentru acest email.");
+        }
+
+        // 2. Validare CNP (NOU)
+        String cnp = request.getCnpDestinatar();
+        if (cnp != null && !cnp.trim().isEmpty()) {
+            String cnpClean = cnp.trim();
+
+            // Verificăm dacă pacientul e deja în baza de date
+            if (pacientiRepository.existsByCnp(cnpClean)) {
+                return new GenerareCodResponse("Eroare: Există deja un pacient înregistrat în sistem cu acest CNP.");
+            }
+
+            // Verificăm dacă i-am generat deja un cod pe care nu l-a folosit
+            if (codInregistrareRepository.existsByCnpDestinatarAndStatus(cnpClean, CodInregistrare.StatusCod.NEUTILIZAT)) {
+                return new GenerareCodResponse("Eroare: Există deja un cod de înregistrare activ generat pentru acest CNP.");
+            }
         }
 
         String codUnicStr = generareCodUnic();

@@ -20,14 +20,15 @@
             </p>
         </div>
         <div class="flex items-center space-x-3">
-            <a th:href="@{'/medic/analize/dosar/' + ${document.pacientId}}"
+            <!-- Corectat linkul de Anulare pentru a duce la dosarul pacientului -->
+            <a th:href="@{'/analize/pacient/documente/' + ${document.pacientId}}"
                class="bg-white border border-gray-200 hover:bg-gray-50 text-brand-navy font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-sm">
                 Anulează
             </a>
             <!-- Buton Principal  -->
             <button type="submit" form="revizuireForm"
                     class="bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-md flex items-center">
-                <i class="fas fa-microchip mr-2"></i> Finalizează
+                 Finalizează
             </button>
         </div>
     </div>
@@ -44,20 +45,22 @@
                         <i class="fas fa-file-pdf text-red-500 text-xl"></i>
                         Sursă Document
                     </h2>
-                    <a th:href="@{'/medic/analize/view-pdf/' + ${document.id}}" target="_blank"
+                    <!-- Corectat ruta pentru deschidere în tab nou -->
+                    <a th:href="@{'/analize/view-pdf/' + ${document.id}}" target="_blank"
                        class="text-sm font-bold text-gray-500 hover:text-brand-blue transition-colors flex items-center">
                         Deschide în tab nou <i class="fas fa-external-link-alt ml-1.5 text-xs"></i>
                     </a>
                 </div>
 
                 <div class="w-full flex-grow bg-gray-100/50 overflow-hidden flex items-center justify-center p-4">
+                    <!-- Corectat rutele sursă pentru afișarea fișierului -->
                     <img th:if="${isImage}"
-                         th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
+                         th:src="@{'/analize/view-pdf/' + ${document.id}}"
                          class="max-w-full max-h-full object-contain rounded-xl shadow-sm border border-gray-200"
                          alt="Document scanat" />
 
                     <iframe th:unless="${isImage}"
-                            th:src="@{'/medic/analize/view-pdf/' + ${document.id}}"
+                            th:src="@{'/analize/view-pdf/' + ${document.id}}"
                             class="w-full h-full border border-gray-200 rounded-xl shadow-sm bg-white"
                             title="Vizualizator PDF">
                     </iframe>
@@ -75,7 +78,8 @@
                 </div>
 
                 <div class="overflow-y-auto p-0 flex-grow bg-white">
-                    <form id="revizuireForm" th:action="@{'/medic/analize/finalizeaza/' + ${document.id}}" th:object="${buletin}" method="post">
+                    <!-- Corectat action-ul formularului ca să mapeze pe @PostMapping("/salveaza-validat") -->
+                    <form id="revizuireForm" th:action="@{'/analize/medic/finalizeaza/' + ${document.id}}" th:object="${buletin}" method="post">
 
                         <input type="hidden" th:field="*{documentId}" />
                         <input type="hidden" th:field="*{pacientId}" />
@@ -83,7 +87,6 @@
                         <!-- Iterăm prin lista de secțiuni adăugând secStat pentru index -->
                         <th:block th:each="sectiune, secStat : *{sectiuni}">
 
-                            <!-- CÂMP ASCUNS CRITIC: Păstrăm numele secțiunii la submit -->
                             <input type="hidden" th:field="*{sectiuni[__${secStat.index}__].nume}" />
 
                             <!-- Antet Secțiune -->

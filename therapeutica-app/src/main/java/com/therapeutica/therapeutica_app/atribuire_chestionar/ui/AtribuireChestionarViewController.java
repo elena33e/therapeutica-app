@@ -268,6 +268,13 @@ public class AtribuireChestionarViewController {
             System.out.println("Redirecting to patient details page...");
             return "redirect:/medic/pacienti/" + pacientId;
 
+        } catch (IllegalStateException e) {
+            // Prindem excepția de validare din Service pentru duplicate active
+            System.err.println("Validation Error in proceseazaAtribuire: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            // Redirecționăm înapoi la formularul de atribuire, nu la profilul pacientului
+            return "redirect:/medic/pacienti/" + pacientId + "/atribuire-nou";
+
         } catch (Exception e) {
             System.err.println("Error in proceseazaAtribuire: " + e.getMessage());
             e.printStackTrace();

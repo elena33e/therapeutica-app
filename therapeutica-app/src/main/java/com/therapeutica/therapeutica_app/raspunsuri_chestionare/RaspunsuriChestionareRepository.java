@@ -12,22 +12,10 @@ import java.util.UUID;
 @Repository
 public interface RaspunsuriChestionareRepository extends JpaRepository<RaspunsuriChestionare, UUID> {
 
-    // Pentru AtribuireChestionarService.getChestionareDisponibilePentruPacient()
-    @Query("SELECT r FROM RaspunsuriChestionare r WHERE r.pacient.id = :pacientId AND r.status = 'NECOMPLETAT'")
-    List<RaspunsuriChestionare> findByPacientIdAndStatusNecompletat(@Param("pacientId") UUID pacientId);
+    // Spring Data JPA va genera automat interogările corecte pe baza numelor metodelor
+    boolean existsByPacientIdAndChestionarIdAndStatus(UUID pacientId, UUID chestionarId, RaspunsuriChestionare.StatusRaspuns status);
 
-    @Query("SELECT COUNT(r) > 0 FROM RaspunsuriChestionare r WHERE " +
-            "r.pacient.id = :pacientId AND " +
-            "r.chestionar.id = :chestionarId AND " +
-            "r.status = 'NECOMPLETAT'")
-    boolean existsByPacientIdAndChestionarIdAndStatusNecompletat(
-            @Param("pacientId") UUID pacientId,
-            @Param("chestionarId") UUID chestionarId);
-
-    @Query("SELECT r FROM RaspunsuriChestionare r WHERE r.pacient.id = :pacientId AND r.status = :status")
-    List<RaspunsuriChestionare> findByPacientIdAndStatus(
-            @Param("pacientId") UUID pacientId,
-            @Param("status") RaspunsuriChestionare.StatusRaspuns status);
+    List<RaspunsuriChestionare> findByPacientIdAndStatus(UUID pacientId, RaspunsuriChestionare.StatusRaspuns status);
 
     // Pentru frontend - istoric chestionare pacient
     @Query("SELECT r FROM RaspunsuriChestionare r WHERE r.pacient.id = :pacientId ORDER BY r.completatLa DESC NULLS FIRST")
@@ -65,7 +53,7 @@ public interface RaspunsuriChestionareRepository extends JpaRepository<Raspunsur
             "LEFT JOIN FETCH rc.pacient p " +              // Pacient
             "LEFT JOIN FETCH p.user pu " +                 // User-ul pacientului
             "WHERE rc.pacient.id = :pacientId " +
-            "AND rc.status IN :statusuri " +               // AICI ESTE MODIFICAREA (IN în loc de =)
+            "AND rc.status IN :statusuri " +
             "ORDER BY rc.completatLa DESC NULLS LAST")
     List<RaspunsuriChestionare> findByPacientIdAndStatusInFullRelations(
             @Param("pacientId") UUID pacientId,
@@ -74,7 +62,7 @@ public interface RaspunsuriChestionareRepository extends JpaRepository<Raspunsur
     @Query("SELECT rc FROM RaspunsuriChestionare rc " +
             "LEFT JOIN FETCH rc.chestionar " +
             "LEFT JOIN FETCH rc.pacient p " +
-            "LEFT JOIN FETCH p.user " +  // ← ASTA E CHEIA!
+            "LEFT JOIN FETCH p.user " +
             "WHERE rc.id = :id")
     Optional<RaspunsuriChestionare> findByIdForCompletare(@Param("id") UUID id);
 
@@ -90,6 +78,5 @@ public interface RaspunsuriChestionareRepository extends JpaRepository<Raspunsur
     @Query("SELECT p.user.id FROM RaspunsuriChestionare rc " +
             "JOIN rc.pacient p WHERE rc.id = :raspunsChestionarId")
     UUID findUserIdByRaspunsChestionarId(@Param("raspunsChestionarId") UUID raspunsChestionarId);
-
 
 }

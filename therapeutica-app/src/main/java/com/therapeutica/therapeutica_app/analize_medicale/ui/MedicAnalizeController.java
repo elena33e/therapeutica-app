@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
+import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestTemplate;
@@ -232,20 +234,25 @@ public class MedicAnalizeController {
      * Aici medicul vede istoricul analizelor și statusurile clinice pentru a iniția revizuiri.
      */
     @GetMapping("/dosar/{pacientId}")
-    public String dosarPacientPentruMedic(@PathVariable UUID pacientId, Model model) {
+    public String dosarPacientPentruMedic(@PathVariable UUID pacientId, Model model, HttpSession session) {
         log.info("Medic accesează dosarul pacientului cu ID: {}", pacientId);
 
-        // 1. Găsim entitatea pacient pentru a afla ce User ID are în spate
-        Pacienti pacient = pacientiRepository.findById(pacientId)
+        Object medicId = session.getAttribute("userId");
+
+        // AICI E SCHIMBAREA: folosim findByIdWithUser în loc de findById
+        // Asta forțează Hibernate să aducă și obiectul Utilizatori imediat, evitând eroarea Lazy.
+        Pacienti pacient = pacientiRepository.findByIdWithUser(pacientId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Pacientul nu a fost găsit în baza de date."));
 
-        // Extragem ID-ul utilizatorului din cont
-        UUID userId = pacient.getUser().getId();
+        Utilizatori pacientUser = pacient.getUser();
+        UUID userId = pacientUser.getId();
 
         List<DocumentMedical> documente = documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(userId);
 
         model.addAttribute("documente", documente);
-        model.addAttribute("pacientId", pacientId);
+        model.addAttribute("pacient", pacient);
+        model.addAttribute("pacientUser", pacientUser);
+        model.addAttribute("medicId", medicId);
 
         return "medic/analize-pacient/dosar-pacient";
     }

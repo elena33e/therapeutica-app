@@ -17,6 +17,8 @@ public interface PacientiRepository extends JpaRepository<Pacienti, UUID> {
     // Verificare alternativă după ID
     boolean existsByUserId(UUID userId);
 
+    boolean existsByCnp(String cnp);
+
     Optional<Pacienti> findFirstByUserId(UUID userId);
     // Caută pacient după user_id (nu utilizator_id)
     Optional<Pacienti> findByUserId(UUID userId);
