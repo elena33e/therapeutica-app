@@ -48,7 +48,7 @@ public class CategoriiChestionare {
     @Column(name = "este_evaluabila", nullable = false)
     private boolean esteEvaluabila = true;
 
-    // --- CÂMP NOU ADĂUGAT ---
+
     @Enumerated(EnumType.STRING)
     @Column(name = "sex_tinta", nullable = false)
     private SexTinta sexTinta = SexTinta.AMBELE;

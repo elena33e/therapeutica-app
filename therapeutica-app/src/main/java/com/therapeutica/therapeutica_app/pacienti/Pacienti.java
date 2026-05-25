@@ -32,7 +32,7 @@ public class Pacienti {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sex")
-    private Sex sex; // Enum: MASCULIN, FEMININ
+    private Sex sex;
 
     @Column(name = "inaltime")
     private Integer inaltime; // in cm (ex: 180)

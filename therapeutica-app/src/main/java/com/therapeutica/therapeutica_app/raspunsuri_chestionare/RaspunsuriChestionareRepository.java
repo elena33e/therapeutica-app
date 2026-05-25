@@ -79,4 +79,6 @@ public interface RaspunsuriChestionareRepository extends JpaRepository<Raspunsur
             "JOIN rc.pacient p WHERE rc.id = :raspunsChestionarId")
     UUID findUserIdByRaspunsChestionarId(@Param("raspunsChestionarId") UUID raspunsChestionarId);
 
+    List<RaspunsuriChestionare> findByPacientId(UUID pacientId);
+
 }

@@ -44,6 +44,7 @@ public class ChestionarController {
     private final RaportGeneratorService raportGeneratorService;
     private final PacientiRepository pacientiRepository;
 
+
     /**
      * Afișează un chestionar pentru completare
      */
@@ -55,11 +56,11 @@ public class ChestionarController {
         log.info("Parametru primit: raspunsChestionarId = {}", raspunsChestionarId);
 
         try {
-            // 1. Folosește noua metodă cu TOATE relațiile
+            // 1. Folosește metoda cu TOATE relațiile
             log.info("Caută RaspunsuriChestionare cu toate relațiile...");
 
             RaspunsuriChestionare raspunsChestionar = raspunsuriChestionareRepository
-                    .findByIdForCompletare(raspunsChestionarId)  // ← FOLOSEȘTE ASTA!
+                    .findByIdForCompletare(raspunsChestionarId)
                     .orElseThrow(() -> {
                         log.error("NU există RaspunsuriChestionare cu ID: {}", raspunsChestionarId);
                         return new NotFoundException("Chestionarul nu a fost găsit în baza de date");
@@ -68,21 +69,29 @@ public class ChestionarController {
             log.info("RaspunsChestionar găsit: ID={}, Status={}",
                     raspunsChestionar.getId(), raspunsChestionar.getStatus());
 
-
             if (raspunsChestionar.getChestionar() != null) {
                 log.info("Chestionar: {}", raspunsChestionar.getChestionar().getNume());
             }
 
+            // 2. Extragem detaliile pacientului și sexul acestuia
+            String sexPacientStr = null;
             if (raspunsChestionar.getPacient() != null) {
                 log.info("Pacient ID: {}", raspunsChestionar.getPacient().getId());
 
-                // Acum pacient.user ar trebui să fie deja încărcat datorită JOIN FETCH
                 if (raspunsChestionar.getPacient().getUser() != null) {
                     log.info("Pacient User: {} {}",
                             raspunsChestionar.getPacient().getUser().getNume(),
                             raspunsChestionar.getPacient().getUser().getPrenume());
+
+                    // Preluăm sexul pacientului (dacă există)
+                    if (raspunsChestionar.getPacient().getSex() != null) {
+                        sexPacientStr = raspunsChestionar.getPacient().getSex().name();
+                        log.info("Sex pacient identificat: {}", sexPacientStr);
+                    } else {
+                        log.warn("Sexul pacientului nu este completat!");
+                    }
                 } else {
-                    log.warn("⚠Pacientul nu are user asociat!");
+                    log.warn("⚠ Pacientul nu are user asociat!");
                 }
             }
 
@@ -101,47 +110,57 @@ public class ChestionarController {
                 return "redirect:/chestionare/rezultate/" + raspunsChestionarId;
             }
 
-            // 5. Obține categoriile
-            List<CategoriiChestionare> categorii = categoriiChestionareRepository
+            // 5. Obține și filtrează categoriile pe baza sexului
+            List<CategoriiChestionare> toateCategoriile = categoriiChestionareRepository
                     .findByChestionarId(chestionar.getId());
 
-            log.info("Găsite {} categorii", categorii.size());
+            log.info("Găsite {} categorii inițiale", toateCategoriile.size());
 
-            // 6. Obține întrebările
+            final String finalSexPacient = sexPacientStr;
+
+            List<CategoriiChestionare> categoriiFiltrate = toateCategoriile.stream()
+                    .filter(categorie -> {
+                        // Dacă categoria e generală (AMBELE sau null), o păstrăm
+                        if (categorie.getSexTinta() == null || categorie.getSexTinta().name().equals("AMBELE")) {
+                            return true;
+                        }
+                        // Dacă nu cunoaștem sexul pacientului, afișăm tot din siguranță
+                        if (finalSexPacient == null) {
+                            return true;
+                        }
+                        // Păstrăm categoria doar dacă e destinată sexului pacientului
+                        return categorie.getSexTinta().name().equalsIgnoreCase(finalSexPacient);
+                    })
+                    .sorted(Comparator.comparingInt(c -> c.getOrdine() != null ? c.getOrdine() : 999))
+                    .collect(Collectors.toList());
+
+            log.info("Au rămas {} categorii după filtrarea pe sex", categoriiFiltrate.size());
+
+            // 6. Obține întrebările doar pentru categoriile filtrate
             Map<UUID, List<Intrebare>> intrebariPeCategorii = new HashMap<>();
-            for (CategoriiChestionare categorie : categorii) {
-                List<Intrebare> intrebari = intrebariRepository
-                        .findByCategorieId(categorie.getId());
-                intrebariPeCategorii.put(categorie.getId(), intrebari);
-                log.info("  ├─ Categorie '{}': {} întrebări",
-                        categorie.getNume(), intrebari.size());
-            }
 
-            // În metoda afiseazaPentruCompletare, după ce obții întrebările:
-            for (CategoriiChestionare categorie : categorii) {
+            for (CategoriiChestionare categorie : categoriiFiltrate) {
                 List<Intrebare> intrebari = intrebariRepository
                         .findByCategorieId(categorie.getId());
                 intrebariPeCategorii.put(categorie.getId(), intrebari);
 
-                // DEBUG: Afișează detaliile fiecărei întrebări
+                log.info("  ├─ Categorie '{}': {} întrebări", categorie.getNume(), intrebari.size());
+
+                // Debugging avansat (opțional)
                 for (Intrebare intrebare : intrebari) {
-                    log.info("DEBUG Întrebare: '{}' - Tip: {} (toString: {}, name: {}, class: {})",
+                    log.debug("DEBUG Întrebare: '{}' - Tip: {}",
                             intrebare.getTextIntrebare(),
-                            intrebare.getTipIntrebare(),
-                            intrebare.getTipIntrebare() != null ? intrebare.getTipIntrebare().toString() : "NULL",
-                            intrebare.getTipIntrebare() != null ? intrebare.getTipIntrebare().name() : "NULL",
-                            intrebare.getTipIntrebare() != null ? intrebare.getTipIntrebare().getClass().getName() : "NULL"
-                    );
+                            intrebare.getTipIntrebare());
                 }
             }
 
-            // 7. Adaugă la model
+            // 7. Adaugă datele filtrate la model
             model.addAttribute("chestionar", chestionar);
             model.addAttribute("raspunsChestionar", raspunsChestionar);
-            model.addAttribute("categorii", categorii);
+            model.addAttribute("categorii", categoriiFiltrate);
             model.addAttribute("intrebariPeCategorii", intrebariPeCategorii);
 
-            log.info("📝 ========== SUCCESS - Se încarcă template completare ==========");
+            log.info("========== SUCCESS - Se încarcă template completare ==========");
             return "pacient/completare-chestionar";
 
         } catch (Exception e) {
@@ -339,11 +358,10 @@ public class ChestionarController {
     public String listaChestionareSistem(Model model) {
         log.info("Medic accesează lista globală de chestionare");
 
-        // Obținem definițiile de chestionare (nu instanțele completate)
+        // Această listă trebuie să fie de tip List<Chestionare>
         List<Chestionare> lista = chestionareRepository.findAll();
 
         model.addAttribute("chestionareSistem", lista);
-        // Presupunem că folderul este 'medic' și fișierul este 'lista-chestionare.html'
         return "medic/chestionare/lista-chestionare";
     }
 
@@ -356,7 +374,10 @@ public class ChestionarController {
 
         // Obținem categoriile (secțiunile de disfuncție)
         List<CategoriiChestionare> categorii = categoriiChestionareRepository
-                .findByChestionarId(id);
+                .findByChestionarId(id)
+                .stream()
+                .sorted(Comparator.comparingInt(c -> c.getOrdine() != null ? c.getOrdine() : 999))
+                .collect(Collectors.toList());
 
         // Obținem întrebările grupate pe categorii
         Map<UUID, List<Intrebare>> intrebariPeCategorii = new HashMap<>();

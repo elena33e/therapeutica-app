@@ -43,16 +43,15 @@
           method="post"
           id="chestionarForm">
 
-        <div th:each="categorie : ${categorii}"
-             th:if="${categorie.sexTinta == null or categorie.sexTinta.name() == 'AMBELE' or (raspunsChestionar.pacient.sex != null and categorie.sexTinta.name() == raspunsChestionar.pacient.sex.name())}"
-             class="mb-10">
+        <div th:each="categorie, catIter : ${categorii}" class="mb-10">
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-6 border-b border-gray-100 gap-4">
                     <div>
-                        <h2 class="text-xl font-bold text-brand-navy mb-1" th:text="${categorie.nume}">Nume Categorie</h2>
-                        <p class="text-gray-500 text-sm font-medium" th:text="${categorie.descriere} ?: 'Vă rugăm să citiți cu atenție și să răspundeți.'">Descriere categorie</p>
+                        <h2 class="text-xl font-bold text-brand-navy mb-1" th:text="'Secțiunea ' + ${catIter.count}">Secțiunea X</h2>
+
+                        <p class="text-gray-500 text-sm font-medium">Vă rugăm să citiți cu atenție și să răspundeți la următoarele întrebări.</p>
                     </div>
                     <div class="bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg text-[10px] font-bold text-gray-500 uppercase tracking-widest shadow-sm flex-shrink-0">
                         <i class="fas fa-list-ol mr-1.5 text-brand-blue"></i>

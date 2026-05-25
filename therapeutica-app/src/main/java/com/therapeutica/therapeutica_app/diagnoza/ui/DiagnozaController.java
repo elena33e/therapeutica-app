@@ -2,10 +2,13 @@ package com.therapeutica.therapeutica_app.diagnoza.ui;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.therapeutica.therapeutica_app.chestionare.ChestionareRepository;
 import com.therapeutica.therapeutica_app.diagnoza.DiagnozaService;
 import com.therapeutica.therapeutica_app.diagnoza.IstoricDiagnoza;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
+import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
+import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -26,10 +29,11 @@ public class DiagnozaController {
 
     private final PacientiRepository pacientiRepository;
     private final DiagnozaService diagnozaService;
+
     private final ObjectMapper objectMapper;
+    private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
 
     /**
-     * 1. RUTA DE AFIȘARE (GET)
      * Randează dovezile și citește ultimul JSON salvat în DB.
      */
     @GetMapping("/{pacientId}/diagnoza-integrata")
@@ -42,6 +46,9 @@ public class DiagnozaController {
         UUID userId = pacient.getUser().getId();
         model.addAttribute("pacient", pacient);
         model.addAttribute("pacientUser", pacient.getUser());
+
+
+        List<RaspunsuriChestionare> istoricChestionare = raspunsuriChestionareRepository.findByPacientId(pacientId);
 
         try {
             // 1. Extragere date de laborator (Am schimbat din Object în List pentru claritate)

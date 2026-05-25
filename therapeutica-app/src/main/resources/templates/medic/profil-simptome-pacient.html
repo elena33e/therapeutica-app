@@ -8,17 +8,15 @@
 <body class="bg-gray-50">
 <div layout:fragment="content" class="min-h-screen pb-20">
 
-    <!-- Header-->
     <div class="bg-white border-b border-gray-200 sticky top-0 z-30 px-6 py-4 shadow-sm">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 
             <div class="flex items-center space-x-4">
-                <!-- Iconiță reprezentativă-->
                 <div class="bg-brand-navy p-2.5 rounded-xl border border-brand-navy/10 shadow-sm">
                     <i class="fas fa-network-wired text-white text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-brand-navy leading-none">Profil Fenotipic Integrat</h1>
+                    <h1 class="text-lg font-bold text-brand-navy leading-none">Profil Fenotipic</h1>
                     <p class="text-[12px] text-gray-500 mt-1 font-medium">
                         Pacient: <span class="font-bold text-brand-navy" th:text="${pacientUser.nume + ' ' + pacientUser.prenume}"></span>
                     </p>
@@ -32,7 +30,7 @@
                 </a>
 
                 <form th:action="@{'/medic/pacienti/' + ${pacient.id} + '/ruleaza-diagnoza'}" method="post">
-                    <!-- Buton Principal pe Gold Solid pentru a atrage atenția, text Navy pentru contrast -->
+
                     <button type="submit"
                             class="px-6 py-2.5 bg-brand-gold text-brand-navy text-sm rounded-xl hover:bg-brand-gold/90 font-bold shadow-md transition-all flex items-center group"
                             th:classappend="${!diagnosticRulat} ? 'animate-pulse' : ''">
@@ -44,10 +42,8 @@
         </div>
     </div>
 
-    <!-- Container Principal (aliniat cu restul aplicației) -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-10 space-y-8">
 
-        <!-- Mesaje Alerte (Păstrăm culorile semantice Teal/Roșu pentru feedback clar) -->
         <div th:if="${success}" class="p-4 bg-brand-teal text-white rounded-xl flex items-center shadow-md">
             <i class="fas fa-check-circle mr-3 text-white text-lg"></i>
             <span class="text-sm font-bold" th:text="${success}"></span>
@@ -66,17 +62,14 @@
             <span class="text-sm font-medium" th:text="${error}"></span>
         </div>
 
-        <!-- Secțiunea Analize și Chestionare -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            <!-- Card Analize (Tema Blue - Obiectiv) -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[400px]">
                 <div class="px-8 py-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <div class="flex items-center">
                         <i class="fas fa-microscope text-brand-blue mr-3 text-lg"></i>
                         <h3 class="font-bold text-brand-navy uppercase tracking-widest text-xs">Simptome buletin analize</h3>
                     </div>
-                    <!-- Badge Solid -->
                     <span th:if="${hasLabData}" class="bg-brand-blue text-white px-2 py-0.5 rounded-md text-[10px] font-bold uppercase shadow-sm">Detectat</span>
                 </div>
 
@@ -111,7 +104,6 @@
                 </div>
             </div>
 
-            <!-- Card Chestionare (Tema Gold - Subiectiv) -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[400px]">
                 <div class="px-8 py-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <div class="flex items-center">
@@ -160,7 +152,6 @@
 
         </div>
 
-        <!-- Secțiunea de Rezultate Diagnoză -->
         <section th:if="${diagnosticRulat}" class="pt-10 border-t border-gray-200" id="rezultate-diagnoza">
 
             <div class="mb-10 text-center max-w-2xl mx-auto">
@@ -174,26 +165,22 @@
                 </p>
             </div>
 
-            <!-- Empty State pentru Diagnoză -->
             <div th:if="${diagnostice == null or diagnostice.isEmpty()}" class="bg-white p-12 rounded-2xl border border-gray-200 text-center shadow-sm">
                 <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
                 <h4 class="text-xl font-bold text-brand-navy">Nu s-au identificat potriviri clare</h4>
                 <p class="text-sm text-gray-500 mt-2 max-w-md mx-auto font-medium">Combinația curentă de simptome și analize nu indică o patologie specifică în baza de date curentă (Mondo).</p>
             </div>
 
-            <!-- Lista de Boli Identificate -->
             <div th:if="${diagnostice != null and !diagnostice.isEmpty()}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                 <div th:each="diag, iterStat : ${diagnostice}"
                      class="bg-white rounded-2xl p-8 shadow-sm transition-all group relative flex flex-col"
                      th:classappend="${iterStat.index == 0} ? 'border-2 border-brand-teal shadow-md' : 'border border-gray-200 hover:shadow-md hover:border-gray-300'">
 
-                    <!-- Badge pentru prima afecțiune (Match-ul cel mai mare) -->
                     <div th:if="${iterStat.index == 0}" class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-brand-teal text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1 rounded-full shadow-md">
                         Probabilitate Maximă
                     </div>
 
-                    <!-- Link Extern MONDO -->
                     <a th:if="${diag.mondoId != null}"
                        th:href="'https://monarchinitiative.org/disease/' + ${diag.mondoId}"
                        target="_blank"
@@ -203,17 +190,14 @@
                     </a>
 
                     <div class="flex-grow mt-2">
-                        <!-- Numele Bolii -->
                         <h4 class="text-lg font-bold text-brand-navy leading-snug group-hover:text-brand-teal transition-colors pr-6" th:text="${diag.numeBoala}">Denumire Boală</h4>
 
                         <div class="flex items-center justify-between mt-6">
-                            <!-- Scorul de Potrivire -->
                             <div class="flex flex-col">
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Scor Potrivire</span>
                                 <span class="text-3xl font-black text-brand-teal tracking-tight" th:text="${diag.relevanta + '%'}">0%</span>
                             </div>
 
-                            <!-- Acoperire Profil -->
                             <div class="text-right">
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acoperire Profil</span>
                                 <p class="text-sm font-bold text-brand-navy bg-gray-100 px-3 py-1 rounded-lg mt-1 border border-gray-200 shadow-sm">
@@ -223,7 +207,6 @@
                         </div>
                     </div>
 
-                    <!-- Dovezi Susținătoare (Termeni HPO acoperiți) -->
                     <div class="pt-5 border-t border-gray-100 mt-6">
                         <p class="text-[10px] font-bold text-brand-navy uppercase tracking-widest mb-3"><i class="fas fa-check-double mr-1 text-brand-teal"></i> Dovezi Acoperite</p>
                         <div class="flex flex-wrap gap-2">
@@ -237,6 +220,48 @@
         </section>
 
     </div>
+
+    <div id="modalDiagnostic" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
+        <div class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-gray-100">
+            <h3 class="text-2xl font-bold text-brand-navy mb-6">Validare Clinică</h3>
+
+            <form th:action="@{/diagnostic/salveaza}" method="post">
+                <input type="hidden" name="pacientId" th:value="${pacient.id}" />
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold uppercase text-gray-500">Diagnostic Final</label>
+                        <input type="text" name="diagnosticFinal" class="w-full mt-1 p-3 border border-gray-200 rounded-xl" required placeholder="Ex: Hipoclorhidrie..." />
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold uppercase text-gray-500">Observații</label>
+                        <textarea name="observatiiClinice" class="w-full mt-1 p-3 border border-gray-200 rounded-xl" rows="3"></textarea>
+                    </div>
+
+                    <div class="hidden" th:if="${istoricChestionare != null}">
+                        <input th:each="chest : ${istoricChestionare}" type="checkbox" name="chestionareIds" th:value="${chest.id}" checked />
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-8">
+                    <button type="button" onclick="document.getElementById('modalDiagnostic').classList.add('hidden')"
+                            class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">Anulează</button>
+                    <button type="submit" class="flex-1 py-3 bg-brand-teal text-white rounded-xl font-bold shadow-lg">Salvează Diagnostic</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="fixed bottom-8 right-8 z-50">
+        <button type="button"
+                onclick="document.getElementById('modalDiagnostic').classList.remove('hidden')"
+                class="flex items-center gap-2 bg-brand-navy text-white px-6 py-4 rounded-2xl shadow-2xl hover:bg-brand-navy/90 transition-all font-bold">
+            <i class="fas fa-stethoscope"></i>
+            <span>Stabilește Diagnostic</span>
+        </button>
+    </div>
+
 </div>
 
 <th:block layout:fragment="scripts">
