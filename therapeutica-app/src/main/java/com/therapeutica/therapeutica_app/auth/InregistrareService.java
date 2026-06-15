@@ -7,6 +7,7 @@ import com.therapeutica.therapeutica_app.cod_inregistrare.CodInregistrare;
 import com.therapeutica.therapeutica_app.cod_inregistrare.CodInregistrareRepository;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
+import com.therapeutica.therapeutica_app.util.PasswordValidator;
 import com.therapeutica.therapeutica_app.utilizatori.RoleType;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
@@ -40,7 +41,7 @@ public class InregistrareService {
                 return new InregistrareResponse(false, "Parolele nu coincid");
             }
 
-            if (!valideazaParola(request.getParola())) {
+            if (!PasswordValidator.isValida(request.getParola())) {
                 return new InregistrareResponse(false,
                         "Parola trebuie să aibă cel puțin 8 caractere, o cifră și un caracter special");
             }
@@ -132,23 +133,5 @@ public class InregistrareService {
         }
     }
 
-    private boolean valideazaParola(String parola) {
-        if (parola == null || parola.length() < 8) {
-            return false;
-        }
 
-        boolean hasDigit = false;
-        boolean hasSpecialChar = false;
-
-        for (char c : parola.toCharArray()) {
-            if (Character.isDigit(c)) {
-                hasDigit = true;
-            }
-            if (!Character.isLetterOrDigit(c)) {
-                hasSpecialChar = true;
-            }
-        }
-
-        return hasDigit && hasSpecialChar;
-    }
 }

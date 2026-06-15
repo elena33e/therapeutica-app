@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Setare Parolă Nouă - Therapeutica</title>
+</head>
+<body>
+<div layout:fragment="content" class="container mx-auto px-4 py-12 flex items-center justify-center min-h-[75vh]">
+
+    <div class="w-full max-w-md bg-white p-10 rounded-3xl shadow-sm border border-gray-200">
+
+        <div th:if="${error}" class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-bold rounded-xl flex items-center shadow-sm">
+            <i class="fas fa-exclamation-triangle mr-3 text-red-500 text-lg"></i>
+            <span th:text="${error}"></span>
+        </div>
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 border border-gray-200 mb-6 shadow-sm">
+                <i class="fas fa-key text-2xl text-brand-teal"></i>
+            </div>
+            <h1 class="text-3xl font-black text-brand-navy tracking-tight">Parolă nouă</h1>
+            <p class="text-gray-500 mt-3 font-medium">Introduceți noua parolă mai jos</p>
+        </div>
+
+        <form th:action="@{/resetare-parola/schimba}" method="POST" class="space-y-6">
+            <input type="hidden" name="token" th:value="${token}" />
+
+            <div>
+                <label for="parolaNoua" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Noua Parolă</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    <input type="password" id="parolaNoua" name="parolaNoua" required
+                           class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy bg-gray-50 focus:bg-white"
+                           placeholder="••••••••">
+                </div>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center group mt-2">
+                <span class="uppercase tracking-widest text-xs">Salvează parola</span>
+                <i class="fas fa-check ml-2 text-[10px]"></i>
+            </button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

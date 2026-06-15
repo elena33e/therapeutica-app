@@ -47,7 +47,10 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label for="password" class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">Parolă</label>
-                    <a href="#" class="text-[10px] font-bold text-brand-teal uppercase tracking-widest hover:text-brand-navy transition-colors">Ați uitat parola?</a>
+                    <a th:href="@{/resetare-parola/cere-resetare-view}"
+                       class="text-[10px] font-bold text-brand-teal uppercase tracking-widest hover:text-brand-navy transition-colors">
+                        Ați uitat parola?
+                    </a>
                 </div>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">

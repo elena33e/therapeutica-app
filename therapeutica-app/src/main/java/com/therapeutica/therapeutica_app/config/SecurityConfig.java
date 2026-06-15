@@ -47,7 +47,9 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/inregistrare", "/api/auth/**", "/api/test/**", "/css/**", "/js/**", "/images/**", "/error").permitAll()
+
+                        .requestMatchers("/", "/login", "/inregistrare", "/api/auth/**", "/api/test/**",
+                                "/css/**", "/js/**", "/images/**", "/error", "/resetare-parola/**").permitAll()
                         .requestMatchers("/medic/**").hasRole("MEDIC")
                         .requestMatchers("/pacient/**").hasRole("PACIENT")
                         .anyRequest().authenticated()

@@ -14,8 +14,6 @@ public class AuthController {
     @Autowired
     private InregistrareService inregistrareService;
 
-    // Metoda pentru înregistrare rămâne, deoarece este un flux public, non-security,
-    // care doar inserează date în bază/Supabase.
     @PostMapping("/inregistrare")
     @Transactional
     public ResponseEntity<InregistrareResponse> inregistrare(@RequestBody InregistrareRequest request) {

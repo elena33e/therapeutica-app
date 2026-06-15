@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,6 +44,12 @@ public class Utilizatori {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "role_type")
     private RoleType rol;
+
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "token_expirare")
+    private LocalDateTime tokenExpirare;
 
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
