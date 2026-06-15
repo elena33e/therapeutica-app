@@ -1,14 +1,16 @@
 package com.therapeutica.therapeutica_app.medici.ui;
 
+import com.therapeutica.therapeutica_app.diagnostic.DiagnosticMedicService;
 import com.therapeutica.therapeutica_app.medici.Medici;
 import com.therapeutica.therapeutica_app.medici.MediciRepository;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
-import com.therapeutica.therapeutica_app.raspunsuri_chestionare.dto.RaspunsChestionarDTO; // IMPORTUL NOU
+import com.therapeutica.therapeutica_app.raspunsuri_chestionare.dto.RaspunsChestionarDTO;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
+import com.therapeutica.therapeutica_app.diagnostic.DiagnosticMedic;
 import jakarta.servlet.http.HttpSession;
 import lombok.Builder;
 import lombok.Data;
@@ -36,6 +38,7 @@ public class PacientiMedicController {
     private final PacientiRepository pacientiRepository;
     private final UtilizatoriRepository utilizatoriRepository;
     private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
+    private final DiagnosticMedicService diagnosticMedicService;
 
     @GetMapping("/{medicId}/pacienti")
     public String listaPacienti(@PathVariable UUID medicId,
@@ -128,7 +131,7 @@ public class PacientiMedicController {
                 throw new RuntimeException("User not found for pacient");
             }
 
-            // 1. Extragem ENTITĂȚILE din baza de date
+            // 1. Extragem ENTITĂȚILE pentru chestionare din baza de date
             List<RaspunsuriChestionare> completateEntity = raspunsuriChestionareRepository
                     .findByPacientIdAndStatusInFullRelations(
                             pacientId,
@@ -140,7 +143,7 @@ public class PacientiMedicController {
                             pacientId,
                             RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
 
-            // 2. Mapăm Entitățile în DTO-ul tău curat
+            // 2. Mapăm Entitățile în DTO
             List<RaspunsChestionarDTO> chestionareCompletate = completateEntity.stream()
                     .map(this::mapToDTO)
                     .collect(Collectors.toList());
@@ -149,14 +152,25 @@ public class PacientiMedicController {
                     .map(this::mapToDTO)
                     .collect(Collectors.toList());
 
-            // 3. Calculăm data ultimei activități
+            // 3. Extragem istoricul diagnosticelor și îl sortăm descrescător (cel mai recent primul)
+            List<DiagnosticMedic> istoricDiagnostice = diagnosticMedicService.getIstoricDiagnosticPacient(pacientId);
+            if (istoricDiagnostice != null && !istoricDiagnostice.isEmpty()) {
+                istoricDiagnostice.sort((d1, d2) -> d2.getDataStabilire().compareTo(d1.getDataStabilire()));
+            }
+
+            // 4. Calculăm data ultimei activități comparând ultimul chestionar cu ultimul diagnostic
             LocalDateTime ultimaActivitate = !chestionareCompletate.isEmpty()
                     ? chestionareCompletate.get(0).getCompletatLa()
                     : null;
 
+            if (istoricDiagnostice != null && !istoricDiagnostice.isEmpty()) {
+                LocalDateTime ultimulDiag = istoricDiagnostice.get(0).getDataStabilire();
+                if (ultimaActivitate == null || ultimulDiag.isAfter(ultimaActivitate)) {
+                    ultimaActivitate = ultimulDiag;
+                }
+            }
 
-
-            // Trimitem totul în Model
+            // 5. Trimitem datele către UI
             model.addAttribute("medicId", medicId);
             model.addAttribute("pacient", pacient);
             model.addAttribute("pacientUser", pacientUser);
@@ -164,11 +178,13 @@ public class PacientiMedicController {
             model.addAttribute("totalChestionareNecompletate", chestionareNecompletate.size());
             model.addAttribute("ultimaActivitate", ultimaActivitate);
             model.addAttribute("chestionareCompletate", chestionareCompletate);
-            model.addAttribute("chestionareNecompletate", chestionareNecompletate); // Asta lipsea!
+            model.addAttribute("chestionareNecompletate", chestionareNecompletate);
+            model.addAttribute("istoricDiagnostice", istoricDiagnostice); // Variabila necesară în HTML
 
-            log.info("Detalii pacient: {} {} | Completate: {} | Restante: {}",
+            log.info("Detalii pacient: {} {} | Chestionare: {} completate, {} restante | Diagnostice validate: {}",
                     pacientUser.getNume(), pacientUser.getPrenume(),
-                    chestionareCompletate.size(), chestionareNecompletate.size());
+                    chestionareCompletate.size(), chestionareNecompletate.size(),
+                    (istoricDiagnostice != null ? istoricDiagnostice.size() : 0));
 
             return "medic/pacienti-detalii";
 

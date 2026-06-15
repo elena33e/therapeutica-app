@@ -33,4 +33,9 @@ public class DiagnosticMedicService {
     public List<DiagnosticMedic> getIstoricDiagnosticPacient(UUID pacientId) {
         return repository.findByPacientId(pacientId);
     }
+
+
+    public List<DiagnosticMedic> getIstoricDiagnosticPacientDetaliat(UUID pacientId) {
+        return repository.findByPacientIdWithFullDetails(pacientId);
+    }
 }

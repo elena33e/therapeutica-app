@@ -7,12 +7,11 @@ import com.therapeutica.therapeutica_app.cod_inregistrare.CodInregistrare;
 import com.therapeutica.therapeutica_app.cod_inregistrare.CodInregistrareRepository;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
-import com.therapeutica.therapeutica_app.supabase.SupabaseAuthService;
-import com.therapeutica.therapeutica_app.supabase.dto.SupabaseAuthResponse;
 import com.therapeutica.therapeutica_app.utilizatori.RoleType;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,12 +30,12 @@ public class InregistrareService {
     private PacientiRepository pacientiRepository;
 
     @Autowired
-    private SupabaseAuthService supabaseAuthService;
+    private PasswordEncoder passwordEncoder; // Adaugă acest câmp în InregistrareService
 
     @Transactional
     public InregistrareResponse inregistreazaUtilizator(InregistrareRequest request) {
         try {
-            // 1. Validări de bază
+            // Validări de bază
             if (!request.getParola().equals(request.getConfirmaParola())) {
                 return new InregistrareResponse(false, "Parolele nu coincid");
             }
@@ -46,7 +45,7 @@ public class InregistrareService {
                         "Parola trebuie să aibă cel puțin 8 caractere, o cifră și un caracter special");
             }
 
-            // 2. Verifică codul de înregistrare și utilizatorul într-o singură tranzacție
+            // Verificare cod inregistrare
             Optional<CodInregistrare> codOpt = codInregistrareRepository
                     .findByCodUnicAndStatus(request.getCodUnic(), CodInregistrare.StatusCod.NEUTILIZAT);
 
@@ -56,69 +55,47 @@ public class InregistrareService {
 
             CodInregistrare cod = codOpt.get();
 
-            // 3. Găsește utilizatorul
+            // Găsește utilizatorul asociat email-ului din cod
             Optional<Utilizatori> utilizatorOpt = utilizatoriRepository.findByEmail(cod.getEmailDestinatar());
             if (utilizatorOpt.isEmpty()) {
-                return new InregistrareResponse(false, "Nu există utilizator pentru acest cod");
+                return new InregistrareResponse(false, "Nu există cont asociat acestui cod");
             }
 
-            Utilizatori utilizatorExistent = utilizatorOpt.get();
+            Utilizatori utilizator = utilizatorOpt.get();
 
-            // 4. Verifică CNP-ul (doar pentru PACIENTI) - evită extra query dacă nu e necesar
-            if (utilizatorExistent.getRol() == RoleType.PACIENT) {
-                Optional<Pacienti> pacientOpt = pacientiRepository.findByUserId(utilizatorExistent.getId());
+            // Verificare CNP pacient
+            if (utilizator.getRol() == RoleType.PACIENT) {
+                Optional<Pacienti> pacientOpt = pacientiRepository.findByUserId(utilizator.getId());
                 if (pacientOpt.isEmpty()) {
                     return new InregistrareResponse(false, "Date incomplete pentru pacient");
                 }
 
                 Pacienti pacient = pacientOpt.get();
-                if (!pacient.getCnp().equals(request.getCnp())) {
-                    return new InregistrareResponse(false, "CNP invalid pentru acest cod");
+                if (pacient.getCnp() != null && !pacient.getCnp().equals(request.getCnp())) {
+                    return new InregistrareResponse(false, "CNP invalid");
                 }
             }
 
-            // 5. CREEAZĂ contul în Supabase
-            SupabaseAuthResponse authResponse = supabaseAuthService.signUp(
-                    cod.getEmailDestinatar(),
-                    request.getParola(),
-                    utilizatorExistent.getRol(),
-                    utilizatorExistent.getNume(),
-                    utilizatorExistent.getPrenume()
-            );
+            // Criptarea parolei și actualizarea utilizatorului local
+            utilizator.setParola(passwordEncoder.encode(request.getParola()));
+            utilizatoriRepository.save(utilizator);
 
-            System.out.println("=== AUTH RESPONSE ANALYSIS ===");
-            System.out.println("User: " + (authResponse.getUser() != null));
-            System.out.println("User ID: " + (authResponse.getUser() != null ? authResponse.getUser().getId() : "null"));
-            System.out.println("Access Token: " + (authResponse.getAccess_token() != null));
-            System.out.println("Error: " + (authResponse.getError() != null));
-
-            // ✅ NOU - consideră succes dacă userul apare în Supabase (chiar dacă răspunsul e gol)
-            if (authResponse.getError() != null) {
-                // Există o eroare explicită de la Supabase
-                return new InregistrareResponse(false, "Eroare la crearea contului: " + authResponse.getError().getMessage());
-            }
-
-            // Dacă ajungem aici, considerăm că e succes (userul apare în Supabase dashboard)
-            System.out.println("✅ User creat în Supabase - continuăm cu fluxul");
-
-            // 6. Marchează codul ca utilizat
+            // Marchează codul ca utilizat
             cod.setStatus(CodInregistrare.StatusCod.UTILIZAT);
-            cod.setAtribuit(utilizatorExistent);
+            cod.setAtribuit(utilizator);
             codInregistrareRepository.save(cod);
 
-            // ✅ MODIFICARE CHEIE: Întotdeauna returnăm că necesită confirmare
-            // pentru că Supabase cu confirmare email activată va trimite mereu email de confirmare
             return new InregistrareResponse(
                     true,
-                    "Cont creat cu succes! Vă rugăm să vă verificați email-ul (" + utilizatorExistent.getEmail() + ") și să faceți click pe link-ul de confirmare pentru a activa contul. După confirmare, vă puteți autentifica în aplicație.",
-                    utilizatorExistent.getEmail(),
-                    utilizatorExistent.getRol(),
-                    true // ✅ ÎNTOTDEAUNA true - căci Supabase trimite email de confirmare
+                    "Cont activat cu succes! Vă puteți autentifica acum folosind email-ul și parola setată.",
+                    utilizator.getEmail(),
+                    utilizator.getRol(),
+                    false
             );
 
         } catch (Exception e) {
-            e.printStackTrace();  // ✅ PENTRU DEBUG
-            return new InregistrareResponse(false, "Eroare internă: " + e.getMessage());
+            e.printStackTrace();
+            return new InregistrareResponse(false, "Eroare internă la procesarea înregistrării: " + e.getMessage());
         }
     }
 
@@ -150,7 +127,7 @@ public class InregistrareService {
                 return new CodVerificareResponse(false, "Cod invalid sau deja utilizat");
             }
         } catch (Exception e) {
-            e.printStackTrace();  // ✅ PENTRU DEBUG
+            e.printStackTrace();
             return new CodVerificareResponse(false, "Eroare la verificarea codului: " + e.getMessage());
         }
     }

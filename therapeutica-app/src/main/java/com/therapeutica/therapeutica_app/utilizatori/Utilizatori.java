@@ -37,6 +37,9 @@ public class Utilizatori {
     @Column(nullable = false, columnDefinition = "text")
     private String prenume;
 
+    @Column(nullable = false, columnDefinition = "text")
+    private String parola;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "role_type")
     private RoleType rol;

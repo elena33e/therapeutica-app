@@ -36,11 +36,7 @@ public class PacientProfilController {
 
         // Verifică autentificare și rol
         String userIdStr = (String) session.getAttribute("userId");
-        String userRole = (String) session.getAttribute("userRole");
 
-        if (userIdStr == null || userRole == null || !userRole.equals("PACIENT")) {
-            return "redirect:/login";
-        }
 
         UUID userId = UUID.fromString(userIdStr);
 
@@ -75,7 +71,7 @@ public class PacientProfilController {
             // Punem link-ul în model pentru Thymeleaf
             model.addAttribute("whatsappLinkMedic", linkWa);
         }
-        // -----------------------
+
 
         // Adaugă datele în model
         model.addAttribute("pacientId", userIdStr);
@@ -94,11 +90,6 @@ public class PacientProfilController {
                                         Model model) {
 
         String userIdStr = (String) session.getAttribute("userId");
-        String userRole = (String) session.getAttribute("userRole");
-
-        if (userIdStr == null || userRole == null || !userRole.equals("PACIENT")) {
-            return "redirect:/login";
-        }
 
         UUID userId = UUID.fromString(userIdStr);
 
@@ -137,12 +128,6 @@ public class PacientProfilController {
                                 Model model) {
 
         String userIdStr = (String) session.getAttribute("userId");
-        String userRole = (String) session.getAttribute("userRole");
-
-        // 1. Verificare securitate
-        if (userIdStr == null || userRole == null || !userRole.equals("PACIENT")) {
-            return "redirect:/login";
-        }
 
         UUID userId = UUID.fromString(userIdStr);
         if (!id.equals(userIdStr)) {
