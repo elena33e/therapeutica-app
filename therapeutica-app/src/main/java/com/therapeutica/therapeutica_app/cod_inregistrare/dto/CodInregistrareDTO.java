@@ -29,6 +29,12 @@ public class CodInregistrareDTO {
     private UUID atribuit;
 
     @NotNull
+    private String numeDestinatar;
+
+    @NotNull
+    private String prenumeDestinatar;
+
+    @NotNull
     private String emailDestinatar;
 
     private String cnpDestinatar;

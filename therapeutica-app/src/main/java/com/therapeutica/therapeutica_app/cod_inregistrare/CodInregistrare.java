@@ -44,6 +44,12 @@ public class CodInregistrare {
     @JoinColumn(name = "atribuit")
     private Utilizatori atribuit;
 
+    @Column(name = "nume_destinatar", columnDefinition = "text")
+    private String numeDestinatar;
+
+    @Column(name = "prenume_destinatar", columnDefinition = "text")
+    private String prenumeDestinatar;
+
     @Column(name = "email_destinatar", nullable = false, columnDefinition = "text")
     private String emailDestinatar;
 

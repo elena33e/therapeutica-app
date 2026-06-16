@@ -86,7 +86,7 @@ public class AtribuireChestionarService {
             });
         }
 
-        // 5. Notificare Pacient (doar dacă s-au creat atribuiri noi)
+        // Notificare Pacient (doar dacă s-au creat atribuiri noi)
         if (!raspunsuriCreateIds.isEmpty()) {
             triggerNotificarePacient(pacient, raspunsuriCreateIds.size());
         }

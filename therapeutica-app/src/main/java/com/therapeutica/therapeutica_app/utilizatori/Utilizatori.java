@@ -45,13 +45,6 @@ public class Utilizatori {
     @Column(nullable = false, columnDefinition = "role_type")
     private RoleType rol;
 
-    @Column(name = "reset_token")
-    private String resetToken;
-
-    @Column(name = "token_expirare")
-    private LocalDateTime tokenExpirare;
-
-
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private Medici medic;
 

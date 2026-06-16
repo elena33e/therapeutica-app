@@ -31,7 +31,7 @@ public class InregistrareService {
     private PacientiRepository pacientiRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Adaugă acest câmp în InregistrareService
+    private PasswordEncoder passwordEncoder;
 
     @Transactional
     public InregistrareResponse inregistreazaUtilizator(InregistrareRequest request) {
@@ -56,41 +56,34 @@ public class InregistrareService {
 
             CodInregistrare cod = codOpt.get();
 
-            // Găsește utilizatorul asociat email-ului din cod
-            Optional<Utilizatori> utilizatorOpt = utilizatoriRepository.findByEmail(cod.getEmailDestinatar());
-            if (utilizatorOpt.isEmpty()) {
-                return new InregistrareResponse(false, "Nu există cont asociat acestui cod");
+           // Creare instanța Utilizator nou
+            Utilizatori utilizatorNou = new Utilizatori();
+            utilizatorNou.setEmail(cod.getEmailDestinatar());
+            utilizatorNou.setRol(cod.getRolDestinatar());
+            utilizatorNou.setParola(passwordEncoder.encode(request.getParola()));
+            utilizatorNou.setNume(cod.getNumeDestinatar());
+            utilizatorNou.setPrenume(cod.getPrenumeDestinatar());
+            utilizatoriRepository.save(utilizatorNou);
+
+            // Creare + asociere profil Pacient
+            if (cod.getRolDestinatar() == RoleType.PACIENT) {
+                Pacienti pacientNou = new Pacienti();
+                pacientNou.setUser(utilizatorNou);
+                pacientNou.setCnp(cod.getCnpDestinatar());
+                pacientNou.setMedic(cod.getGeneratDe().getMedic());
+                pacientiRepository.save(pacientNou);
             }
 
-            Utilizatori utilizator = utilizatorOpt.get();
-
-            // Verificare CNP pacient
-            if (utilizator.getRol() == RoleType.PACIENT) {
-                Optional<Pacienti> pacientOpt = pacientiRepository.findByUserId(utilizator.getId());
-                if (pacientOpt.isEmpty()) {
-                    return new InregistrareResponse(false, "Date incomplete pentru pacient");
-                }
-
-                Pacienti pacient = pacientOpt.get();
-                if (pacient.getCnp() != null && !pacient.getCnp().equals(request.getCnp())) {
-                    return new InregistrareResponse(false, "CNP invalid");
-                }
-            }
-
-            // Criptarea parolei și actualizarea utilizatorului local
-            utilizator.setParola(passwordEncoder.encode(request.getParola()));
-            utilizatoriRepository.save(utilizator);
-
-            // Marchează codul ca utilizat
+           // Invalidare cod
             cod.setStatus(CodInregistrare.StatusCod.UTILIZAT);
-            cod.setAtribuit(utilizator);
+            cod.setAtribuit(utilizatorNou);
             codInregistrareRepository.save(cod);
 
             return new InregistrareResponse(
                     true,
-                    "Cont activat cu succes! Vă puteți autentifica acum folosind email-ul și parola setată.",
-                    utilizator.getEmail(),
-                    utilizator.getRol(),
+                    "Cont creat și activat cu succes!",
+                    utilizatorNou.getEmail(),
+                    utilizatorNou.getRol(),
                     false
             );
 

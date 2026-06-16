@@ -5,7 +5,7 @@ import com.therapeutica.therapeutica_app.cod_inregistrare.dto.GenerareCodRequest
 import com.therapeutica.therapeutica_app.cod_inregistrare.dto.GenerareCodResponse;
 import com.therapeutica.therapeutica_app.events.BeforeDeleteUtilizatori;
 import com.therapeutica.therapeutica_app.notificari.external.WhatsAppService;
-import com.therapeutica.therapeutica_app.pacienti.PacientiRepository; // Adăugat import
+import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import com.therapeutica.therapeutica_app.util.ReferencedException;
 import com.therapeutica.therapeutica_app.utilizatori.RoleType;
@@ -32,7 +32,7 @@ public class CodInregistrareService {
 
     private final CodInregistrareRepository codInregistrareRepository;
     private final UtilizatoriRepository utilizatoriRepository;
-    private final PacientiRepository pacientiRepository; // Adăugat inject
+    private final PacientiRepository pacientiRepository;
     private final WhatsAppService whatsappService;
 
     @Transactional
@@ -56,17 +56,15 @@ public class CodInregistrareService {
             return new GenerareCodResponse("Eroare: Există deja un cod activ pentru acest email.");
         }
 
-        // 2. Validare CNP (NOU)
+        // 2. Validare CNP
         String cnp = request.getCnpDestinatar();
         if (cnp != null && !cnp.trim().isEmpty()) {
             String cnpClean = cnp.trim();
 
-            // Verificăm dacă pacientul e deja în baza de date
             if (pacientiRepository.existsByCnp(cnpClean)) {
                 return new GenerareCodResponse("Eroare: Există deja un pacient înregistrat în sistem cu acest CNP.");
             }
 
-            // Verificăm dacă i-am generat deja un cod pe care nu l-a folosit
             if (codInregistrareRepository.existsByCnpDestinatarAndStatus(cnpClean, CodInregistrare.StatusCod.NEUTILIZAT)) {
                 return new GenerareCodResponse("Eroare: Există deja un cod de înregistrare activ generat pentru acest CNP.");
             }
@@ -78,6 +76,11 @@ public class CodInregistrareService {
         codEntity.setStatus(CodInregistrare.StatusCod.NEUTILIZAT);
         codEntity.setGeneratDe(medicUser);
         codEntity.setAtribuit(null);
+
+        // Câmpuri apelate corect
+        codEntity.setNumeDestinatar(request.getNumeDestinatar());
+        codEntity.setPrenumeDestinatar(request.getPrenumeDestinatar());
+
         codEntity.setEmailDestinatar(request.getEmailDestinatar());
         codEntity.setCnpDestinatar(request.getCnpDestinatar());
         codEntity.setTelefonDestinatar(request.getTelefonDestinatar());
@@ -157,6 +160,11 @@ public class CodInregistrareService {
         dto.setStatus(cod.getStatus());
         dto.setGeneratDe(cod.getGeneratDe() != null ? cod.getGeneratDe().getId() : null);
         dto.setAtribuit(cod.getAtribuit() != null ? cod.getAtribuit().getId() : null);
+
+        // Mapări completate
+        dto.setNumeDestinatar(cod.getNumeDestinatar());
+        dto.setPrenumeDestinatar(cod.getPrenumeDestinatar());
+
         dto.setEmailDestinatar(cod.getEmailDestinatar());
         dto.setCnpDestinatar(cod.getCnpDestinatar());
         dto.setTelefonDestinatar(cod.getTelefonDestinatar());
@@ -173,6 +181,10 @@ public class CodInregistrareService {
         if (dto.getAtribuit() != null) {
             cod.setAtribuit(utilizatoriRepository.findById(dto.getAtribuit()).orElse(null));
         }
+
+
+        cod.setNumeDestinatar(dto.getNumeDestinatar());
+        cod.setPrenumeDestinatar(dto.getPrenumeDestinatar());
         cod.setEmailDestinatar(dto.getEmailDestinatar());
         cod.setCnpDestinatar(dto.getCnpDestinatar());
         cod.setTelefonDestinatar(dto.getTelefonDestinatar());
