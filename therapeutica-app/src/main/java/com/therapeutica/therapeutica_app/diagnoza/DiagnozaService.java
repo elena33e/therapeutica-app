@@ -47,10 +47,10 @@ public class DiagnozaService {
     public String ruleazaDiagnoza(UUID userId, UUID profilPacientId) {
         log.info("Inițiere diagnoză cumulativă. UserId: {}, ProfilId: {}", userId, profilPacientId);
 
-        // Extragere date fuzionate din TOATE buletinele de analize
-        List<Object> dateLab = extrageDateLab(userId);
+        // Extragere date din toate buletinele de analize
+        List<Object> dateLab = extrageDateLab(profilPacientId);
 
-        // Extragere simptome unice din chestionare, cu tot cu Clinical modifiers asociati
+        // Extragere simptome din chestionare
         List<Map<String, Object>> simptomeBrute = extrageSimptomeBrute(profilPacientId);
 
         log.info("Date colectate: {} analize unice, {} simptome unice.", dateLab.size(), simptomeBrute.size());
@@ -77,7 +77,7 @@ public class DiagnozaService {
      * Colectează analizele din documentele interpretate, păstrând doar cea mai recentă valoare pentru fiecare marker.
      */
     public List<Object> extrageDateLab(UUID userId) {
-        List<DocumentMedical> documente = documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(userId);
+        List<DocumentMedical> documente = documentMedicalRepository.findByPacient_IdOrderByDataIncarcareDesc(userId);
 
         List<Map<String, Object>> toateObservatiile = new ArrayList<>();
 

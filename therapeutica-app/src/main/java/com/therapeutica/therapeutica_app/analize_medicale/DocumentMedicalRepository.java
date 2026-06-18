@@ -12,23 +12,21 @@ import java.util.UUID;
 @Repository
 public interface DocumentMedicalRepository extends JpaRepository<DocumentMedical, UUID> {
 
-    // Găsește toate documentele încărcate pentru un anumit pacient
-    List<DocumentMedical> findByPacientId(UUID pacientId);
+    List<DocumentMedical> findByPacient_Id(UUID pacientId);
 
-    // Găsește cel mai recent document al unui pacient
-    Optional<DocumentMedical> findFirstByPacientIdOrderByDataIncarcareDesc(UUID pacientId);
 
-    // Verifică dacă un document aparține unui anumit pacient (pentru securitate)
-    boolean existsByIdAndPacientId(UUID id, UUID pacientId);
+    Optional<DocumentMedical> findFirstByPacient_IdOrderByDataIncarcareDesc(UUID pacientId);
 
-    // Query custom pentru a număra documentele validate
-    @Query("SELECT COUNT(d) FROM DocumentMedical d WHERE d.pacientId = :pacientId AND d.status = 'VALIDAT'")
+    boolean existsByIdAndPacient_Id(UUID id, UUID pacientId);
+
+    @Query("SELECT COUNT(d) FROM DocumentMedical d WHERE d.pacient.id = :pacientId AND d.status = 'VALIDAT'")
     long countValidatedDocumentsByPacient(@Param("pacientId") UUID pacientId);
 
-    List<DocumentMedical> findByPacientIdOrderByDataIncarcareDesc(UUID pacientId);
 
-    //metoda necesară pentru Worklist-ul medicului
+    List<DocumentMedical> findByPacient_IdOrderByDataIncarcareDesc(UUID pacientId);
+
     List<DocumentMedical> findByStatus(DocumentMedical.StatusDocument status);
 
-    List<DocumentMedical> findByPacientIdAndStatusNotOrderByDataIncarcareDesc(UUID pacientId, DocumentMedical.StatusDocument status);
+
+    List<DocumentMedical> findByPacient_IdAndStatusNotOrderByDataIncarcareDesc(UUID pacientId, DocumentMedical.StatusDocument status);
 }

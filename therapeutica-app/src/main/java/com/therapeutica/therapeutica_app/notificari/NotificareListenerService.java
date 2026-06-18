@@ -1,6 +1,8 @@
 package com.therapeutica.therapeutica_app.notificari;
 
 import com.therapeutica.therapeutica_app.notificari.events.NotificareEvent;
+import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
+import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -14,13 +16,16 @@ import java.time.LocalDateTime;
 public class NotificareListenerService {
 
     private final NotificareRepository notificareRepository;
+    private final UtilizatoriRepository utilizatoriRepository;
 
     //@Async
     @EventListener
     public void proceseazaNotificare(NotificareEvent event) {
         try {
+            Utilizatori destinatarRef = utilizatoriRepository.getReferenceById(event.destinatarId());
+
             Notificare notificare = Notificare.builder()
-                    .utilizatorDestinatarId(event.destinatarId())
+                    .utilizatorDestinatar(destinatarRef)
                     .titlu(event.titlu())
                     .mesaj(event.mesaj())
                     .linkActiune(event.linkActiune())

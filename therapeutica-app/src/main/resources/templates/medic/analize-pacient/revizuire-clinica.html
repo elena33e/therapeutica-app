@@ -21,7 +21,7 @@
         </div>
         <div class="flex items-center space-x-3">
             <!-- Corectat linkul de Anulare pentru a duce la dosarul pacientului -->
-            <a th:href="@{'/analize/pacient/documente/' + ${document.pacientId}}"
+            <a th:href="@{'/medic/analize/dosar/' + ${pacientId}}"
                class="bg-white border border-gray-200 hover:bg-gray-50 text-brand-navy font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-sm">
                 Anulează
             </a>

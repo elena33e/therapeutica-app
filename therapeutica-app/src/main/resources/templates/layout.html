@@ -14,29 +14,21 @@
 
 <header th:replace="~{fragments/header :: header}"></header>
 
-<!-- Div-ul ăsta ține sidebar-ul la stânga și conținutul la dreapta -->
-<div class="flex flex-1 overflow-hidden">
+<div class="flex flex-1 relative">
 
-    <!-- Sidebar-ul tău -->
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
-    <!--
-      AICI ESTE SECRETUL: flex flex-col flex-1 min-h-full.
-      Coloana din dreapta va lua tot spațiul rămas, iar în interiorul ei vom împinge flex.
-    -->
-    <div th:class="${session != null and session.userId != null} ? 'flex flex-col flex-1 w-full ml-0 md:ml-64 min-h-[calc(100vh-4rem)]' : 'flex flex-col flex-1 min-h-screen w-full'">
+    <div th:class="${session != null and session.userId != null} ?
+                        'flex flex-col flex-1 w-full ml-0 md:ml-64 min-h-[calc(100vh-4rem)]' :
+                        'flex flex-col flex-1 w-full min-h-[calc(100vh-4rem)]'">
 
-        <!-- Main-ul cu flex-1 va absorbi ABSOLUT TOT spațiul gol, împingând footerul jos de tot -->
-        <main layout:fragment="content" class="flex-1 w-full flex flex-col">
+        <main class="flex-1 flex flex-col">
+            <div layout:fragment="content" class="flex-1"></div>
         </main>
 
-        <!-- Footer-ul e forțat să stea la final -->
-        <footer th:replace="~{fragments/footer :: footer}"></footer>
-
+        <div th:replace="~{fragments/footer :: footer}"></div>
     </div>
 </div>
-
-<div layout:fragment="scripts"></div>
 
 </body>
 </html>

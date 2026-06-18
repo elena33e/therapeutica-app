@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface TokenResetareRepository extends JpaRepository<TokenResetare, UUID> {
-    // Spring generează automat implementarea pentru acestă metodă
+
+    Optional<TokenResetare> findByUtilizatorId(UUID utilizatorId);
+
     Optional<TokenResetare> findByToken(String token);
 }

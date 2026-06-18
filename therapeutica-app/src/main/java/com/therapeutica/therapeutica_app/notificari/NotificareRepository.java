@@ -9,14 +9,12 @@ import java.util.UUID;
 @Repository
 public interface NotificareRepository extends JpaRepository<Notificare, Long> {
 
+    // Corectat: se folosește UtilizatorDestinatar_Id pentru a naviga în relația ManyToOne
+    List<Notificare> findByUtilizatorDestinatar_IdAndCititaFalseOrderByDataCreareDesc(UUID utilizatorDestinatarId);
 
-    // Extrage doar notificările pe care medicul nu le-a văzut încă,
-     //si le afiseaza pe cele mai recente
-    List<Notificare> findByUtilizatorDestinatarIdAndCititaFalseOrderByDataCreareDesc(UUID utilizatorDestinatarId);
-
-    //Utilă pentru istoricul complet de notificări
-    List<Notificare> findByUtilizatorDestinatarIdOrderByDataCreareDesc(UUID utilizatorDestinatarId);
+    // Utilă pentru istoricul complet de notificări
+    List<Notificare> findByUtilizatorDestinatar_IdOrderByDataCreareDesc(UUID utilizatorDestinatarId);
 
     // Returnează numărul de notificări necitite
-    long countByUtilizatorDestinatarIdAndCititaFalse(UUID utilizatorDestinatarId);
+    long countByUtilizatorDestinatar_IdAndCititaFalse(UUID utilizatorDestinatarId);
 }

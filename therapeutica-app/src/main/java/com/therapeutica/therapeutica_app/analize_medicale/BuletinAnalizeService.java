@@ -57,7 +57,13 @@ public class BuletinAnalizeService {
 
     @Transactional
     public DocumentMedical initializeazaDocument(MultipartFile[] files, UUID userIdDinSesiune) throws Exception {
+
+
+        Pacienti pacient = pacientiRepository.findByUserId(userIdDinSesiune)
+                .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit pentru acest utilizator!"));
+
         if (files == null || files.length == 0) throw new IllegalArgumentException("Nu au fost selectate fișiere.");
+
 
         // Generăm un ID unic pentru acest set de documente (buletin)
         UUID documentId = UUID.randomUUID();
@@ -80,10 +86,9 @@ public class BuletinAnalizeService {
         }
 
         DocumentMedical doc = new DocumentMedical();
-        doc.setId(documentId); // Forțăm ID-ul generat de noi pentru folder
-        doc.setPacientId(userIdDinSesiune);
+        doc.setId(documentId);
+        doc.setPacient(pacient);
         doc.setNumeFisier(numeAfisat);
-        // Salvăm calea către DIRECTORUL care conține imaginile
         doc.setCaleFisierStocare(folderDocument.toAbsolutePath().toString());
         doc.setStatus(DocumentMedical.StatusDocument.INCARCAT);
 
@@ -91,19 +96,18 @@ public class BuletinAnalizeService {
     }
 
     @Async
-
     public void proceseazaDocumentAsincron(UUID documentId) {
-        log.info("--- [START ASYNC] Inițiere procesare pentru documentul: {} ---", documentId);
 
         String caleStocare;
         UUID pacientId;
+
 
         try {
             // Acest findById își deschide singur o tranzacție scurtă, citește și o închide instant.
             DocumentMedical initialDoc = documentMedicalRepository.findById(documentId)
                     .orElseThrow(() -> new RuntimeException("Documentul nu mai există în DB."));
             caleStocare = initialDoc.getCaleFisierStocare();
-            pacientId = initialDoc.getPacientId();
+            pacientId = initialDoc.getPacient().getId();
         } catch (Exception e) {
             log.error("Eroare la citirea inițială a documentului {}: {}", documentId, e.getMessage());
             return;
@@ -186,8 +190,13 @@ public class BuletinAnalizeService {
                 .orElseThrow(() -> new RuntimeException("Eroare: Documentul nu există."));
 
         try {
-            Pacienti pacient = pacientiRepository.findByUserId(dto.getPacientId())
-                    .orElseThrow(() -> new RuntimeException("Eroare: Pacientul nu a fost găsit."));
+            // IMPORTANT: dto.getPacientId() provine din mapeazaDinDocumentValidat() și conține
+            // deja Pacienti.id (entitatea reală), NU userId. Nu trebuie convertit din nou cu
+            // findByUserId — îl luăm direct din documentul deja încărcat din DB.
+            Pacienti pacient = doc.getPacient();
+            if (pacient == null) {
+                throw new RuntimeException("Documentul nu are un pacient asociat!");
+            }
 
             // CONVERSIE: Listă -> Map (pentru a păstra formatul JSON așteptat de restul aplicației/Python)
             Map<String, SectiuneWrapperDTO> mapSectiuni = dto.getSectiuni().stream()
@@ -222,7 +231,7 @@ public class BuletinAnalizeService {
             String sexPacient = (pacient.getSex() != null) ? pacient.getSex().toString() : "NECUNOSCUT";
 
             // Trimitem Map-ul re-construit către Python
-            this.trimiteSpreStandardizareSemantica(mapSectiuni, dto.getDocumentId(), dto.getPacientId(), dataNasteriiFinala, sexPacient);
+            this.trimiteSpreStandardizareSemantica(mapSectiuni, dto.getDocumentId(), pacient.getId(), dataNasteriiFinala, sexPacient);
 
         } catch (Exception e) {
             log.error("Eroare la salvarea datelor validate: {}", e.getMessage());
@@ -308,7 +317,7 @@ public class BuletinAnalizeService {
             String payloadHpo = pregatestePayloadHpo(
                     doc.getDateStandardizate(),
                     doc.getId(),
-                    doc.getPacientId()
+                    doc.getPacient().getId()
             );
 
             log.info("Trimitere payload HPO către Python pentru documentul: {}", documentId);
@@ -354,7 +363,7 @@ public class BuletinAnalizeService {
             };
 
             if (jsonSursa == null || jsonSursa.isEmpty()) {
-                return BuletinEditabilDTO.builder().documentId(doc.getId()).pacientId(doc.getPacientId()).build();
+                return BuletinEditabilDTO.builder().documentId(doc.getId()).pacientId(doc.getPacient().getId()).build();
             }
 
             // Citim JSON-ul (care este Map în DB)
@@ -379,17 +388,17 @@ public class BuletinAnalizeService {
 
             return BuletinEditabilDTO.builder()
                     .documentId(doc.getId())
-                    .pacientId(doc.getPacientId())
+                    .pacientId(doc.getPacient().getId())
                     .sectiuni(listaSectiuni)
                     .build();
 
         } catch (Exception e) {
             log.error("Eroare mapping DTO: {}", e.getMessage());
-            return BuletinEditabilDTO.builder().documentId(doc.getId()).pacientId(doc.getPacientId()).sectiuni(new ArrayList<>()).build();
+            return BuletinEditabilDTO.builder().documentId(doc.getId()).pacientId(doc.getPacient().getId()).sectiuni(new ArrayList<>()).build();
         }
     }
 
-    // --- METODE UTILITARE (Păstrate din varianta originală)
+    // METODE UTILITARE
 
     private LocalDate extrageDataNasteriiDinCNP(String cnp) {
         if (cnp == null || cnp.trim().length() < 13) return null;
@@ -448,8 +457,32 @@ public class BuletinAnalizeService {
         return objectMapper.writeValueAsString(payload);
     }
 
-    public List<DocumentMedical> getDocumentePacient(UUID pacientId) {
-        return documentMedicalRepository.findByPacientIdAndStatusNotOrderByDataIncarcareDesc(pacientId, DocumentMedical.StatusDocument.STERS_DE_PACIENT);
+    public List<DocumentMedical> getDocumentePacient(UUID userIdDinSesiune) {
+
+        Pacienti pacient = pacientiRepository.findByUserId(userIdDinSesiune)
+                .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit pentru acest utilizator!"));
+
+        return documentMedicalRepository.findByPacient_IdAndStatusNotOrderByDataIncarcareDesc(
+                pacient.getId(),
+                DocumentMedical.StatusDocument.STERS_DE_PACIENT
+        );
+    }
+
+    /**
+     * Convertește Pacienti.id (cheia primară a entității Pacienti) în userId-ul
+     * utilizatorului asociat (Utilizatori.id). Necesar pentru construirea unor
+     * redirect-uri către rute care, din convenție, primesc userId în loc de
+     * Pacienti.id (ex. /analize/pacient/documente/{userId}).
+     */
+    public UUID getUserIdDinPacientId(UUID pacientEntityId) {
+        Pacienti pacient = pacientiRepository.findById(pacientEntityId)
+                .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit (id entitate: " + pacientEntityId + ")"));
+
+        if (pacient.getUser() == null) {
+            throw new RuntimeException("Pacientul " + pacientEntityId + " nu are un utilizator asociat!");
+        }
+
+        return pacient.getUser().getId();
     }
 
     private String sanitizeFilename(String input) {

@@ -1,5 +1,6 @@
 package com.therapeutica.therapeutica_app.notificari;
 
+import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -18,8 +19,9 @@ public class Notificare {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "utilizator_destinatar_id", nullable = false)
-    private UUID utilizatorDestinatarId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "utilizator_destinatar_id", nullable = false)
+    private Utilizatori utilizatorDestinatar;
 
     @Column(nullable = false, length = 100)
     private String titlu;
@@ -27,7 +29,7 @@ public class Notificare {
     @Column(nullable = false, length = 500)
     private String mesaj;
 
-    // Calea relativă în aplicație unde va fi redirecționat utilizatorul la click
+    // Calea unde va fi redirecționat utilizatorul la click
     @Column(name = "link_actiune", length = 255)
     private String linkActiune;
 

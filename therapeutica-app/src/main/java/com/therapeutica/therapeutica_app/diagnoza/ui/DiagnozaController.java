@@ -51,8 +51,8 @@ public class DiagnozaController {
         List<RaspunsuriChestionare> istoricChestionare = raspunsuriChestionareRepository.findByPacientId(pacientId);
 
         try {
-            // 1. Extragere date de laborator (Am schimbat din Object în List pentru claritate)
-            List<Object> analizeList = diagnozaService.extrageDateLab(userId);
+            // Extragere date de laborator
+            List<Object> analizeList = diagnozaService.extrageDateLab(pacientId);
             model.addAttribute("analizeInterpretate", analizeList);
             model.addAttribute("hasLabData", !analizeList.isEmpty());
 

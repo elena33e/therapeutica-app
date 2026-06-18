@@ -21,9 +21,16 @@ public class ResetareParolaService {
     @Transactional
     public void genereazaSiTrimiteToken(Utilizatori utilizator) {
 
+        tokenRepository.findByUtilizatorId(utilizator.getId())
+                .ifPresent(token -> {
+                    tokenRepository.delete(token);
+                    // Forțăm Hibernate să execute DELETE imediat în DB
+                    tokenRepository.flush();
+                });
         // Token nou
+        String tokenString = UUID.randomUUID().toString();
         TokenResetare tokenNou = new TokenResetare();
-        tokenNou.setToken(UUID.randomUUID().toString());
+        tokenNou.setToken(tokenString);
         tokenNou.setUtilizator(utilizator);
         tokenNou.setDataExpirare(LocalDateTime.now().plusMinutes(15));
 
@@ -50,5 +57,11 @@ public class ResetareParolaService {
         // Stergere token
         tokenRepository.delete(tokenResetare);
         return true;
+    }
+
+    public boolean esteTokenValid(String token) {
+        return tokenRepository.findByToken(token)
+                .map(t -> t.getDataExpirare().isAfter(LocalDateTime.now()))
+                .orElse(false);
     }
 }

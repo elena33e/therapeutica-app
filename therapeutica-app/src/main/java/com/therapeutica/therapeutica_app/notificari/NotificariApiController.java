@@ -15,15 +15,16 @@ public class NotificariApiController {
 
     private final NotificareRepository notificareRepository;
 
-    // Păstrează acest endpoint doar dacă ai nevoie de el în altă parte
     @GetMapping("/necitite/{medicId}")
     public List<Notificare> getNotificari(@PathVariable UUID medicId) {
-        return notificareRepository.findByUtilizatorDestinatarIdAndCititaFalseOrderByDataCreareDesc(medicId);
+
+        return notificareRepository.findByUtilizatorDestinatar_IdAndCititaFalseOrderByDataCreareDesc(medicId);
     }
 
     @GetMapping("/necitite-count/{medicId}")
     public long getNumarNotificariNecitite(@PathVariable UUID medicId) {
-        return notificareRepository.countByUtilizatorDestinatarIdAndCititaFalse(medicId);
+
+        return notificareRepository.countByUtilizatorDestinatar_IdAndCititaFalse(medicId);
     }
 
     @PostMapping("/marcheaza-citita/{id}")

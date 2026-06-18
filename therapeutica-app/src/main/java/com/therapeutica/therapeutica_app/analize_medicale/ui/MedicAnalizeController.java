@@ -1,6 +1,5 @@
 package com.therapeutica.therapeutica_app.analize_medicale.ui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.therapeutica.therapeutica_app.analize_medicale.BuletinAnalizeService;
@@ -41,10 +40,6 @@ public class MedicAnalizeController {
     private final PacientiRepository pacientiRepository;
     private final ObjectMapper objectMapper;
 
-    /**
-     * 1. Pagina de SPLIT-SCREEN (Revizuirea clinică)
-     * Încarcă interfața unde medicul vede PDF-ul (stânga) și tabelul editabil (dreapta).
-     */
     @GetMapping("/revizuire/{docId}")
     public String paginaRevizuire(@PathVariable UUID docId, Model model) {
         DocumentMedical doc = documentMedicalRepository.findById(docId)
@@ -62,17 +57,20 @@ public class MedicAnalizeController {
 
         BuletinEditabilDTO dto = analizeService.mapeazaDinDocumentValidat(doc);
 
+        // MODIFICARE: Accesăm direct entitatea pacient din document
+        Pacienti pacient = doc.getPacient();
+        if (pacient == null) {
+            throw new RuntimeException("Documentul nu are un pacient asociat!");
+        }
+
         model.addAttribute("buletin", dto);
         model.addAttribute("document", doc);
         model.addAttribute("isImage", isImage);
+        model.addAttribute("pacientId", pacient.getId());
 
         return "medic/analize-pacient/revizuire-clinica";
     }
 
-    /**
-     * 2. Streaming PDF pentru Iframe
-     * Această metodă servește fișierul fizic direct în browser pentru vizualizarea în paralel.
-     */
     @GetMapping("/view-pdf/{docId}")
     @ResponseBody
     public ResponseEntity<Resource> streamPdf(@PathVariable UUID docId) {
@@ -102,10 +100,6 @@ public class MedicAnalizeController {
         }
     }
 
-    /**
-     * 3. Salvarea modificărilor medicului și declanșarea HPO (Pasul Final)
-     * Medicul apasă "Finalizează", datele se salvează și se trimit asincron către Python.
-     */
     @PostMapping("/finalizeaza/{docId}")
     public String finalizeazaRevizuire(@PathVariable UUID docId,
                                        @ModelAttribute("buletin") BuletinEditabilDTO dto,
@@ -116,8 +110,9 @@ public class MedicAnalizeController {
             analizeService.salveazaCorectiiMedic(docId, dto);
             analizeService.finalizeazaInterpretareClinica(docId);
 
-            redirectAttributes.addFlashAttribute("success", "Buletinul a fost validat. Interpretarea HPO și resursele FHIR sunt în curs de generare.");
-            return "redirect:/medic/analize/dosar-pacient/" + dto.getPacientId();
+            redirectAttributes.addFlashAttribute("success", "Buletinul a fost validat.");
+            // Asigură-te că dto.getPacientId() este transmis corect din formular
+            return "redirect:/medic/analize/dosar/" + dto.getPacientId();
 
         } catch (Exception e) {
             log.error("Eroare critică la finalizarea revizuirii: {}", e.getMessage());
@@ -126,22 +121,17 @@ public class MedicAnalizeController {
         }
     }
 
-    /**
-     * 4. Vizualizarea Raportului Clinic Final (FHIR & HPO)
-     */
     @GetMapping("/vizualizeaza/{docId}")
     public String afiseazaRaportFinal(@PathVariable UUID docId, Model model) {
-
         log.info("Accesare raport vizualizare pentru documentul: {}", docId);
 
         DocumentMedical doc = documentMedicalRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Documentul nu a fost găsit."));
 
-        Pacienti pacient = pacientiRepository.findByUserId(doc.getPacientId())
-                .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit."));
+        // MODIFICARE: Accesăm direct entitatea pacient din document
+        Pacienti pacient = doc.getPacient();
 
-        UUID realPacientId = pacient.getId();
-        model.addAttribute("realPacientId", realPacientId);
+        model.addAttribute("realPacientId", pacient.getId());
         model.addAttribute("document", doc);
 
         try {
@@ -163,23 +153,6 @@ public class MedicAnalizeController {
         return "medic/analize-pacient/raport-hpo";
     }
 
-    /**
-     * 5. Endpoint de căutare LOINC (API pentru Frontend)
-     */
-    @GetMapping("/api/search-loinc")
-    @ResponseBody
-    public ResponseEntity<?> cautaCodLoinc(@RequestParam String query) {
-        try {
-            log.info("Căutare LOINC pentru termenul: {}", query);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Eroare la căutare");
-        }
-    }
-
-    /**
-     * 6. Dosarul medical al unui pacient specific
-     */
     @GetMapping("/dosar/{pacientId}")
     public String dosarPacientPentruMedic(@PathVariable UUID pacientId, Model model, HttpSession session) {
         log.info("Medic accesează dosarul pacientului cu ID: {}", pacientId);
@@ -190,9 +163,7 @@ public class MedicAnalizeController {
                 .orElseThrow(() -> new RuntimeException("Eroare: Pacientul nu a fost găsit în baza de date."));
 
         Utilizatori pacientUser = pacient.getUser();
-        UUID userId = pacientUser.getId();
-
-        List<DocumentMedical> documente = documentMedicalRepository.findByPacientIdOrderByDataIncarcareDesc(userId);
+        List<DocumentMedical> documente = documentMedicalRepository.findByPacient_IdOrderByDataIncarcareDesc(pacientId);
 
         model.addAttribute("documente", documente);
         model.addAttribute("pacient", pacient);

@@ -176,7 +176,7 @@ public class AtribuireChestionarViewController {
             model.addAttribute("requestDTO", requestDTO);
 
             // DEBUG final
-            System.out.println("🔍 Final model attributes:");
+            System.out.println(" Final model attributes:");
             model.asMap().forEach((key, value) -> {
                 if (key.equals("chestionareDisponibile")) {
                     List<Chestionare> list = (List<Chestionare>) value;
@@ -189,7 +189,7 @@ public class AtribuireChestionarViewController {
             return "medic/chestionare/atribuire-chestionar-form";
 
         } catch (Exception e) {
-            System.err.println("❌ Error in atribuireChestionarNou: " + e.getMessage());
+            System.err.println("Error in atribuireChestionarNou: " + e.getMessage());
             e.printStackTrace();
             return handleException(e);
         }
@@ -354,13 +354,13 @@ public class AtribuireChestionarViewController {
 
         // Debugging
         if (pacientUser == null) {
-            System.err.println("⚠️ ATENȚIE: Pacientul cu ID " + pacient.getId() + " nu are un Utilizator asociat!");
+            System.err.println("⚠ ATENȚIE: Pacientul cu ID " + pacient.getId() + " nu are un Utilizator asociat!");
         }
 
         model.addAttribute("pacient", pacient);
-        model.addAttribute("pacientUser", pacientUser); // Esențial pentru Thymeleaf
+        model.addAttribute("pacientUser", pacientUser);
         model.addAttribute("medic", medic);
-        model.addAttribute("medicUser", medicUser);    // Recomandat să pui tot obiectul
+        model.addAttribute("medicUser", medicUser);
         model.addAttribute("userId", userIdStr);
     }
 

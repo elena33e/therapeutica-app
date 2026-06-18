@@ -25,22 +25,34 @@ public class ResetareParolaController {
 
     // Procesează email-ul și trimite token-ul
     @PostMapping("/cere-resetare")
-    public String cereResetare(@RequestParam String email, RedirectAttributes redirectAttributes) {
+    public String cereResetare(@RequestParam String email, Model model) {
         return utilizatoriRepository.findByEmail(email)
                 .map(utilizator -> {
                     resetareParolaService.genereazaSiTrimiteToken(utilizator);
-                    redirectAttributes.addFlashAttribute("message", "Link-ul a fost trimis pe email.");
+                    model.addAttribute("message", "Link-ul a fost trimis pe email.");
                     return "redirect:/login";
                 })
                 .orElseGet(() -> {
-                    redirectAttributes.addFlashAttribute("error", "Email-ul nu există.");
-                    return "redirect:auth/resetare-parola/cere-resetare-view";
+                    // Fluxul [A1]: Rămânem pe pagină, afișăm eroarea
+                    model.addAttribute("error", "Adresa de email nu a fost găsită în sistem.");
+                    return "auth/resetare-parola"; // Returnăm direct numele template-ului
                 });
     }
 
-    // Afișează pagina unde utilizatorul introduce noua parolă
+
     @GetMapping("/schimba-view")
-    public String schimbaParolaView(@RequestParam String token, Model model) {
+    public String schimbaParolaView(@RequestParam String token, Model model, RedirectAttributes redirectAttributes) {
+
+        // Verificăm existata si validitate token
+        boolean esteValid = resetareParolaService.esteTokenValid(token);
+
+        if (!esteValid) {
+            // Token invalid sau expirat
+            redirectAttributes.addFlashAttribute("error", "Token invalid sau expirat. Vă rugăm să cereți un link nou.");
+            return "redirect:/resetare-parola/cere-resetare-view";
+        }
+
+        // Token valid
         model.addAttribute("token", token);
         return "auth/resetare-parola-schimba";
     }

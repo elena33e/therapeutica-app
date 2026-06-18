@@ -32,8 +32,7 @@ public class NotificariController {
     private String proceseazaInbox(UUID userId, Model model, String viewName, String idLabel) {
         log.info("Încărcare inbox pentru utilizatorul: {}", userId);
 
-        List<Notificare> notificari = notificareRepository.findByUtilizatorDestinatarIdOrderByDataCreareDesc(userId);
-
+        List<Notificare> notificari = notificareRepository.findByUtilizatorDestinatar_IdOrderByDataCreareDesc(userId);
         model.addAttribute("notificari", notificari);
         model.addAttribute(idLabel, userId);
 

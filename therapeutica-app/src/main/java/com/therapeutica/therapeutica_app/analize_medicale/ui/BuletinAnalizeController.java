@@ -151,8 +151,13 @@ public class BuletinAnalizeController {
             analizeService.salveazaDateValidate(dto);
             redirectAttributes.addFlashAttribute("success", "✅ Datele medicale au fost salvate și validate cu succes!");
 
+            // IMPORTANT: ruta /analize/pacient/documente/{pacientId} așteaptă userId (vezi
+            // BuletinAnalizeService.getDocumentePacient -> findByUserId), iar dto.getPacientId()
+            // conține Pacienti.id, nu userId. Trebuie să aflăm userId-ul real al pacientului.
+            UUID userIdPentruRedirect = analizeService.getUserIdDinPacientId(dto.getPacientId());
+
             // Redirecționăm către lista de documente a pacientului
-            return "redirect:/analize/pacient/documente/" + dto.getPacientId();
+            return "redirect:/analize/pacient/documente/" + userIdPentruRedirect;
 
         } catch (Exception e) {
             log.error("Eroare critică la salvarea documentului {}: {}", dto.getDocumentId(), e.getMessage());
@@ -166,33 +171,29 @@ public class BuletinAnalizeController {
     /**
      * POST - Salvarea corecțiilor LOINC făcute de MEDIC
      */
-    /**
-     * POST - Salvarea corecțiilor LOINC făcute de MEDIC
-     */
     @PostMapping("/medic/finalizeaza/{documentId}")
     public String finalizeazaMapareMedic(@PathVariable UUID documentId,
                                          @ModelAttribute("buletin") BuletinEditabilDTO dto,
                                          RedirectAttributes redirectAttributes) {
         log.info("Medic salvează maparea LOINC pentru documentul: {}", documentId);
 
-        // Căutăm entitatea Pacient
-        log.info("PacientId primit din DTO: {}", dto.getPacientId());
-        Optional<Pacienti> pacientOptional = pacientiRepository.findByUserId(dto.getPacientId());
+        // IMPORTANT: dto.getPacientId() provine din mapeazaDinDocumentValidat() și conține
+        // deja Pacienti.id (entitatea reală), NU userId. findByUserId era greșit aici —
+        // luăm entitatea Pacienti direct din documentul deja persistat în DB.
+        DocumentMedical docPentruPacient = documentMedicalRepository.findById(documentId).orElse(null);
 
-        if (pacientOptional.isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Eroare: Pacientul nu a fost găsit în baza de date.");
+        if (docPentruPacient == null || docPentruPacient.getPacient() == null) {
+            redirectAttributes.addFlashAttribute("error", "Eroare: Documentul sau pacientul asociat nu a fost găsit în baza de date.");
             return "redirect:/medic/analize/dosar/" + dto.getPacientId();
         }
 
-        // Extragem entitatea din Optional și obținem ID-ul ei real
-        Pacienti pacient = pacientOptional.get();
-        UUID pacientIdReal = pacient.getId();
+        UUID pacientIdReal = docPentruPacient.getPacient().getId();
 
         try {
             analizeService.salveazaCorectiiMedic(documentId, dto);
             redirectAttributes.addFlashAttribute("success", "Maparea LOINC a fost validată cu succes!");
 
-            // 3. Redirecționăm folosind ID-ul corect (cheia primară a tabelului Pacienti)
+            // Redirecționăm folosind ID-ul corect (cheia primară a tabelului Pacienti)
             return "redirect:/medic/analize/dosar/" + pacientIdReal;
 
         } catch (Exception e) {
@@ -224,7 +225,7 @@ public class BuletinAnalizeController {
         BuletinEditabilDTO dto = analizeService.mapeazaDinDocumentValidat(doc);
 
         model.addAttribute("buletin", dto);
-        model.addAttribute("pacientId", doc.getPacientId());
+        model.addAttribute("pacientId", doc.getPacient().getId());
         model.addAttribute("citireaDoar", true);
 
         return "pacient/analize/vizualizare-analize";
@@ -247,7 +248,7 @@ public class BuletinAnalizeController {
             return "redirect:/";
         }
 
-        UUID pacientId = doc.getPacientId();
+        UUID pacientId = doc.getPacient().getId();
 
         try {
             // Apelăm serviciul pentru a executa ștergerea în cascadă (fișier, DB, FHIR)

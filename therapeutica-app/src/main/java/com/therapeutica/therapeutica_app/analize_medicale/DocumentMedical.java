@@ -1,5 +1,6 @@
 package com.therapeutica.therapeutica_app.analize_medicale;
 
+import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,18 +18,18 @@ import java.util.UUID;
 public class DocumentMedical implements Persistable<UUID> {
 
     @Id
-    // @GeneratedValue // ELIMINĂ ACEASTA dacă setezi UUID-ul manual în Service
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Version // CRUCIAL pentru a rezolva OptimisticLockException
+    @Version
     private Long version;
 
     @Transient
-    private boolean isNew = true; // Flag pentru Spring Data JPA
+    private boolean isNew = true;
 
-    @Column(name = "pacient_id", nullable = false)
-    private UUID pacientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pacient_id", nullable = false)
+    private Pacienti pacient;
 
     @Column(name = "nume_fisier")
     private String numeFisier;
@@ -77,7 +78,6 @@ public class DocumentMedical implements Persistable<UUID> {
         this.isNew = false;
     }
 
-    // --- ENUM ---
     public enum StatusDocument {
         INCARCAT, VALIDAT, PROCESAT, STANDARDIZAT, INTERPRETAT, EROARE, STERS_DE_PACIENT
     }
