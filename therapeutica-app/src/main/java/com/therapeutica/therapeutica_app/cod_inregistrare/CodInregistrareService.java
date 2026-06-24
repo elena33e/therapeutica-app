@@ -160,7 +160,7 @@ public class CodInregistrareService {
         dto.setStatus(cod.getStatus());
         dto.setGeneratDe(cod.getGeneratDe() != null ? cod.getGeneratDe().getId() : null);
         dto.setAtribuit(cod.getAtribuit() != null ? cod.getAtribuit().getId() : null);
-
+        dto.setCreatedAt(cod.getCreatedAt());
         // Mapări completate
         dto.setNumeDestinatar(cod.getNumeDestinatar());
         dto.setPrenumeDestinatar(cod.getPrenumeDestinatar());

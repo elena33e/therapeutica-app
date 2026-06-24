@@ -208,12 +208,12 @@
             const codeDisplay = container.querySelector('.loinc-code-display');
             if (codeDisplay) {
                 codeDisplay.textContent = selectElement.value;
-                // Când o selecție validă este făcută, textul devine Teal
+
                 codeDisplay.classList.remove('text-gray-900', 'text-amber-800');
                 codeDisplay.classList.add('text-brand-teal');
             }
 
-            // Eliminăm clasele de "Pending" (Gold/Amber)
+            // Eliminăm clasele de pending
             if (selectElement.value !== 'Pending') {
                 selectElement.classList.remove('border-brand-gold/60', 'bg-brand-gold/10');
                 selectElement.classList.add('border-gray-300', 'bg-white', 'focus:ring-brand-blue', 'focus:border-brand-blue');

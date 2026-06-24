@@ -21,5 +21,5 @@ public class AtribuireChestionarRequestDTO {
     private UUID medicId;
 
     @NotNull(message = "Lista de chestionare este obligatorie")
-    private List<UUID> chestionareIds;
+    private List<UUID> chestionareIds = new ArrayList<>();
 }

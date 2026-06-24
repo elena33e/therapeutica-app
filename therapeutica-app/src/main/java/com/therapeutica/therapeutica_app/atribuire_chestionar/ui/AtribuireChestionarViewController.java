@@ -10,6 +10,7 @@ import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
+import com.therapeutica.therapeutica_app.raspunsuri_chestionare.dto.RaspunsChestionarDTO;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/medic")
@@ -82,57 +84,6 @@ public class AtribuireChestionarViewController {
 
         } catch (Exception e) {
             System.err.println("Error in listaPacienti: " + e.getMessage());
-            return handleException(e);
-        }
-    }
-
-    /**
-     * PAS 3-4: Medic selectează un pacient
-     */
-    @GetMapping("/pacienti/{pacientId}")
-    @Transactional
-    public String detaliiPacient(@PathVariable UUID pacientId, HttpSession session, Model model) {
-        try {
-            SessionInfo sessionInfo = getSessionInfo(session);
-            MedicInfo medicInfo = getMedicInfo(sessionInfo.userId());
-
-            Pacienti pacient = pacientiRepository.findByIdWithUser(pacientId)
-                    .orElseThrow(() -> new NotFoundException("Pacient not found"));
-
-            // Luăm tot istoricul
-            List<RaspunsuriChestionare> totIstoricul = atribuireChestionarService
-                    .getIstoricChestionarePacient(pacientId);
-
-            // Împărțim lista în două pentru cele două tabele din HTML
-            List<RaspunsuriChestionare> completate = totIstoricul.stream()
-                    .filter(rc -> rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT)
-                    .toList();
-
-            List<RaspunsuriChestionare> necompletate = totIstoricul.stream()
-                    .filter(rc -> rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT)
-                    .toList();
-
-            // Adăugăm atributele de bază
-            addCommonAttributesToModel(pacient, medicInfo.medic(), medicInfo.medicUser(),
-                    sessionInfo.userId().toString(), model);
-
-            // Satisface cerințele specifice din pacienti-detalii.html
-            model.addAttribute("medicId", sessionInfo.userId());
-            model.addAttribute("totalChestionareCompletate", (long) completate.size());
-            model.addAttribute("totalChestionareNecompletate", (long) necompletate.size());
-            model.addAttribute("chestionareCompletate", completate);
-            model.addAttribute("chestionareNecompletate", necompletate);
-
-            // Calculăm ultima activitate (cea mai recentă dată de completare)
-            Optional<java.time.LocalDateTime> ultima = completate.stream()
-                    .map(RaspunsuriChestionare::getCompletatLa)
-                    .filter(Objects::nonNull)
-                    .max(java.time.LocalDateTime::compareTo);
-            model.addAttribute("ultimaActivitate", ultima.orElse(null));
-
-            return "medic/pacienti-detalii";
-        } catch (Exception e) {
-            e.printStackTrace(); // Loghează eroarea în consolă să o vedem clar
             return handleException(e);
         }
     }
@@ -207,8 +158,9 @@ public class AtribuireChestionarViewController {
 
         System.out.println("=== ATRIBUIRE CHESTIONAR - proceseazaAtribuire ===");
 
+        SessionInfo sessionInfo = null;
         try {
-            SessionInfo sessionInfo = getSessionInfo(session);
+            sessionInfo = getSessionInfo(session);
 
             // ====== CRITIC: Obține pacientul și verifică ID-ul corect ======
             System.out.println("Loading patient from database...");
@@ -266,7 +218,7 @@ public class AtribuireChestionarViewController {
             redirectAttributes.addFlashAttribute("numarAtribuit", raspunsuriIds.size());
 
             System.out.println("Redirecting to patient details page...");
-            return "redirect:/medic/pacienti/" + pacientId;
+            return "redirect:/medic/" + sessionInfo.userId() + "/pacient/" + pacientId;
 
         } catch (IllegalStateException e) {
             // Prindem excepția de validare din Service pentru duplicate active
@@ -279,7 +231,7 @@ public class AtribuireChestionarViewController {
             System.err.println("Error in proceseazaAtribuire: " + e.getMessage());
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Eroare la atribuirea chestionarului");
-            return "redirect:/medic/pacienti/" + pacientId;
+            return "redirect:/medic/" + sessionInfo.userId() + "/pacient/" + pacientId;
         }
     }
 

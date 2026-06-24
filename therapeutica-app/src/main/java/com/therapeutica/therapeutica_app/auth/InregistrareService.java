@@ -56,6 +56,11 @@ public class InregistrareService {
 
             CodInregistrare cod = codOpt.get();
 
+            // ---> AICI ESTE LOCUL EXACT PENTRU VALIDARE <---
+            if (request.getCnp() == null || !request.getCnp().equals(cod.getCnpDestinatar())) {
+                return new InregistrareResponse(false, "CNP-ul introdus nu corespunde cu cel asociat codului.");
+            }
+
            // Creare instanța Utilizator nou
             Utilizatori utilizatorNou = new Utilizatori();
             utilizatorNou.setEmail(cod.getEmailDestinatar());

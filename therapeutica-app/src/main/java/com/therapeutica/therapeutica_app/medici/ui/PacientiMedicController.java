@@ -189,7 +189,7 @@ public class PacientiMedicController {
             return "medic/pacienti-detalii";
 
         } catch (Exception e) {
-            log.error("❌ Eroare la obținerea detaliilor pacientului: {}", e.getMessage(), e);
+            log.error("Eroare la obținerea detaliilor pacientului: {}", e.getMessage(), e);
             model.addAttribute("error", "Eroare: " + e.getMessage());
             return "medic/error";
         }
@@ -210,9 +210,6 @@ public class PacientiMedicController {
         if (rc.getStatus() != null) {
             dto.setStatus(rc.getStatus().name());
         }
-
-        // Dacă ai scor în entitate, activează linia asta:
-        // dto.setScorTotalGeneral(rc.getScorTotalGeneral());
 
         dto.setCompletatLa(rc.getCompletatLa());
         return dto;

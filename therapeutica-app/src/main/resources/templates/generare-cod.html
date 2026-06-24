@@ -4,12 +4,8 @@
       layout:decorate="~{layout}">
 <head>
     <title>Generare Cod Înregistrare</title>
-
-    <div layout:fragment="head">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </div>
 </head>
-<body class="bg-gray-50">
+<body>
 
 <div layout:fragment="content">
     <div class="container mx-auto px-4 py-12 max-w-7xl">
@@ -53,7 +49,15 @@
                         <i class="fas fa-plus-circle mr-3 text-brand-teal"></i> Generează un cod nou
                     </h2>
 
-                    <form id="formGenerareCod" class="space-y-6">
+                    <form th:action="@{/generare-cod}" th:object="${request}" method="post" class="space-y-6">
+
+                        <!-- Mesaj eroare de la server -->
+                        <div th:if="${rezultat != null and rezultat.mesaj != null and #strings.startsWith(rezultat.mesaj, 'Eroare')}"
+                             class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 font-medium text-sm flex items-center">
+                            <i class="fas fa-exclamation-circle mr-3 text-red-500"></i>
+                            <span th:text="${rezultat.mesaj}"></span>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                             <!-- Email Destinatar -->
@@ -65,7 +69,8 @@
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                                         <i class="fas fa-envelope"></i>
                                     </span>
-                                    <input type="email" id="emailDestinatar" required placeholder="exemplu@email.com"
+                                    <input type="email" id="emailDestinatar" th:field="*{emailDestinatar}" required
+                                           placeholder="exemplu@email.com"
                                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
                                 </div>
                             </div>
@@ -79,7 +84,8 @@
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                                         <i class="fas fa-user"></i>
                                     </span>
-                                    <input type="text" id="numeDestinatar" required placeholder="Nume de familie"
+                                    <input type="text" id="numeDestinatar" th:field="*{numeDestinatar}" required
+                                           placeholder="Nume de familie"
                                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
                                 </div>
                             </div>
@@ -93,7 +99,8 @@
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                                         <i class="fas fa-user"></i>
                                     </span>
-                                    <input type="text" id="prenumeDestinatar" required placeholder="Prenume"
+                                    <input type="text" id="prenumeDestinatar" th:field="*{prenumeDestinatar}" required
+                                           placeholder="Prenume"
                                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
                                 </div>
                             </div>
@@ -107,9 +114,9 @@
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                                         <i class="fas fa-user-tag"></i>
                                     </span>
-                                    <select id="rolDestinatar" required
+                                    <select id="rolDestinatar" th:field="*{rolDestinatar}" required
                                             class="w-full pl-11 pr-10 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy appearance-none cursor-pointer">
-                                        <option value="" disabled selected>Selectează rol...</option>
+                                        <option value="" disabled>Selectează rol...</option>
                                         <option value="PACIENT">Pacient</option>
                                         <option value="MEDIC">Medic</option>
                                     </select>
@@ -128,7 +135,8 @@
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                                         <i class="fas fa-phone"></i>
                                     </span>
-                                    <input type="tel" id="telefonDestinatar" placeholder="ex: 0722123456"
+                                    <input type="tel" id="telefonDestinatar" th:field="*{telefonDestinatar}"
+                                           placeholder="ex: 0722123456"
                                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
                                 </div>
                             </div>
@@ -142,27 +150,27 @@
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-brand-blue">
                                         <i class="fas fa-id-card"></i>
                                     </span>
-                                    <input type="text" id="cnpDestinatar" maxlength="13" placeholder="13 cifre"
+                                    <input type="text" id="cnpDestinatar" th:field="*{cnpDestinatar}" maxlength="13"
+                                           placeholder="13 cifre"
                                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all font-bold text-brand-navy">
                                 </div>
                             </div>
+
                         </div>
 
                         <!-- Buton Generare -->
                         <div class="pt-4 mt-8 border-t border-gray-100">
-                            <button type="submit" id="submitBtn"
+                            <button type="submit"
                                     class="w-full bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center group">
                                 <i class="fas fa-key mr-2 group-hover:scale-110 transition-transform"></i>
-                                <span id="btnText" class="uppercase tracking-widest text-xs">Generează Cod</span>
-                                <span id="btnSpinner" class="hidden ml-2">
-                                    <i class="fas fa-circle-notch fa-spin"></i>
-                                </span>
+                                <span class="uppercase tracking-widest text-xs">Generează Cod</span>
                             </button>
                         </div>
                     </form>
 
-                    <!-- Rezultat Cod Generat -->
-                    <div id="rezultatCod" class="hidden mt-8 bg-brand-teal rounded-2xl p-6 shadow-md text-white transition-all duration-300 transform scale-95 opacity-0">
+                    <!-- Rezultat Cod Generat — afișat doar dacă serverul a returnat un cod -->
+                    <div th:if="${rezultat != null and rezultat.codUnic != null}"
+                         class="mt-8 bg-brand-teal rounded-2xl p-6 shadow-md text-white">
                         <div class="flex items-start">
                             <i class="fas fa-check-circle text-2xl mr-4 mt-0.5 opacity-90"></i>
                             <div class="w-full">
@@ -173,42 +181,50 @@
                                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div>
                                             <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Codul Unic de Acces</p>
-                                            <p id="codGeneratAfisare" class="text-3xl font-mono font-black tracking-widest text-white"></p>
+                                            <p th:text="${rezultat.codUnic}" class="text-3xl font-mono font-black tracking-widest text-white"></p>
                                         </div>
 
-                                        <!-- Zona de Butoane Actiuni -->
+                                        <!-- Butoane Acțiuni -->
                                         <div class="flex flex-col gap-2">
-                                            <button onclick="copyToClipboard()" id="copyBtn"
+                                            <button onclick="navigator.clipboard.writeText(this.dataset.cod)"
+                                                    th:data-cod="${rezultat.codUnic}"
                                                     class="w-full px-4 py-2 bg-white text-brand-teal hover:bg-gray-50 font-bold rounded-lg text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center justify-center">
                                                 <i class="fas fa-copy mr-2"></i> Copiază
                                             </button>
 
-                                            <!-- Butonul Nou de WhatsApp -->
-                                            <a id="whatsappBtn" target="_blank"
-                                               class="w-full px-4 py-2 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-lg text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center justify-center cursor-pointer">
+                                            <!-- Buton WhatsApp — activ doar dacă serverul a generat link-ul -->
+                                            <a th:if="${rezultat.whatsappLink != null}"
+                                               th:href="${rezultat.whatsappLink}" target="_blank"
+                                               class="w-full px-4 py-2 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-lg text-xs uppercase tracking-widest shadow-sm transition-colors flex items-center justify-center">
                                                 <i class="fab fa-whatsapp mr-2 text-lg"></i> Trimite WhatsApp
                                             </a>
+                                            <span th:unless="${rezultat.whatsappLink != null}"
+                                                  class="w-full px-4 py-2 bg-[#25D366] opacity-50 text-white font-bold rounded-lg text-xs uppercase tracking-widest flex items-center justify-center cursor-not-allowed"
+                                                  title="Număr de telefon lipsă sau invalid">
+                                                <i class="fab fa-whatsapp mr-2 text-lg"></i> Trimite WhatsApp
+                                            </span>
                                         </div>
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/10">
                                         <div>
                                             <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Destinatar</p>
-                                            <p id="emailAfisat" class="font-bold text-sm truncate"></p>
+                                            <p th:text="${rezultat.emailDestinatar}" class="font-bold text-sm truncate"></p>
                                         </div>
                                         <div>
                                             <p class="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Rol</p>
-                                            <p id="rolAfisat" class="font-bold text-sm uppercase tracking-wide"></p>
+                                            <p th:text="${rezultat.status}" class="font-bold text-sm uppercase tracking-wide"></p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
 
-            <!-- Informații laterale -->
+            <!-- Coloana laterală -->
             <div>
                 <!-- Informații Card -->
                 <div class="bg-white border-l-4 border-l-brand-blue rounded-xl p-6 mb-6 shadow-sm border-t border-r border-b border-gray-200">
@@ -239,281 +255,68 @@
                     <div class="space-y-4 font-medium">
                         <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total generate</span>
-                            <span id="totalCoduri" class="font-black text-brand-navy text-lg">0</span>
+                            <span th:text="${totalCoduri}" class="font-black text-brand-navy text-lg">0</span>
                         </div>
                         <div class="flex justify-between items-center p-3 bg-brand-teal/5 border border-brand-teal/10 rounded-lg">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Active (Neutilizate)</span>
-                            <span id="coduriActive" class="font-black text-brand-teal text-lg">0</span>
+                            <span th:text="${coduriActive}" class="font-black text-brand-teal text-lg">0</span>
                         </div>
                         <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Utilizate</span>
-                            <span id="coduriUtilizate" class="font-black text-gray-400 text-lg">0</span>
+                            <span th:text="${coduriUtilizate}" class="font-black text-gray-400 text-lg">0</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Lista codurile generate recent -->
+        <!-- Lista coduri generate -->
         <div class="mt-12">
             <div class="flex justify-between items-end mb-6 border-b border-gray-200 pb-4">
                 <div>
                     <h2 class="text-2xl font-bold text-brand-navy">Istoric Coduri Generate</h2>
                     <p class="text-sm font-medium text-gray-500 mt-1">Lista tuturor codurilor alocate din acest cont.</p>
                 </div>
-                <button onclick="incarcaCodurileMele()"
-                        class="text-xs font-bold text-brand-blue hover:text-brand-navy uppercase tracking-widest transition-colors flex items-center px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
-                    <i class="fas fa-sync-alt mr-2"></i> Reîncarcă
-                </button>
             </div>
 
-            <div id="loadingCoduri" class="hidden text-center py-12">
-                <i class="fas fa-circle-notch fa-spin text-3xl text-brand-teal mb-3"></i>
-                <p class="text-gray-500 font-bold uppercase tracking-widest text-xs">Se încarcă datele...</p>
+            <!-- Lista goală -->
+            <div th:if="${coduri.isEmpty()}"
+                 class="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 text-gray-400 font-medium">
+                Niciun cod generat încă.
             </div>
 
-            <div id="listaCoduri" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Populare dinamică via JS -->
+            <!-- Carduri coduri -->
+            <div th:unless="${coduri.isEmpty()}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div th:each="cod : ${coduri}"
+                     class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-brand-blue transition-all flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-4">
+                        <span th:text="${cod.codUnic}"
+                              th:classappend="${cod.status.name() == 'NEUTILIZAT'} ? 'text-brand-navy' : 'text-gray-400 line-through'"
+                              class="font-mono text-xl font-black tracking-widest"></span>
+                        <span th:text="${cod.status}"
+                              th:classappend="${cod.status.name() == 'NEUTILIZAT'} ? 'bg-brand-teal text-white' : 'bg-gray-200 text-gray-500'"
+                              class="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest"></span>
+                    </div>
+                    <div class="space-y-2 mb-4 border-b border-gray-100 pb-4">
+                        <div class="flex items-center text-sm">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase w-16">Rol:</span>
+                            <span th:text="${cod.rolDestinatar}" class="font-bold text-brand-navy ml-2"></span>
+                        </div>
+                        <div class="flex items-center text-sm truncate">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase w-16">Email:</span>
+                            <span th:text="${cod.emailDestinatar}" class="font-medium text-gray-700 ml-2 truncate"></span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-auto">
+                        <span th:text="${'Generat: ' + #temporals.format(cod.createdAt, 'dd.MM.yyyy')}"
+                              class="text-[10px] font-bold text-gray-400 uppercase"></span>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <!-- Șablon HTML (Template) pentru un card din listă -->
-        <template id="codTemplate">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-brand-blue transition-all flex flex-col justify-between">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="element-cod font-mono text-xl font-black tracking-widest"></span>
-                    <span class="element-badge px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest"></span>
-                </div>
-                <div class="space-y-2 mb-4 border-b border-gray-100 pb-4">
-                    <div class="flex items-center text-sm">
-                        <span class="text-[10px] font-bold text-gray-400 uppercase w-16">Rol:</span>
-                        <span class="element-rol font-bold text-brand-navy ml-2"></span>
-                    </div>
-                    <div class="flex items-center text-sm truncate">
-                        <span class="text-[10px] font-bold text-gray-400 uppercase w-16">Email:</span>
-                        <span class="element-email font-medium text-gray-700 ml-2 truncate"></span>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center mt-auto">
-                    <span class="element-data text-[10px] font-bold text-gray-400 uppercase"></span>
-                </div>
-            </div>
-        </template>
 
     </div>
 </div>
 
-<div layout:fragment="scripts">
-    <script>
-        const API_BASE = '/api';
-        const userId = "[[${session.userId}]]";
-
-        function getToken() {
-            return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-        }
-
-        if (!userId || userId === 'null' || userId === '') {
-            window.location.href = '/login?redirect=/generare-cod';
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            incarcaCodurileMele();
-        });
-
-        // --- GENERARE COD NOU ---
-        document.getElementById('formGenerareCod').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const emailDestinatar = document.getElementById('emailDestinatar').value.trim();
-            const telefonDestinatar = document.getElementById('telefonDestinatar').value.trim();
-            const cnpDestinatar = document.getElementById('cnpDestinatar').value.trim();
-            const rolDestinatar = document.getElementById('rolDestinatar').value;
-            const numeDestinatar = document.getElementById('numeDestinatar').value.trim();
-            const prenumeDestinatar = document.getElementById('prenumeDestinatar').value.trim();
-
-            if (!emailDestinatar || !rolDestinatar || !numeDestinatar || !prenumeDestinatar) {
-                alert('Completează toate câmpurile obligatorii!');
-                return;
-            }
-
-            if (telefonDestinatar && telefonDestinatar.replace(/\D/g, '').length < 10) {
-                alert('Te rugăm să introduci un număr de telefon valid (minim 10 cifre).');
-                return;
-            }
-
-            const requestData = {
-                medicId: userId,
-                emailDestinatar: emailDestinatar,
-                telefonDestinatar: telefonDestinatar || null,
-                cnpDestinatar: cnpDestinatar || null,
-                rolDestinatar: rolDestinatar,
-                numeDestinatar: numeDestinatar,
-                prenumeDestinatar: prenumeDestinatar
-            };
-
-            const submitBtn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            const btnSpinner = document.getElementById('btnSpinner');
-
-            btnText.textContent = 'SE GENEREAZĂ...';
-            btnSpinner.classList.remove('hidden');
-            submitBtn.disabled = true;
-
-            try {
-                const response = await fetch(`${API_BASE}/coduri-inregistrare/generare`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${getToken()}`
-                    },
-                    body: JSON.stringify(requestData)
-                });
-
-                const textResponse = await response.text();
-                let data = {};
-                try {
-                    data = JSON.parse(textResponse);
-                } catch (err) {
-                    console.warn("Răspunsul serverului nu este JSON. Se folosește fallback tip text.");
-                    data = { codUnic: textResponse, mesaj: textResponse };
-                }
-
-                if (response.ok || response.status === 201) {
-                    const codFinal = data.codUnic || textResponse;
-
-                    document.getElementById('codGeneratAfisare').textContent = codFinal;
-                    document.getElementById('emailAfisat').textContent = emailDestinatar;
-                    document.getElementById('rolAfisat').textContent = rolDestinatar;
-
-                    // --- LOGICA WHATSAPP PRELUATĂ DE LA SERVER ---
-                    const whatsappBtn = document.getElementById('whatsappBtn');
-                    if (data.whatsappLink) {
-                        whatsappBtn.href = data.whatsappLink;
-                        whatsappBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        whatsappBtn.onclick = null;
-                    } else {
-                        whatsappBtn.removeAttribute('href');
-                        whatsappBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                        whatsappBtn.onclick = (event) => {
-                            event.preventDefault();
-                            alert('Nu există un link WhatsApp valid. Verificați numărul de telefon introdus.');
-                        };
-                    }
-
-                    const rezultatDiv = document.getElementById('rezultatCod');
-                    rezultatDiv.classList.remove('hidden');
-                    setTimeout(() => {
-                        rezultatDiv.classList.remove('scale-95', 'opacity-0');
-                        rezultatDiv.classList.add('scale-100', 'opacity-100');
-                    }, 10);
-
-                    document.getElementById('formGenerareCod').reset();
-                    setTimeout(() => { rezultatDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
-                    setTimeout(incarcaCodurileMele, 500);
-                } else {
-                    alert('Eroare: ' + (data.mesaj || 'A apărut o eroare la generare'));
-                }
-            } catch (error) {
-                console.error('Eroare script/rețea:', error);
-                alert('A apărut o problemă de comunicație. Verificați istoricul.');
-            } finally {
-                btnText.textContent = 'GENEREAZĂ COD';
-                btnSpinner.classList.add('hidden');
-                submitBtn.disabled = false;
-            }
-        });
-
-        // --- UTILITARE ---
-        function copyToClipboard() {
-            const cod = document.getElementById('codGeneratAfisare').textContent;
-            navigator.clipboard.writeText(cod).then(() => {
-                const btn = document.getElementById('copyBtn');
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check mr-2"></i> COPIAT';
-                btn.classList.add('bg-green-100', 'text-green-800');
-                btn.classList.remove('bg-white', 'text-brand-teal');
-
-                setTimeout(() => {
-                    btn.innerHTML = originalHtml;
-                    btn.classList.remove('bg-green-100', 'text-green-800');
-                    btn.classList.add('bg-white', 'text-brand-teal');
-                }, 2000);
-            });
-        }
-
-        // --- ÎNCĂRCARE DATE ISTORIC ---
-        async function incarcaCodurileMele() {
-            const container = document.getElementById('listaCoduri');
-            const loading = document.getElementById('loadingCoduri');
-
-            container.innerHTML = '';
-            loading.classList.remove('hidden');
-
-            try {
-                const response = await fetch(`${API_BASE}/coduri-inregistrare/medic/${userId}`, {
-                    headers: { 'Authorization': `Bearer ${getToken()}` }
-                });
-
-                if (response.ok) {
-                    const coduri = await response.json();
-                    afiseazaCodurile(coduri);
-                    actualizeazaStatistici(coduri);
-                } else {
-                    container.innerHTML = `<div class="col-span-full text-center py-10 text-brand-gold bg-white rounded-xl border">Nu s-au putut încărca datele.</div>`;
-                }
-            } catch (error) {
-                container.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 bg-white rounded-xl border">Eroare de conexiune.</div>`;
-            } finally {
-                loading.classList.add('hidden');
-            }
-        }
-
-        // --- AFIȘARE DIN TEMPLATE HTML ---
-        function afiseazaCodurile(coduri) {
-            const container = document.getElementById('listaCoduri');
-            const template = document.getElementById('codTemplate');
-
-            if (!coduri || coduri.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">Niciun cod generat încă.</div>`;
-                return;
-            }
-
-            coduri.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-            coduri.forEach(cod => {
-                const clone = template.content.cloneNode(true);
-                const data = cod.createdAt ? new Date(cod.createdAt).toLocaleDateString('ro-RO') : 'N/A';
-                const isActiv = cod.status === 'NEUTILIZAT';
-
-                const spanCod = clone.querySelector('.element-cod');
-                spanCod.textContent = cod.codUnic;
-                spanCod.classList.add(isActiv ? 'text-brand-navy' : 'text-gray-400');
-                if (!isActiv) spanCod.classList.add('line-through');
-
-                const spanBadge = clone.querySelector('.element-badge');
-                spanBadge.textContent = cod.status;
-                if (isActiv) {
-                    spanBadge.classList.add('bg-brand-teal', 'text-white');
-                } else {
-                    spanBadge.classList.add('bg-gray-200', 'text-gray-500');
-                }
-
-                clone.querySelector('.element-rol').textContent = cod.rolDestinatar;
-                clone.querySelector('.element-email').textContent = cod.emailDestinatar;
-                clone.querySelector('.element-data').textContent = `Generat: ${data}`;
-
-                container.appendChild(clone);
-            });
-        }
-
-        function actualizeazaStatistici(coduri) {
-            const total = coduri.length;
-            const active = coduri.filter(c => c.status === 'NEUTILIZAT').length;
-            document.getElementById('totalCoduri').textContent = total;
-            document.getElementById('coduriActive').textContent = active;
-            document.getElementById('coduriUtilizate').textContent = total - active;
-        }
-    </script>
-</div>
 </body>
 </html>

@@ -149,11 +149,9 @@ public class BuletinAnalizeController {
 
         try {
             analizeService.salveazaDateValidate(dto);
-            redirectAttributes.addFlashAttribute("success", "✅ Datele medicale au fost salvate și validate cu succes!");
+            redirectAttributes.addFlashAttribute("success", "Datele medicale au fost salvate și validate cu succes!");
 
-            // IMPORTANT: ruta /analize/pacient/documente/{pacientId} așteaptă userId (vezi
-            // BuletinAnalizeService.getDocumentePacient -> findByUserId), iar dto.getPacientId()
-            // conține Pacienti.id, nu userId. Trebuie să aflăm userId-ul real al pacientului.
+
             UUID userIdPentruRedirect = analizeService.getUserIdDinPacientId(dto.getPacientId());
 
             // Redirecționăm către lista de documente a pacientului
@@ -177,9 +175,6 @@ public class BuletinAnalizeController {
                                          RedirectAttributes redirectAttributes) {
         log.info("Medic salvează maparea LOINC pentru documentul: {}", documentId);
 
-        // IMPORTANT: dto.getPacientId() provine din mapeazaDinDocumentValidat() și conține
-        // deja Pacienti.id (entitatea reală), NU userId. findByUserId era greșit aici —
-        // luăm entitatea Pacienti direct din documentul deja persistat în DB.
         DocumentMedical docPentruPacient = documentMedicalRepository.findById(documentId).orElse(null);
 
         if (docPentruPacient == null || docPentruPacient.getPacient() == null) {
@@ -193,7 +188,7 @@ public class BuletinAnalizeController {
             analizeService.salveazaCorectiiMedic(documentId, dto);
             redirectAttributes.addFlashAttribute("success", "Maparea LOINC a fost validată cu succes!");
 
-            // Redirecționăm folosind ID-ul corect (cheia primară a tabelului Pacienti)
+            // Redirecționăm folosind ID-ul corect
             return "redirect:/medic/analize/dosar/" + pacientIdReal;
 
         } catch (Exception e) {
