@@ -2,20 +2,6 @@
 
 A web application for therapeutic support and management. This project contains a Java backend and a client-side UI (HTML + JavaScript). It provides core features for managing users, sessions, and therapy content in a secure, user-friendly interface.
 
-## Table of Contents
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Running Locally](#running-locally)
-- [Building](#building)
-- [Testing](#testing)
-- [Configuration](#configuration)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
 
 ## Features
 - User authentication and role management (patients, therapists, admins)
@@ -42,7 +28,6 @@ Languages used in the repo: Java, HTML, JavaScript.
 - JDK 17+ (or the version required by your project)
 - Maven or Gradle (depending on project)
 - Node.js & npm (only if you use a frontend build step)
-- Docker (optional, for containerized runs)
 
 ## Installation
 1. Clone the repository:
@@ -100,14 +85,6 @@ Common environment variables:
 
 Replace the names above with the actual keys used in your project.
 
-## Deployment
-- Docker (example):
-  Build:
-    docker build -t therapeutica-app:latest .
-  Run:
-    docker run -e DATABASE_URL=... -e DATABASE_USERNAME=... -e DATABASE_PASSWORD=... -p 8080:8080 therapeutica-app:latest
-
-- Cloud: push the Docker image to your registry and deploy to your cloud provider (Heroku, AWS ECS, GKE, etc.)
 
 ## Environment & Secrets
 Never commit secrets (DB passwords, JWT secrets) to the repository. Use environment variables or a secrets manager in production.
@@ -117,11 +94,6 @@ Never commit secrets (DB passwords, JWT secrets) to the repository. Use environm
 - Make changes with tests
 - Open a pull request with a clear description and linked issue (if any)
 - Follow the project's code style and commit message guidelines
-
-If you want, I can add a CONTRIBUTING.md with a checklist and PR template.
-
-## License
-Add your license here (e.g., MIT, Apache-2.0). If you want, I can generate a LICENSE file for you.
 
 ## Contact
 Maintainer: elena33e
