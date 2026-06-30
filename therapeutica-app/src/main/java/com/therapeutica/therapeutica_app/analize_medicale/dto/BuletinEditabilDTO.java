@@ -10,6 +10,7 @@ import java.util.*;
 public class BuletinEditabilDTO {
     private UUID documentId;
     private UUID pacientId;
+    private UUID pacientEntityId;
 
     @Builder.Default
     private List<SectiuneWrapperDTO> sectiuni = new ArrayList<>();

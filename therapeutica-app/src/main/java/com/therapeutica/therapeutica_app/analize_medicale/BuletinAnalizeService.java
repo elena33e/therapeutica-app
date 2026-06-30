@@ -363,7 +363,11 @@ public class BuletinAnalizeService {
             };
 
             if (jsonSursa == null || jsonSursa.isEmpty()) {
-                return BuletinEditabilDTO.builder().documentId(doc.getId()).pacientId(doc.getPacient().getId()).build();
+                return BuletinEditabilDTO.builder()
+                        .documentId(doc.getId())
+                        .pacientId(doc.getPacient().getUser().getId())
+                        .pacientEntityId(doc.getPacient().getId())
+                        .build();
             }
 
             // Citim JSON-ul (care este Map în DB)
@@ -388,13 +392,19 @@ public class BuletinAnalizeService {
 
             return BuletinEditabilDTO.builder()
                     .documentId(doc.getId())
-                    .pacientId(doc.getPacient().getId())
+                    .pacientId(doc.getPacient().getUser().getId())
+                    .pacientEntityId(doc.getPacient().getId())
                     .sectiuni(listaSectiuni)
                     .build();
 
         } catch (Exception e) {
             log.error("Eroare mapping DTO: {}", e.getMessage());
-            return BuletinEditabilDTO.builder().documentId(doc.getId()).pacientId(doc.getPacient().getId()).sectiuni(new ArrayList<>()).build();
+            return BuletinEditabilDTO.builder()
+                    .documentId(doc.getId())
+                    .pacientId(doc.getPacient().getUser().getId())
+                    .pacientEntityId(doc.getPacient().getId())
+                    .sectiuni(new ArrayList<>())
+                    .build();
         }
     }
 
@@ -457,6 +467,12 @@ public class BuletinAnalizeService {
         return objectMapper.writeValueAsString(payload);
     }
 
+    /**
+     * Returnează documentele medicale ale unui pacient.
+     * IMPORTANT: parametrul este userId (Utilizatori.id), NU Pacienti.id.
+     * Convenția folosită în toată aplicația pentru rutele "/analize/pacient/documente/{id}"
+     * și pentru BuletinEditabilDTO.pacientId este ca acel id să fie userId.
+     */
     public List<DocumentMedical> getDocumentePacient(UUID userIdDinSesiune) {
 
         Pacienti pacient = pacientiRepository.findByUserId(userIdDinSesiune)
@@ -470,9 +486,11 @@ public class BuletinAnalizeService {
 
     /**
      * Convertește Pacienti.id (cheia primară a entității Pacienti) în userId-ul
-     * utilizatorului asociat (Utilizatori.id). Necesar pentru construirea unor
-     * redirect-uri către rute care, din convenție, primesc userId în loc de
-     * Pacienti.id (ex. /analize/pacient/documente/{userId}).
+     * utilizatorului asociat (Utilizatori.id).
+     * ATENȚIE: de când BuletinEditabilDTO.pacientId conține deja userId (vezi
+     * mapeazaDinDocumentValidat), această metodă NU mai trebuie aplicată pe
+     * dto.getPacientId(). Rămâne utilă doar dacă pornești de la un Pacienti.id
+     * obținut altfel (ex. doc.getPacient().getId()).
      */
     public UUID getUserIdDinPacientId(UUID pacientEntityId) {
         Pacienti pacient = pacientiRepository.findById(pacientEntityId)

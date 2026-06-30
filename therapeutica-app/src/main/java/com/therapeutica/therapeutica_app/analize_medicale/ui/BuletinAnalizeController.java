@@ -151,11 +151,8 @@ public class BuletinAnalizeController {
             analizeService.salveazaDateValidate(dto);
             redirectAttributes.addFlashAttribute("success", "Datele medicale au fost salvate și validate cu succes!");
 
-
-            UUID userIdPentruRedirect = analizeService.getUserIdDinPacientId(dto.getPacientId());
-
-            // Redirecționăm către lista de documente a pacientului
-            return "redirect:/analize/pacient/documente/" + userIdPentruRedirect;
+            // dto.getPacientId() conține userId (vezi BuletinAnalizeService.mapeazaDinDocumentValidat)
+            return "redirect:/analize/pacient/documente/" + dto.getPacientId();
 
         } catch (Exception e) {
             log.error("Eroare critică la salvarea documentului {}: {}", dto.getDocumentId(), e.getMessage());
@@ -201,7 +198,7 @@ public class BuletinAnalizeController {
 
     @GetMapping("/valideaza/{documentId}")
     public String paginaValidare(@PathVariable UUID documentId, Model model) {
-        DocumentMedical doc = documentMedicalRepository.findById(documentId)
+        DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(documentId)
                 .orElseThrow(() -> new RuntimeException("Documentul nu a fost găsit."));
 
         BuletinEditabilDTO dto = analizeService.mapeazaDinDocumentValidat(doc);
@@ -214,13 +211,14 @@ public class BuletinAnalizeController {
 
     @GetMapping("/vizualizeaza/{documentId}")
     public String vizualizeazaAnalize(@PathVariable UUID documentId, Model model) {
-        DocumentMedical doc = documentMedicalRepository.findById(documentId)
+        DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(documentId)
                 .orElseThrow(() -> new RuntimeException("Documentul nu a fost găsit."));
 
         BuletinEditabilDTO dto = analizeService.mapeazaDinDocumentValidat(doc);
 
         model.addAttribute("buletin", dto);
-        model.addAttribute("pacientId", doc.getPacient().getId());
+        // dto.getPacientId() conține deja userId (vezi mapeazaDinDocumentValidat)
+        model.addAttribute("pacientId", dto.getPacientId());
         model.addAttribute("citireaDoar", true);
 
         return "pacient/analize/vizualizare-analize";
@@ -234,7 +232,7 @@ public class BuletinAnalizeController {
         log.info("Primire cerere de ștergere pentru documentul: {}", documentId);
 
         // Extragem documentul mai întâi pentru a afla pacientId-ul necesar redirecționării
-        DocumentMedical doc = documentMedicalRepository.findById(documentId).orElse(null);
+        DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(documentId).orElse(null);
 
         if (doc == null) {
             log.warn("Încercare de ștergere eșuată. Documentul {} nu există.", documentId);
@@ -243,7 +241,8 @@ public class BuletinAnalizeController {
             return "redirect:/";
         }
 
-        UUID pacientId = doc.getPacient().getId();
+        // Ruta /analize/pacient/documente/{id} așteaptă userId, nu Pacienti.id
+        UUID userId = doc.getPacient().getUser().getId();
 
         try {
             // Apelăm serviciul pentru a executa ștergerea în cascadă (fișier, DB, FHIR)
@@ -257,7 +256,7 @@ public class BuletinAnalizeController {
         }
 
         // Redirecționăm înapoi la dosarul pacientului
-        return "redirect:/analize/pacient/documente/" + pacientId;
+        return "redirect:/analize/pacient/documente/" + userId;
     }
 
 

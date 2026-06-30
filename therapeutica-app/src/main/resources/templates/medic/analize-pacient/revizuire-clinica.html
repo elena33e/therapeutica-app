@@ -28,7 +28,7 @@
             <!-- Buton Principal  -->
             <button type="submit" form="revizuireForm"
                     class="bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-2.5 px-5 rounded-lg transition duration-200 shadow-md flex items-center">
-                 Finalizează
+                Finalizează
             </button>
         </div>
     </div>
@@ -83,6 +83,7 @@
 
                         <input type="hidden" th:field="*{documentId}" />
                         <input type="hidden" th:field="*{pacientId}" />
+                        <input type="hidden" th:field="*{pacientEntityId}" />
 
                         <!-- Iterăm prin lista de secțiuni adăugând secStat pentru index -->
                         <th:block th:each="sectiune, secStat : *{sectiuni}">

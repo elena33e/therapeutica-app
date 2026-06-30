@@ -42,7 +42,7 @@ public class MedicAnalizeController {
 
     @GetMapping("/revizuire/{docId}")
     public String paginaRevizuire(@PathVariable UUID docId, Model model) {
-        DocumentMedical doc = documentMedicalRepository.findById(docId)
+        DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(docId)
                 .orElseThrow(() -> new RuntimeException("Documentul cu ID-ul " + docId + " nu a fost găsit."));
 
         boolean isImage = false;
@@ -97,27 +97,6 @@ public class MedicAnalizeController {
 
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @PostMapping("/finalizeaza/{docId}")
-    public String finalizeazaRevizuire(@PathVariable UUID docId,
-                                       @ModelAttribute("buletin") BuletinEditabilDTO dto,
-                                       RedirectAttributes redirectAttributes) {
-        try {
-            log.info("Medicul finalizează revizuirea pentru documentul: {}", docId);
-
-            analizeService.salveazaCorectiiMedic(docId, dto);
-            analizeService.finalizeazaInterpretareClinica(docId);
-
-            redirectAttributes.addFlashAttribute("success", "Buletinul a fost validat.");
-            // Asigură-te că dto.getPacientId() este transmis corect din formular
-            return "redirect:/medic/analize/dosar/" + dto.getPacientId();
-
-        } catch (Exception e) {
-            log.error("Eroare critică la finalizarea revizuirii: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Eroare la salvarea datelor: " + e.getMessage());
-            return "redirect:/medic/analize/revizuire/" + docId;
         }
     }
 

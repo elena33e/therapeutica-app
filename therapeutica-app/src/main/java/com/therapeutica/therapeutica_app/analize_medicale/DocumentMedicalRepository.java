@@ -29,4 +29,7 @@ public interface DocumentMedicalRepository extends JpaRepository<DocumentMedical
 
 
     List<DocumentMedical> findByPacient_IdAndStatusNotOrderByDataIncarcareDesc(UUID pacientId, DocumentMedical.StatusDocument status);
+
+    @Query("SELECT d FROM DocumentMedical d JOIN FETCH d.pacient p JOIN FETCH p.user WHERE d.id = :id")
+    Optional<DocumentMedical> findByIdWithPacientSiUser(@Param("id") UUID id);
 }
