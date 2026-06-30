@@ -56,13 +56,13 @@ public class RaspunsuriIntrebariService {
                     raspunsuriSalvate++;
 
                 } catch (Exception e) {
-                    log.error("❌ Eroare la procesarea răspunsului {}: {}", key, e.getMessage());
+                    log.error("Eroare la procesarea răspunsului {}: {}", key, e.getMessage());
                     raspunsuriErate++;
                 }
             }
         }
 
-        log.info("✅ {} răspunsuri salvate, {} erori pentru chestionar {}",
+        log.info("{} răspunsuri salvate, {} erori pentru chestionar {}",
                 raspunsuriSalvate, raspunsuriErate, raspunsChestionarId);
 
         // Marchează chestionarul ca completat
@@ -161,10 +161,10 @@ public class RaspunsuriIntrebariService {
     }
 
     /**
-     * Obține toate răspunsurile detaliate pentru un chestionar
+     * Obține toate răspunsurile detaliate pentru un chestionar.
      */
     public List<RaspunsuriIntrebari> getRaspunsuriDetaliate(UUID raspunsChestionarId) {
-        return raspunsuriIntrebariRepository.findByRaspunsChestionarId(raspunsChestionarId);
+        return raspunsuriIntrebariRepository.findByRaspunsChestionarIdWithDetails(raspunsChestionarId);
     }
 
     /**

@@ -115,18 +115,111 @@
 
             <div x-show="activeTab === 'completate'" class="overflow-x-auto">
                 <table class="w-full text-left" th:if="${totalChestionareCompletate > 0}">
-                    <tr th:each="rc : ${chestionareCompletate}">
-                        <td class="px-8 py-5 text-sm font-bold text-brand-navy" th:text="${rc.numeChestionar ?: 'Nume indisponibil'}"></td>
+                    <thead>
+                    <tr class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                        <th class="px-8 py-4">Chestionar</th>
+                        <th class="px-8 py-4">Data Completării</th>
+                        <th class="px-8 py-4 text-center">Scor</th>
+                        <th class="px-8 py-4 text-right">Acțiuni</th>
                     </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                    <tr th:each="rc : ${chestionareCompletate}" class="hover:bg-gray-50 transition-colors">
+                        <td class="px-8 py-5 text-sm font-bold text-brand-navy" th:text="${rc.numeChestionar ?: 'Nume indisponibil'}"></td>
+                        <td class="px-8 py-5 text-sm text-gray-500 font-medium"
+                            th:text="${rc.completatLa != null ? #temporals.format(rc.completatLa, 'dd MMM yyyy · HH:mm') : '-'}"></td>
+                        <td class="px-8 py-5 text-center">
+                            <span th:if="${rc.scorTotalGeneral != null}"
+                                  class="inline-flex px-3 py-1 rounded-lg text-xs font-bold bg-brand-blue/10 text-brand-blue border border-brand-blue/20">
+                                <span th:text="${rc.scorTotalGeneral}"></span> pct.
+                            </span>
+                            <span th:if="${rc.scorTotalGeneral == null}" class="text-xs font-semibold text-gray-400 italic">
+                                Necesită analiză
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <a th:href="@{'/chestionare/medic/vizualizare/' + ${rc.id}}"
+                               class="inline-flex items-center text-xs font-bold text-brand-blue hover:text-brand-navy bg-white border border-gray-200 hover:border-brand-blue/40 px-4 py-2 rounded-lg transition-all shadow-sm">
+                                Vezi Rezultate
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
                 </table>
+
+                <div th:if="${totalChestionareCompletate == 0}" class="text-center py-20">
+                    <i class="fas fa-clipboard text-gray-200 text-5xl mb-4"></i>
+                    <h3 class="text-lg font-bold text-brand-navy">Niciun istoric</h3>
+                    <p class="text-sm text-gray-400 mt-1">Pacientul nu a finalizat evaluările atribuite.</p>
+                </div>
             </div>
 
             <div x-show="activeTab === 'necompletate'" class="overflow-x-auto" style="display: none;">
                 <table class="w-full text-left" th:if="${totalChestionareNecompletate > 0}">
-                    <tr th:each="rn : ${chestionareNecompletate}">
-                        <td class="px-8 py-5 text-sm font-bold text-brand-navy" th:text="${rn.numeChestionar ?: 'Nume indisponibil'}">Nume</td>
+                    <thead>
+                    <tr class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                        <th class="px-8 py-4">Chestionar Atribuit</th>
+                        <th class="px-8 py-4 text-center">Status</th>
+                        <th class="px-8 py-4 text-right">Acțiuni</th>
                     </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                    <tr th:each="rn : ${chestionareNecompletate}" class="hover:bg-gray-50 transition-colors">
+                        <td class="px-8 py-5 text-sm font-bold text-brand-navy" th:text="${rn.numeChestionar ?: 'Nume indisponibil'}">Nume</td>
+                        <td class="px-8 py-5 text-center">
+                            <span class="px-3 py-1 bg-brand-gold/20 text-brand-navy text-xs font-bold rounded-full border border-brand-gold/40">
+                                Restant
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <button class="inline-flex items-center text-xs font-bold text-gray-500 hover:text-brand-navy transition-colors">
+                                <i class="fas fa-bell mr-1.5"></i> Trimite Memento
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
                 </table>
+
+                <div th:if="${totalChestionareNecompletate == 0}" class="text-center py-20">
+                    <i class="fas fa-check-circle text-gray-200 text-5xl mb-4"></i>
+                    <h3 class="text-lg font-bold text-brand-navy">La zi</h3>
+                    <p class="text-sm text-gray-400 mt-1">Pacientul a completat toate sarcinile active.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-8 py-5 border-b border-gray-200 bg-gray-50">
+                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Istoric Diagnostice Stabilite de Medic</h3>
+            </div>
+
+            <div th:if="${istoricDiagnostice != null and !istoricDiagnostice.isEmpty()}" class="px-8 py-8">
+                <div class="relative pl-8">
+                    <!-- Linia verticală a timeline-ului -->
+                    <div class="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-200"></div>
+
+                    <div th:each="diag, stat : ${istoricDiagnostice}" class="relative pb-8 last:pb-0">
+                        <!-- Marker -->
+                        <div th:class="${stat.first} ? 'absolute -left-8 top-1 w-4 h-4 rounded-full bg-brand-teal border-4 border-white shadow-sm ring-1 ring-brand-teal'
+                                                      : 'absolute -left-8 top-1 w-4 h-4 rounded-full bg-white border-4 border-gray-200'"></div>
+
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+                            <div class="flex items-start justify-between gap-4 mb-2">
+                                <p class="text-sm font-bold text-brand-navy" th:text="${diag.diagnosticFinal}"></p>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap"
+                                      th:text="${diag.dataStabilire != null ? #temporals.format(diag.dataStabilire, 'dd MMM yyyy · HH:mm') : '-'}"></span>
+                            </div>
+                            <p th:if="${diag.observatiiClinice != null and !diag.observatiiClinice.isEmpty()}"
+                               class="text-sm text-gray-500 leading-relaxed" th:text="${diag.observatiiClinice}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${istoricDiagnostice == null or istoricDiagnostice.isEmpty()}" class="text-center py-20">
+                <i class="fas fa-stethoscope text-gray-200 text-5xl mb-4"></i>
+                <h3 class="text-lg font-bold text-brand-navy">Niciun diagnostic stabilit încă</h3>
+                <p class="text-sm text-gray-400 mt-1">Diagnosticele stabilite vor apărea aici după evaluarea clinică.</p>
             </div>
         </div>
     </div>

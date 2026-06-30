@@ -212,6 +212,7 @@ public class PacientiMedicController {
         }
 
         dto.setCompletatLa(rc.getCompletatLa());
+        dto.setScorTotalGeneral(rc.getScorTotalGeneral());
         return dto;
     }
 
