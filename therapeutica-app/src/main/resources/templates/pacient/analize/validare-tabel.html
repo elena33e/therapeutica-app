@@ -22,9 +22,10 @@
             </a>
         </div>
 
-        <form th:action="@{/analize/salveaza-validat}" th:object="${buletin}" method="post" class="space-y-8">
+        <form id="validareForm" th:action="@{/analize/salveaza-validat}" th:object="${buletin}" method="post" class="space-y-8">
             <input type="hidden" th:field="*{documentId}" />
             <input type="hidden" th:field="*{pacientId}" />
+            <input type="hidden" th:field="*{pacientEntityId}" />
 
             <!-- Tabel Secțiuni -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -66,6 +67,9 @@
                                     </div>
                                 </td>
                             </tr>
+                            <!-- Flag soft-delete pentru întreaga secțiune -->
+                            <input type="hidden" class="section-sters-flag"
+                                   th:field="*{sectiuni[__${secStat.index}__].sters}" value="false" />
 
                             <!-- Indicatori -->
                             <tr th:each="ind, indStat : ${sec.indicatori}" class="hover:bg-gray-50 transition-colors indicator-row">
@@ -93,6 +97,9 @@
                                 <td class="px-6 py-3 flex items-center justify-between gap-2">
                                     <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-medium text-gray-600 transition-colors"
                                            th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].interval}" />
+                                    <!-- Flag soft-delete pentru acest indicator -->
+                                    <input type="hidden" class="indicator-sters-flag"
+                                           th:field="*{sectiuni[__${secStat.index}__].indicatori[__${indStat.index}__].sters}" value="false" />
                                     <button type="button" onclick="removeRow(this)" class="text-gray-300 hover:text-red-500 p-2 outline-none transition-colors" title="Șterge indicator">
                                         <i class="fas fa-times"></i>
                                     </button>
@@ -110,8 +117,8 @@
                     <i class="fas fa-info-circle mr-2 text-brand-blue"></i>
                     Corectitudinea datelor asigură precizia mapării LOINC.
                 </div>
-                <button type="submit"
-                        class="w-full sm:w-auto bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-3.5 px-8 rounded-xl shadow-md transition-all flex items-center justify-center uppercase tracking-widest text-xs active:scale-95 group">
+                <button type="submit" id="submitBtn"
+                        class="w-full sm:w-auto bg-brand-teal hover:bg-brand-teal/90 text-white font-bold py-3.5 px-8 rounded-xl shadow-md transition-all flex items-center justify-center uppercase tracking-widest text-xs active:scale-95 group disabled:opacity-60 disabled:cursor-not-allowed">
                     <i class="fas fa-save mr-2 text-white group-hover:scale-110 transition-transform"></i>
                     Salvează în Dosar
                 </button>
@@ -123,34 +130,43 @@
 
 <div layout:fragment="scripts">
     <script>
-        function removeRow(button) {
-            if(confirm('Sigur vrei să ștergi acest indicator?')) {
-                const row = button.closest('tr');
-                let prevRow = row.previousElementSibling;
-                while (prevRow && !prevRow.classList.contains('section-row')) {
-                    prevRow = prevRow.previousElementSibling;
-                }
-                const sectionIndex = prevRow ? prevRow.getAttribute('data-section-index') : null;
+        // Soft-delete: ascunde rândul și marchează hidden input-ul 'sters' ca true,
 
-                row.remove();
-                if(sectionIndex !== null) {
-                    renumberIndicatorsForSection(prevRow);
-                }
+
+        function removeRow(button) {
+            if (!confirm('Sigur vrei să ștergi acest indicator?')) return;
+
+            const row = button.closest('tr.indicator-row');
+            const flag = row.querySelector('.indicator-sters-flag');
+            if (flag) {
+                flag.value = 'true';
             }
+            row.style.display = 'none';
         }
 
         function removeSection(button) {
-            if(confirm('Sigur vrei să ștergi TOATĂ secțiunea?')) {
-                const sectionHeader = button.closest('tr.section-row');
-                let nextRow = sectionHeader.nextElementSibling;
+            if (!confirm('Sigur vrei să ștergi TOATĂ secțiunea?')) return;
 
-                while (nextRow && !nextRow.classList.contains('section-row')) {
-                    let temp = nextRow.nextElementSibling;
-                    nextRow.remove();
-                    nextRow = temp;
-                }
-                sectionHeader.remove();
-                renumberAllSections();
+            const sectionHeader = button.closest('tr.section-row');
+
+            // Bifează flag-ul secțiunii (e pe rândul imediat următor headerului)
+            const sectionFlagRow = sectionHeader.nextElementSibling;
+            if (sectionFlagRow) {
+                const sectionFlag = sectionFlagRow.querySelector('.section-sters-flag')
+                    || (sectionFlagRow.matches('input.section-sters-flag') ? sectionFlagRow : null);
+                if (sectionFlag) sectionFlag.value = 'true';
+            }
+
+            sectionHeader.style.display = 'none';
+            if (sectionFlagRow) sectionFlagRow.style.display = 'none';
+
+            // Ascunde și marchează ca șterși toți indicatorii secțiunii
+            let next = sectionFlagRow ? sectionFlagRow.nextElementSibling : sectionHeader.nextElementSibling;
+            while (next && next.classList && next.classList.contains('indicator-row')) {
+                const flag = next.querySelector('.indicator-sters-flag');
+                if (flag) flag.value = 'true';
+                next.style.display = 'none';
+                next = next.nextElementSibling;
             }
         }
 
@@ -158,86 +174,74 @@
             const sectionRow = button.closest('tr.section-row');
             const sectionIndex = sectionRow.getAttribute('data-section-index');
 
-            let lastRow = sectionRow;
-            while (lastRow.nextElementSibling && lastRow.nextElementSibling.classList.contains('indicator-row')) {
+            // Găsim ultimul rând de indicator din secțiune (sărim peste hidden-ul de flag al secțiunii)
+            let lastRow = sectionRow.nextElementSibling; // poate fi flag-ul secțiunii
+            if (lastRow && lastRow.matches('input.section-sters-flag')) {
                 lastRow = lastRow.nextElementSibling;
             }
+            let cursor = lastRow;
+            let countIndicatori = 0;
+            while (cursor && cursor.nextElementSibling && cursor.nextElementSibling.classList &&
+                   cursor.nextElementSibling.classList.contains('indicator-row')) {
+                cursor = cursor.nextElementSibling;
+                countIndicatori++;
+            }
+            if (!cursor || !cursor.classList || !cursor.classList.contains('indicator-row')) {
+                cursor = sectionRow;
+            } else {
+                countIndicatori++; // numărăm și ultimul rând găsit
+            }
+
+            // IMPORTANT: indexul trebuie să fie un întreg mic și continuu (numărul curent
+            // de indicatori din secțiune), NU un timestamp - Spring's data binder alocă
+            // o listă de mărimea indexului maxim întâlnit, deci un index uriaș ar crea
+            // o listă internă cu milioane de elemente goale la binding.
+            const newIndex = countIndicatori;
 
             const newRow = document.createElement('tr');
             newRow.className = 'hover:bg-gray-50 transition-colors indicator-row border-t border-gray-50';
 
-            // Template HTML actualizat la noul design
             newRow.innerHTML = `
                 <td class="px-6 py-3">
                     <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-bold text-brand-navy transition-colors"
-                           name="sectiuni[${sectionIndex}].indicatori[999].nume" value="Nume Indicator">
+                           name="sectiuni[${sectionIndex}].indicatori[${newIndex}].nume" value="Nume Indicator">
                 </td>
                 <td class="px-6 py-3">
                     <input type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[10px] uppercase tracking-widest font-bold text-gray-500 focus:bg-white focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition-all"
-                           name="sectiuni[${sectionIndex}].indicatori[999].metoda_detectata" placeholder="Ex: Spectrometrie">
+                           name="sectiuni[${sectionIndex}].indicatori[${newIndex}].metoda_detectata" placeholder="Ex: Spectrometrie">
                 </td>
                 <td class="px-6 py-3">
                     <input type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-black text-brand-navy text-center shadow-sm focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all"
-                           name="sectiuni[${sectionIndex}].indicatori[999].valoare" value="">
+                           name="sectiuni[${sectionIndex}].indicatori[${newIndex}].valoare" value="">
                 </td>
                 <td class="px-6 py-3">
                     <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-medium text-gray-600 text-center transition-colors"
-                           name="sectiuni[${sectionIndex}].indicatori[999].um" value="">
+                           name="sectiuni[${sectionIndex}].indicatori[${newIndex}].um" value="">
                 </td>
                 <td class="px-6 py-3 flex items-center justify-between gap-2">
                     <input type="text" class="w-full bg-transparent border-b border-transparent focus:border-brand-teal outline-none py-1.5 text-sm font-medium text-gray-600 transition-colors"
-                           name="sectiuni[${sectionIndex}].indicatori[999].interval" value="">
+                           name="sectiuni[${sectionIndex}].indicatori[${newIndex}].interval" value="">
+                    <input type="hidden" class="indicator-sters-flag"
+                           name="sectiuni[${sectionIndex}].indicatori[${newIndex}].sters" value="false">
                     <button type="button" onclick="removeRow(this)" class="text-gray-300 hover:text-red-500 p-2 outline-none transition-colors" title="Șterge indicator">
                         <i class="fas fa-times"></i>
                     </button>
                 </td>
             `;
 
-            lastRow.after(newRow);
-            renumberIndicatorsForSection(sectionRow);
+            cursor.after(newRow);
         }
 
-        function renumberIndicatorsForSection(sectionRow) {
-            const sectionIndex = sectionRow.getAttribute('data-section-index');
-            let next = sectionRow.nextElementSibling;
-            let indicatorIndex = 0;
-
-            while(next && next.classList.contains('indicator-row')) {
-                next.querySelectorAll('input').forEach(input => {
-                    const name = input.getAttribute('name');
-                    if(name) {
-                        input.setAttribute('name', name.replace(/indicatori\[\d+\]/, `indicatori[${indicatorIndex}]`));
-                    }
-                });
-                indicatorIndex++;
-                next = next.nextElementSibling;
-            }
-        }
-
-        function renumberAllSections() {
-            const sections = document.querySelectorAll('.section-row');
-
-            sections.forEach((sectionRow, newSectionIndex) => {
-                sectionRow.setAttribute('data-section-index', newSectionIndex);
-
-                const nameInput = sectionRow.querySelector('input[type="text"]');
-                if (nameInput) {
-                    nameInput.setAttribute('name', `sectiuni[${newSectionIndex}].nume`);
-                }
-
-                let next = sectionRow.nextElementSibling;
-                let indicatorIndex = 0;
-
-                while(next && next.classList.contains('indicator-row')) {
-                    next.querySelectorAll('input').forEach(input => {
-                        const name = input.getAttribute('name');
-                        if(name) {
-                            const baseName = name.split('.').pop();
-                            input.setAttribute('name', `sectiuni[${newSectionIndex}].indicatori[${indicatorIndex}].${baseName}`);
-                        }
-                    });
-                    indicatorIndex++;
-                    next = next.nextElementSibling;
+        // Dezactivează butonul și afișează spinner la submit, ca să previi
+        // dublu-click-ul (submit dublu) și să oferi feedback vizual cât timp
+        // datele sunt trimise/procesate pe server.
+        const validareForm = document.getElementById('validareForm');
+        if (validareForm) {
+            validareForm.addEventListener('submit', function () {
+                const btn = document.getElementById('submitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> SE SALVEAZĂ...';
                 }
             });
         }

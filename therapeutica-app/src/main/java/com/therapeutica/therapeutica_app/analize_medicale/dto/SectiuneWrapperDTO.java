@@ -11,4 +11,5 @@ import java.util.*;
 public class SectiuneWrapperDTO {
     private String nume;
     private List<IndicatorDTO> indicatori = new ArrayList<>();
+    private boolean sters = false;
 }

@@ -190,16 +190,25 @@ public class BuletinAnalizeService {
                 .orElseThrow(() -> new RuntimeException("Eroare: Documentul nu există."));
 
         try {
-            // IMPORTANT: dto.getPacientId() provine din mapeazaDinDocumentValidat() și conține
-            // deja Pacienti.id (entitatea reală), NU userId. Nu trebuie convertit din nou cu
-            // findByUserId — îl luăm direct din documentul deja încărcat din DB.
+            // Notă: luăm pacientul direct din doc.getPacient(), nu din dto.getPacientId(),
+            // fiindcă acesta din urmă conține userId (vezi mapeazaDinDocumentValidat),
+            // nu Pacienti.id. doc e deja încărcat în tranzacția curentă, deci accesul
+            // la pacient.getMedic()/.getUser() mai jos e sigur (nu traversează granița
+            // de tranzacție ca în controllere).
             Pacienti pacient = doc.getPacient();
             if (pacient == null) {
                 throw new RuntimeException("Documentul nu are un pacient asociat!");
             }
 
-            // CONVERSIE: Listă -> Map (pentru a păstra formatul JSON așteptat de restul aplicației/Python)
+            // Filtrăm secțiunile și indicatorii marcați ca șterși (soft-delete din UI),
+            // apoi convertim Listă -> Map (format JSON așteptat de restul aplicației/Python)
             Map<String, SectiuneWrapperDTO> mapSectiuni = dto.getSectiuni().stream()
+                    .filter(s -> !s.isSters())
+                    .peek(s -> s.setIndicatori(
+                            s.getIndicatori().stream()
+                                    .filter(ind -> !ind.isSters())
+                                    .collect(Collectors.toList())
+                    ))
                     .collect(Collectors.toMap(
                             SectiuneWrapperDTO::getNume,
                             s -> s,
@@ -486,12 +495,7 @@ public class BuletinAnalizeService {
 
     /**
      * Convertește Pacienti.id (cheia primară a entității Pacienti) în userId-ul
-     * utilizatorului asociat (Utilizatori.id).
-     * ATENȚIE: de când BuletinEditabilDTO.pacientId conține deja userId (vezi
-     * mapeazaDinDocumentValidat), această metodă NU mai trebuie aplicată pe
-     * dto.getPacientId(). Rămâne utilă doar dacă pornești de la un Pacienti.id
-     * obținut altfel (ex. doc.getPacient().getId()).
-     */
+ */
     public UUID getUserIdDinPacientId(UUID pacientEntityId) {
         Pacienti pacient = pacientiRepository.findById(pacientEntityId)
                 .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit (id entitate: " + pacientEntityId + ")"));

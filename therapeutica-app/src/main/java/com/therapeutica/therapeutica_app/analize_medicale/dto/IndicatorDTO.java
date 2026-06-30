@@ -22,6 +22,9 @@ public class IndicatorDTO {
     private String loincNume;
 
     private List<LoincOptiuneDTO> candidati = new ArrayList<>();
+
+    @Builder.Default
+    private boolean sters = false;
 }
 
 @Data
