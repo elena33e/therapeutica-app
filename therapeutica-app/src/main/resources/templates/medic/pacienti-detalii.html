@@ -37,7 +37,8 @@
                    class="px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-brand-navy hover:bg-gray-200 transition-all flex items-center shadow-sm">
                     <i class="fas fa-plus-circle mr-2 text-brand-teal"></i> Atribuie
                 </a>
-                <a th:href="@{'/medic/pacienti/' + ${pacient.id} + '/diagnoza-integrata'}"
+                <a th:if="${inferenceEnabled}"
+                   th:href="@{'/medic/pacienti/' + ${pacient.id} + '/diagnoza-integrata'}"
                    class="px-6 py-2.5 bg-brand-navy text-white text-xs font-bold rounded-xl hover:bg-brand-navy/90 transition-all shadow-md flex items-center">
                     <i class="fas fa-brain mr-2 text-brand-gold"></i> Profil Fenotipic
                 </a>
@@ -222,6 +223,53 @@
                 <p class="text-sm text-gray-400 mt-1">Diagnosticele stabilite vor apărea aici după evaluarea clinică.</p>
             </div>
         </div>
+    </div>
+    <!-- Modal Înregistrare Diagnostic -->
+    <div id="modalDiagnostic" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
+        <div class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-gray-100">
+            <h3 class="text-2xl font-bold text-brand-navy mb-6">Înregistrare Diagnostic</h3>
+
+            <form th:action="@{/diagnostic/salveaza}" method="post">
+                <input type="hidden" name="pacientId" th:value="${pacient.id}" />
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold uppercase text-gray-500">Diagnostic Final</label>
+                        <input type="text" name="diagnosticFinal"
+                               class="w-full mt-1 p-3 border border-gray-200 rounded-xl"
+                               required placeholder="Ex: Hipoclorhidrie..." />
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold uppercase text-gray-500">Observații</label>
+                        <textarea name="observatiiClinice"
+                                  class="w-full mt-1 p-3 border border-gray-200 rounded-xl" rows="3"></textarea>
+                    </div>
+
+                    <div class="hidden" th:if="${chestionareCompletate != null}">
+                        <input th:each="chest : ${chestionareCompletate}" type="checkbox"
+                               name="chestionareIds" th:value="${chest.id}" checked />
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-8">
+                    <button type="button"
+                            onclick="document.getElementById('modalDiagnostic').classList.add('hidden')"
+                            class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">Anulează</button>
+                    <button type="submit"
+                            class="flex-1 py-3 bg-brand-teal text-white rounded-xl font-bold shadow-lg">Salvează Diagnostic</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="fixed bottom-8 right-8 z-50">
+        <button type="button"
+                onclick="document.getElementById('modalDiagnostic').classList.remove('hidden')"
+                class="flex items-center gap-2 bg-brand-navy text-white px-6 py-4 rounded-2xl shadow-2xl hover:bg-brand-navy/90 transition-all font-bold">
+            <i class="fas fa-stethoscope"></i>
+            <span>Stabilește Diagnostic</span>
+        </button>
     </div>
 </div>
 </body>

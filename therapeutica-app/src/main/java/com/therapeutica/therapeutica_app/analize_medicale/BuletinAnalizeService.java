@@ -52,6 +52,12 @@ public class BuletinAnalizeService {
     @Value("${external.services.python-interpret.path}")
     private String interpretPath;
 
+    @Value("${external.services.python-fhir.path}")
+    private String fhirPath;
+
+    @Value("${app.features.inference}")
+    private boolean inferenceEnabled;
+
 
     private final Path rootLocation = Paths.get("upload-dir/analize");
 
@@ -190,18 +196,14 @@ public class BuletinAnalizeService {
                 .orElseThrow(() -> new RuntimeException("Eroare: Documentul nu există."));
 
         try {
-            // Notă: luăm pacientul direct din doc.getPacient(), nu din dto.getPacientId(),
-            // fiindcă acesta din urmă conține userId (vezi mapeazaDinDocumentValidat),
-            // nu Pacienti.id. doc e deja încărcat în tranzacția curentă, deci accesul
-            // la pacient.getMedic()/.getUser() mai jos e sigur (nu traversează granița
-            // de tranzacție ca în controllere).
+
             Pacienti pacient = doc.getPacient();
             if (pacient == null) {
                 throw new RuntimeException("Documentul nu are un pacient asociat!");
             }
 
             // Filtrăm secțiunile și indicatorii marcați ca șterși (soft-delete din UI),
-            // apoi convertim Listă -> Map (format JSON așteptat de restul aplicației/Python)
+
             Map<String, SectiuneWrapperDTO> mapSectiuni = dto.getSectiuni().stream()
                     .filter(s -> !s.isSters())
                     .peek(s -> s.setIndicatori(
@@ -309,11 +311,61 @@ public class BuletinAnalizeService {
             log.info("Date salvate cu succes pentru documentul: {}", docId);
 
             // Declanșăm interpretarea clinică async
-            finalizeazaInterpretareClinica(docId);
+            if (inferenceEnabled) {
+                finalizeazaInterpretareClinica(docId);
+            } else {
+                finalizeazaConversieFhir(docId);
+            }
 
         } catch (Exception e) {
             log.error("Eroare la salvarea medicului", e);
             throw new RuntimeException("Eroare salvare medic: " + e.getMessage());
+        }
+    }
+
+    @Async
+    public void finalizeazaConversieFhir(UUID documentId) {
+        try {
+            DocumentMedical doc = documentMedicalRepository.findById(documentId)
+                    .orElseThrow(() -> new RuntimeException("Document negăsit: " + documentId));
+
+            // Reutilizam acelasi payload standardizat ca la interpretare
+            String payload = pregatestePayloadHpo(
+                    doc.getDateStandardizate(),
+                    doc.getId(),
+                    doc.getPacient().getId()
+            );
+
+            log.info("Trimitere payload către Python /lab-to-fhir pentru documentul: {}", documentId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> request = new HttpEntity<>(payload, headers);
+
+            ResponseEntity<String> response = ocrRestTemplate.postForEntity(
+                    pythonBaseUrl + fhirPath,
+                    request,
+                    String.class
+            );
+
+            documentMedicalRepository.findById(documentId).ifPresent(d -> {
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    d.setDateFhir(response.getBody());
+                    d.setStatus(DocumentMedical.StatusDocument.FHIR_GENERAT);
+                    log.info("Conversie FHIR standard salvată pentru documentul: {}", documentId);
+                } else {
+                    d.setStatus(DocumentMedical.StatusDocument.EROARE);
+                    log.error("Python /lab-to-fhir a returnat {} pentru documentul {}", response.getStatusCode(), documentId);
+                }
+                documentMedicalRepository.saveAndFlush(d);
+            });
+
+        } catch (Exception e) {
+            log.error("Eroare la conversia FHIR pentru documentul {}: {}", documentId, e.getMessage());
+            documentMedicalRepository.findById(documentId).ifPresent(d -> {
+                d.setStatus(DocumentMedical.StatusDocument.EROARE);
+                documentMedicalRepository.saveAndFlush(d);
+            });
         }
     }
 

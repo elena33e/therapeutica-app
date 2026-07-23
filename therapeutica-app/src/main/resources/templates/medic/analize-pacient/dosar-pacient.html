@@ -132,7 +132,11 @@
 
                             <span th:if="${doc.status.name() == 'INTERPRETAT'}"
                                   class="px-2.5 py-1 bg-brand-teal text-white text-[9px] font-bold rounded-lg uppercase tracking-wide shadow-sm">
-                                <i class="fas fa-check mr-1.5 text-[8px]"></i> Interpretat automat
+                            <i class="fas fa-check mr-1.5 text-[8px]"></i> Interpretat automat
+                            </span>
+                            <span th:if="${doc.status.name() == 'FHIR_GENERAT'}"
+                                  class="px-2.5 py-1 bg-brand-teal text-white text-[9px] font-bold rounded-lg uppercase tracking-wide shadow-sm">
+                              <i class="fas fa-check mr-1.5 text-[8px]"></i> Standardizat
                             </span>
 
                             <span th:if="${doc.status.name() == 'EROARE'}"
@@ -159,12 +163,13 @@
                                     <i class="fas fa-stethoscope mr-1.5 text-brand-gold"></i> REVIZUIEȘTE
                                 </a>
 
-                                <div th:if="${doc.status.name() == 'INTERPRETAT'}" class="flex justify-end items-center gap-3">
+                                <div th:if="${doc.status.name() == 'INTERPRETAT' or doc.status.name() == 'FHIR_GENERAT'}" class="flex justify-end items-center gap-3">
                                     <a th:href="@{'/medic/analize/revizuire/' + ${doc.id}}"
                                        class="px-3 py-2 bg-white text-brand-navy border border-brand-navy hover:bg-gray-50 text-[10px] font-bold rounded-lg transition-all shadow-sm">
                                         EDITEAZĂ COPIA
                                     </a>
-                                    <a th:href="@{'/medic/analize/vizualizeaza/' + ${doc.id}}"
+                                    <a th:if="${doc.status.name() == 'INTERPRETAT'}"
+                                       th:href="@{'/medic/analize/vizualizeaza/' + ${doc.id}}"
                                        class="px-4 py-2 bg-brand-teal text-white text-[10px] font-bold rounded-lg hover:bg-brand-teal/90 transition-all shadow-md">
                                         RAPORT GENERAT
                                     </a>

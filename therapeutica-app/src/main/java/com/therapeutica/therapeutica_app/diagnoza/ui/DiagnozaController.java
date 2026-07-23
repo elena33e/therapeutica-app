@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.Map;
@@ -32,13 +33,22 @@ public class DiagnozaController {
 
     private final ObjectMapper objectMapper;
     private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
-
+    @Value("${app.features.inference}")
+    private boolean inferenceEnabled;
     /**
      * Randează dovezile și citește ultimul JSON salvat în DB.
      */
     @GetMapping("/{pacientId}/diagnoza-integrata")
-    public String afiseazaProfilIntegrat(@PathVariable UUID pacientId, Model model) {
+    public String afiseazaProfilIntegrat(@PathVariable UUID pacientId, Model model,
+                                         RedirectAttributes redirectAttributes) {
         log.info("Accesare Hub Diagnoză pentru pacientul ID: {}", pacientId);
+
+        // Gardă: pagina de prediagnostic există doar când inferența e activă
+        if (!inferenceEnabled) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Funcționalitatea de prediagnostic nu este disponibilă.");
+            return "redirect:/medic/analize/dosar/" + pacientId;
+        }
 
         Pacienti pacient = pacientiRepository.findByIdWithUser(pacientId)
                 .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit."));
@@ -94,6 +104,12 @@ public class DiagnozaController {
     @PostMapping("/{pacientId}/ruleaza-diagnoza")
     public String declanseazaMotorDiagnoza(@PathVariable UUID pacientId, RedirectAttributes redirectAttributes) {
         log.info("Rulare cerută pentru motorul de diagnoză, pacient ID: {}", pacientId);
+
+        if (!inferenceEnabled) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Funcționalitatea de prediagnostic nu este disponibilă.");
+            return "redirect:/medic/analize/dosar/" + pacientId;
+        }
 
         Pacienti pacient = pacientiRepository.findByIdWithUser(pacientId)
                 .orElseThrow(() -> new RuntimeException("Pacientul nu a fost găsit."));

@@ -15,8 +15,11 @@
             <h1 class="text-2xl font-bold text-brand-navy">
                 Revizuire Analize: <span class="text-brand-blue" th:text="${document.numeFisier}">fisier.pdf</span>
             </h1>
-            <p class="text-gray-500 font-medium mt-1">
+            <p class="text-gray-500 font-medium mt-1" th:if="${inferenceEnabled}">
                 Verifică și asociază codurile LOINC pentru generarea fenotipului HPO.
+            </p>
+            <p class="text-gray-500 font-medium mt-1" th:unless="${inferenceEnabled}">
+                Verifică și asociază codurile LOINC pentru standardizarea rezultatelor.
             </p>
         </div>
         <div class="flex items-center space-x-3">
@@ -152,7 +155,7 @@
                                                     th:classappend="${ind.loincNum == 'Pending' or ind.loincNum == null or ind.loincNum == '' ? 'border-brand-gold/60 bg-brand-gold/10 text-brand-navy focus:ring-brand-gold focus:border-brand-gold' : 'border-gray-300 focus:ring-brand-blue focus:border-brand-blue bg-white text-brand-navy'}"
                                                     class="block w-full text-xs font-bold rounded-xl border py-2.5 px-3 outline-none transition-colors shadow-sm cursor-pointer appearance-none pr-8">
 
-                                                <option value="Pending" th:if="${ind.loincNum == 'Pending'}" selected>⚠ Verificare Necesară...</option>
+                                                <option value="Pending" th:if="${ind.loincNum == 'Pending'}" selected>⚠Verificare Necesară...</option>
 
                                                 <option th:each="cand : ${ind.candidati}"
                                                         th:value="${cand.code}"

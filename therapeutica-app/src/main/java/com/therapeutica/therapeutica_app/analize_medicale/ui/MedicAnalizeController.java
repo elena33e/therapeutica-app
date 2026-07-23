@@ -22,12 +22,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+
 
 @Controller
 @RequestMapping("/medic/analize")
@@ -39,6 +41,8 @@ public class MedicAnalizeController {
     private final DocumentMedicalRepository documentMedicalRepository;
     private final PacientiRepository pacientiRepository;
     private final ObjectMapper objectMapper;
+    @Value("${app.features.inference}")
+    private boolean inferenceEnabled;
 
     @GetMapping("/revizuire/{docId}")
     public String paginaRevizuire(@PathVariable UUID docId, Model model) {
@@ -101,14 +105,21 @@ public class MedicAnalizeController {
     }
 
     @GetMapping("/vizualizeaza/{docId}")
-    public String afiseazaRaportFinal(@PathVariable UUID docId, Model model) {
+    public String afiseazaRaportFinal(@PathVariable UUID docId, Model model,
+                                      RedirectAttributes redirectAttributes) {
         log.info("Accesare raport vizualizare pentru documentul: {}", docId);
 
         DocumentMedical doc = documentMedicalRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Documentul nu a fost găsit."));
 
-        // MODIFICARE: Accesăm direct entitatea pacient din document
         Pacienti pacient = doc.getPacient();
+
+        // Gardă: raportul de interpretare există doar când inferența e activă
+        if (!inferenceEnabled) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Raportul de interpretare clinică nu este disponibil.");
+            return "redirect:/medic/analize/dosar/" + pacient.getId();
+        }
 
         model.addAttribute("realPacientId", pacient.getId());
         model.addAttribute("document", doc);

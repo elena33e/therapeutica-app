@@ -33,10 +33,18 @@ public class DiagnosticMedicController {
 
         log.info("Medic salvează diagnostic pentru pacientul: {}", pacientId);
 
-        try {
-            Pacienti pacient = pacientiRepository.findById(pacientId)
-                    .orElseThrow(() -> new IllegalArgumentException("Pacient invalid"));
+        Pacienti pacient = pacientiRepository.findByIdWithUser(pacientId).orElse(null);
 
+        if (pacient == null || pacient.getMedic() == null || pacient.getMedic().getUser() == null) {
+            log.error("Pacientul {} nu a fost găsit sau nu are un medic asociat.", pacientId);
+            redirectAttributes.addFlashAttribute("error",
+                    "Pacientul nu a fost găsit sau nu are un medic asociat.");
+            return "redirect:/medic/analize/dosar/" + pacientId;
+        }
+
+        UUID medicUserId = pacient.getMedic().getUser().getId();
+
+        try {
             DiagnosticMedic diagnostic = DiagnosticMedic.builder()
                     .pacient(pacient)
                     .diagnosticFinal(diagnosticFinal)
@@ -48,10 +56,11 @@ public class DiagnosticMedicController {
             redirectAttributes.addFlashAttribute("success", "Diagnosticul a fost salvat cu succes.");
 
         } catch (Exception e) {
-            log.error("Eroare la salvarea diagnosticului: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Eroare la salvarea diagnosticului: " + e.getMessage());
+            log.error("Eroare la salvarea diagnosticului pentru pacientul {}: {}", pacientId, e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Eroare la salvarea diagnosticului: " + e.getMessage());
         }
 
-        return "redirect:/medic/pacienti/" + pacientId + "/diagnoza-integrata";
+        return "redirect:/medic/" + medicUserId + "/pacient/" + pacientId;
     }
 }

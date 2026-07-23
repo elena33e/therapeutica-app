@@ -18,7 +18,7 @@ public class IndicatorDTO {
     private String um;
     private String interval;
     private String metoda_detectata;
-    private String loincNum;  // Codul tehnic (trimis la Python)
+    private String loincNum;
     private String loincNume;
 
     private List<LoincOptiuneDTO> candidati = new ArrayList<>();

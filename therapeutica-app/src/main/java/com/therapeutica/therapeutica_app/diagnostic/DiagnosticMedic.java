@@ -38,11 +38,13 @@ public class DiagnosticMedic {
     @ElementCollection
     @CollectionTable(name = "diagnostic_chestionare_ref", joinColumns = @JoinColumn(name = "diagnostic_id"))
     @Column(name = "chestionar_id")
+    @Builder.Default
     private List<UUID> chestionareReferinte = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "diagnostic_analize_ref", joinColumns = @JoinColumn(name = "diagnostic_id"))
     @Column(name = "analiza_id")
+    @Builder.Default
     private List<UUID> analizeReferinte = new ArrayList<>();
 
     private LocalDateTime dataStabilire;

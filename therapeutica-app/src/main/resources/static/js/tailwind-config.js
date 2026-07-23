@@ -11,7 +11,11 @@ tailwind.config = {
                 secondary: '#ddc696',
                 success: '#4ab097',
                 info: '#6ca2c4'
-            }
+            },
+            fontFamily: {
+                            sans: ['Montserrat', 'sans-serif'],
+
+                        }
         }
     }
 }
