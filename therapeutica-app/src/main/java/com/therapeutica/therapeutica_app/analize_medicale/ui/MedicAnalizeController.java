@@ -6,6 +6,8 @@ import com.therapeutica.therapeutica_app.analize_medicale.BuletinAnalizeService;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedical;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedicalRepository;
 import com.therapeutica.therapeutica_app.analize_medicale.dto.BuletinEditabilDTO;
+import com.therapeutica.therapeutica_app.audit.AuditLog;
+import com.therapeutica.therapeutica_app.audit.AuditService;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
@@ -38,6 +40,7 @@ import java.util.*;
 public class MedicAnalizeController {
 
     private final BuletinAnalizeService analizeService;
+    private final AuditService auditService;
     private final DocumentMedicalRepository documentMedicalRepository;
     private final PacientiRepository pacientiRepository;
     private final ObjectMapper objectMapper;
@@ -45,7 +48,7 @@ public class MedicAnalizeController {
     private boolean inferenceEnabled;
 
     @GetMapping("/revizuire/{docId}")
-    public String paginaRevizuire(@PathVariable UUID docId, Model model) {
+    public String paginaRevizuire(@PathVariable UUID docId, Model model, HttpSession session) {
         DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(docId)
                 .orElseThrow(() -> new RuntimeException("Documentul cu ID-ul " + docId + " nu a fost găsit."));
 
@@ -72,12 +75,20 @@ public class MedicAnalizeController {
         model.addAttribute("isImage", isImage);
         model.addAttribute("pacientId", pacient.getId());
 
+        auditService.inregistreaza(
+                auditService.utilizatorCurent(session),
+                AuditLog.ActiuneAudit.VIZUALIZARE,
+                AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                docId,
+                pacient.getId()
+        );
+
         return "medic/analize-pacient/revizuire-clinica";
     }
 
     @GetMapping("/view-pdf/{docId}")
     @ResponseBody
-    public ResponseEntity<Resource> streamPdf(@PathVariable UUID docId) {
+    public ResponseEntity<Resource> streamPdf(@PathVariable UUID docId, HttpSession session) {
         DocumentMedical doc = documentMedicalRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Fișierul nu a fost găsit."));
 
@@ -94,6 +105,14 @@ public class MedicAnalizeController {
                 contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
             }
 
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.VIZUALIZARE,
+                    AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                    docId,
+                    doc.getPacient().getId()
+            );
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getNumeFisier() + "\"")
@@ -106,7 +125,8 @@ public class MedicAnalizeController {
 
     @GetMapping("/vizualizeaza/{docId}")
     public String afiseazaRaportFinal(@PathVariable UUID docId, Model model,
-                                      RedirectAttributes redirectAttributes) {
+                                      RedirectAttributes redirectAttributes,
+                                      HttpSession session) {
         log.info("Accesare raport vizualizare pentru documentul: {}", docId);
 
         DocumentMedical doc = documentMedicalRepository.findById(docId)
@@ -140,6 +160,14 @@ public class MedicAnalizeController {
             model.addAttribute("error", "Eroare la citirea datelor interpretate.");
         }
 
+        auditService.inregistreaza(
+                auditService.utilizatorCurent(session),
+                AuditLog.ActiuneAudit.VIZUALIZARE,
+                AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                docId,
+                pacient.getId()
+        );
+
         return "medic/analize-pacient/raport-hpo";
     }
 
@@ -160,6 +188,27 @@ public class MedicAnalizeController {
         model.addAttribute("pacientUser", pacientUser);
         model.addAttribute("medicId", medicId);
 
+        auditService.inregistreaza(
+                auditService.utilizatorCurent(session),
+                AuditLog.ActiuneAudit.VIZUALIZARE,
+                AuditLog.TipResursa.DOSAR_PACIENT,
+                pacientId,
+                pacientId
+        );
+
         return "medic/analize-pacient/dosar-pacient";
+    }
+
+    @GetMapping("/dosar/{pacientId}/status")
+    @ResponseBody
+    public Map<String, String> statusDocumente(@PathVariable UUID pacientId) {
+        List<DocumentMedical> documente =
+                documentMedicalRepository.findByPacient_IdOrderByDataIncarcareDesc(pacientId);
+
+        Map<String, String> rezultat = new LinkedHashMap<>();
+        for (DocumentMedical doc : documente) {
+            rezultat.put(doc.getId().toString(), doc.getStatus().name());
+        }
+        return rezultat;
     }
 }

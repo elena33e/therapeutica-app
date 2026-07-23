@@ -11,6 +11,8 @@ import com.therapeutica.therapeutica_app.raspunsuri_chestionare.dto.RaspunsChest
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 import com.therapeutica.therapeutica_app.utilizatori.UtilizatoriRepository;
 import com.therapeutica.therapeutica_app.diagnostic.DiagnosticMedic;
+import com.therapeutica.therapeutica_app.audit.AuditService;
+import com.therapeutica.therapeutica_app.audit.AuditLog;
 import jakarta.servlet.http.HttpSession;
 import lombok.Builder;
 import lombok.Data;
@@ -39,6 +41,7 @@ public class PacientiMedicController {
     private final UtilizatoriRepository utilizatoriRepository;
     private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
     private final DiagnosticMedicService diagnosticMedicService;
+    private final AuditService auditService;
 
     @GetMapping("/{medicId}/pacienti")
     public String listaPacienti(@PathVariable UUID medicId,
@@ -185,6 +188,15 @@ public class PacientiMedicController {
                     pacientUser.getNume(), pacientUser.getPrenume(),
                     chestionareCompletate.size(), chestionareNecompletate.size(),
                     (istoricDiagnostice != null ? istoricDiagnostice.size() : 0));
+
+
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.VIZUALIZARE,
+                    AuditLog.TipResursa.PROFIL_PACIENT,
+                    pacientId,
+                    pacientId
+            );
 
             return "medic/pacienti-detalii";
 

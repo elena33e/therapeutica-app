@@ -214,16 +214,52 @@
 
 <div layout:fragment="scripts">
     <script th:inline="javascript">
-        function verificaActualizariMedic() {
-            const procesariActive = document.querySelectorAll('.fa-spin');
-            if (procesariActive.length > 0) {
-                console.log("Medicul așteaptă finalizarea standardizării... Reîncărcare în 5 secunde.");
-                setTimeout(() => {
-                    window.location.reload();
-                }, 5000);
+        const pacientIdCurent = /*[[${pacient.id}]]*/ '';
+        const statusuriInLucru = ['VALIDAT'];
+
+        function existaProcesariActive() {
+            return document.querySelectorAll('.fa-spin').length > 0;
+        }
+
+        async function verificaStatusuri() {
+            try {
+                const raspuns = await fetch('/medic/analize/dosar/' + pacientIdCurent + '/status');
+                if (!raspuns.ok) {
+                    return true;
+                }
+
+                const statusuri = await raspuns.json();
+
+                for (const status of Object.values(statusuri)) {
+                    if (statusuriInLucru.includes(status)) {
+                        return true;
+                    }
+                }
+                return false;
+
+            } catch (eroare) {
+                console.warn('Verificarea statusului a esuat:', eroare);
+                return true;
             }
         }
-        document.addEventListener('DOMContentLoaded', verificaActualizariMedic);
+
+        async function porneteVerificarea() {
+            if (!existaProcesariActive()) {
+                return;
+            }
+
+            const inLucru = await verificaStatusuri();
+
+            if (inLucru) {
+                setTimeout(porneteVerificarea, 5000);
+            } else {
+                window.location.reload();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(porneteVerificarea, 5000);
+        });
     </script>
 </div>
 </body>

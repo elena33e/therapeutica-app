@@ -4,6 +4,8 @@ import com.therapeutica.therapeutica_app.analize_medicale.BuletinAnalizeService;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedical;
 import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedicalRepository;
 import com.therapeutica.therapeutica_app.analize_medicale.dto.BuletinEditabilDTO;
+import com.therapeutica.therapeutica_app.audit.AuditLog;
+import com.therapeutica.therapeutica_app.audit.AuditService;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +36,7 @@ import java.util.UUID;
 public class BuletinAnalizeController {
 
     private final BuletinAnalizeService analizeService;
+    private final AuditService auditService;
     private final DocumentMedicalRepository documentMedicalRepository;
     private final PacientiRepository pacientiRepository;
 
@@ -103,7 +106,8 @@ public class BuletinAnalizeController {
     @PostMapping("/incarca")
     public String incarcaSiProceseaza(@RequestParam("files") MultipartFile[] files,
                                       @RequestParam("pacientId") UUID pacientId,
-                                      RedirectAttributes redirectAttributes) {
+                                      RedirectAttributes redirectAttributes,
+                                      HttpSession session) {
 
         if (files == null || files.length == 0 || files[0].isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Nu ai selectat niciun fișier.");
@@ -117,6 +121,14 @@ public class BuletinAnalizeController {
             analizeService.proceseazaDocumentAsincron(doc.getId());
 
             redirectAttributes.addFlashAttribute("success", "Cele " + files.length + " fișiere sunt în curs de procesare.");
+
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.CREARE,
+                    AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                    doc.getId(),
+                    doc.getPacient().getId()
+            );
             return "redirect:/analize/pacient/documente/" + pacientId;
 
         } catch (Exception e) {
@@ -133,7 +145,8 @@ public class BuletinAnalizeController {
     public String salveazaValidat(@ModelAttribute("buletin") BuletinEditabilDTO dto,
                                   BindingResult bindingResult,
                                   RedirectAttributes redirectAttributes,
-                                  Model model) {
+                                  Model model,
+                                  HttpSession session) {
 
         log.info("Primire cerere salvare pentru documentul: {} al pacientului: {}",
                 dto.getDocumentId(), dto.getPacientId());
@@ -148,10 +161,20 @@ public class BuletinAnalizeController {
         }
 
         try {
+            DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(dto.getDocumentId())
+                    .orElse(null);
+            UUID pacientIdReal = (doc != null && doc.getPacient() != null) ? doc.getPacient().getId() : null;
+
             analizeService.salveazaDateValidate(dto);
             redirectAttributes.addFlashAttribute("success", "Datele medicale au fost salvate și validate cu succes!");
 
-            // dto.getPacientId() conține userId (vezi BuletinAnalizeService.mapeazaDinDocumentValidat)
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.MODIFICARE,
+                    AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                    dto.getDocumentId(),
+                    pacientIdReal
+            );
             return "redirect:/analize/pacient/documente/" + dto.getPacientId();
 
         } catch (Exception e) {
@@ -169,7 +192,8 @@ public class BuletinAnalizeController {
     @PostMapping("/medic/finalizeaza/{documentId}")
     public String finalizeazaMapareMedic(@PathVariable UUID documentId,
                                          @ModelAttribute("buletin") BuletinEditabilDTO dto,
-                                         RedirectAttributes redirectAttributes) {
+                                         RedirectAttributes redirectAttributes,
+                                         HttpSession session) {
         log.info("Medic salvează maparea LOINC pentru documentul: {}", documentId);
 
         DocumentMedical docPentruPacient = documentMedicalRepository.findById(documentId).orElse(null);
@@ -185,6 +209,13 @@ public class BuletinAnalizeController {
             analizeService.salveazaCorectiiMedic(documentId, dto);
             redirectAttributes.addFlashAttribute("success", "Maparea LOINC a fost validată cu succes!");
 
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.MODIFICARE,
+                    AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                    documentId,
+                    pacientIdReal
+            );
             // Redirecționăm folosind ID-ul corect
             return "redirect:/medic/analize/dosar/" + pacientIdReal;
 
@@ -210,7 +241,7 @@ public class BuletinAnalizeController {
     }
 
     @GetMapping("/vizualizeaza/{documentId}")
-    public String vizualizeazaAnalize(@PathVariable UUID documentId, Model model) {
+    public String vizualizeazaAnalize(@PathVariable UUID documentId, Model model, HttpSession session) {
         DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(documentId)
                 .orElseThrow(() -> new RuntimeException("Documentul nu a fost găsit."));
 
@@ -221,6 +252,14 @@ public class BuletinAnalizeController {
         model.addAttribute("pacientId", dto.getPacientId());
         model.addAttribute("citireaDoar", true);
 
+        auditService.inregistreaza(
+                auditService.utilizatorCurent(session),
+                AuditLog.ActiuneAudit.VIZUALIZARE,
+                AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                documentId,
+                doc.getPacient().getId()
+        );
+
         return "pacient/analize/vizualizare-analize";
     }
 
@@ -228,7 +267,9 @@ public class BuletinAnalizeController {
      * POST - Ștergerea unui document medical
      */
     @PostMapping("/sterge/{documentId}")
-    public String stergeDocument(@PathVariable UUID documentId, RedirectAttributes redirectAttributes) {
+    public String stergeDocument(@PathVariable UUID documentId,
+                                 RedirectAttributes redirectAttributes,
+                                 HttpSession session) {
         log.info("Primire cerere de ștergere pentru documentul: {}", documentId);
 
         // Extragem documentul mai întâi pentru a afla pacientId-ul necesar redirecționării
@@ -254,6 +295,14 @@ public class BuletinAnalizeController {
             log.error("Eroare la ștergerea documentului {}: {}", documentId, e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Eroare la ștergerea documentului: " + e.getMessage());
         }
+
+        auditService.inregistreaza(
+                auditService.utilizatorCurent(session),
+                AuditLog.ActiuneAudit.STERGERE,
+                AuditLog.TipResursa.DOCUMENT_MEDICAL,
+                documentId,
+                doc.getPacient().getId()
+        );
 
         // Redirecționăm înapoi la dosarul pacientului
         return "redirect:/analize/pacient/documente/" + userId;
