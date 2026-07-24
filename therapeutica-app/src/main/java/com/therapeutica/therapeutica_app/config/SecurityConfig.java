@@ -47,11 +47,20 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 )
                 .authorizeHttpRequests(auth -> auth
-
                         .requestMatchers("/", "/login", "/inregistrare", "/api/auth/**", "/api/test/**",
                                 "/css/**", "/js/**", "/images/**", "/error", "/resetare-parola/**").permitAll()
+
+                        // Rute rezervate medicului, indiferent de prefixul controllerului
                         .requestMatchers("/medic/**").hasRole("MEDIC")
+                        .requestMatchers("/chestionare/medic/**").hasRole("MEDIC")
+                        .requestMatchers("/diagnostic/**").hasRole("MEDIC")
+
                         .requestMatchers("/pacient/**").hasRole("PACIENT")
+
+                        // Rute mixte (medic si pacient) — verificarea la nivel de pacient
+                        // se face in cod, prin AccesPacientService
+                        .requestMatchers("/analize/**", "/chestionare/**", "/raspunsuri/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .formLogin(login -> login

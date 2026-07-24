@@ -10,6 +10,7 @@ import com.therapeutica.therapeutica_app.audit.AuditLog;
 import com.therapeutica.therapeutica_app.audit.AuditService;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
+import com.therapeutica.therapeutica_app.security.AccesPacientService;
 import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
 
 import jakarta.servlet.http.HttpSession;
@@ -44,6 +45,7 @@ public class MedicAnalizeController {
     private final DocumentMedicalRepository documentMedicalRepository;
     private final PacientiRepository pacientiRepository;
     private final ObjectMapper objectMapper;
+    private final AccesPacientService accesPacientService;
     @Value("${app.features.inference}")
     private boolean inferenceEnabled;
 
@@ -69,6 +71,7 @@ public class MedicAnalizeController {
         if (pacient == null) {
             throw new RuntimeException("Documentul nu are un pacient asociat!");
         }
+        accesPacientService.verificaAccesMedic(session, pacient.getId());
 
         model.addAttribute("buletin", dto);
         model.addAttribute("document", doc);
@@ -91,6 +94,9 @@ public class MedicAnalizeController {
     public ResponseEntity<Resource> streamPdf(@PathVariable UUID docId, HttpSession session) {
         DocumentMedical doc = documentMedicalRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Fișierul nu a fost găsit."));
+
+
+        accesPacientService.verificaAccesMedic(session, doc.getPacient().getId());
 
         try {
             Path path = Paths.get(doc.getCaleFisierStocare());
@@ -134,6 +140,8 @@ public class MedicAnalizeController {
 
         Pacienti pacient = doc.getPacient();
 
+        accesPacientService.verificaAccesMedic(session, pacient.getId());
+
         // Gardă: raportul de interpretare există doar când inferența e activă
         if (!inferenceEnabled) {
             redirectAttributes.addFlashAttribute("error",
@@ -174,6 +182,7 @@ public class MedicAnalizeController {
     @GetMapping("/dosar/{pacientId}")
     public String dosarPacientPentruMedic(@PathVariable UUID pacientId, Model model, HttpSession session) {
         log.info("Medic accesează dosarul pacientului cu ID: {}", pacientId);
+        accesPacientService.verificaAccesMedic(session, pacientId);
 
         Object medicId = session.getAttribute("userId");
 
@@ -201,7 +210,8 @@ public class MedicAnalizeController {
 
     @GetMapping("/dosar/{pacientId}/status")
     @ResponseBody
-    public Map<String, String> statusDocumente(@PathVariable UUID pacientId) {
+    public Map<String, String> statusDocumente(@PathVariable UUID pacientId, HttpSession session) {
+        accesPacientService.verificaAccesMedic(session, pacientId);
         List<DocumentMedical> documente =
                 documentMedicalRepository.findByPacient_IdOrderByDataIncarcareDesc(pacientId);
 

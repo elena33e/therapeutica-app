@@ -1,5 +1,7 @@
 package com.therapeutica.therapeutica_app.chestionare.ui;
 
+import com.therapeutica.therapeutica_app.audit.AuditLog;
+import com.therapeutica.therapeutica_app.audit.AuditService;
 import com.therapeutica.therapeutica_app.categorii_chestionare.CategoriiChestionare;
 import com.therapeutica.therapeutica_app.categorii_chestionare.CategoriiChestionareRepository;
 import com.therapeutica.therapeutica_app.chestionare.Chestionare;
@@ -20,8 +22,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Hibernate;
-import org.hibernate.LazyInitializationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -46,102 +46,64 @@ public class ChestionarController {
     private final RaportGeneratorService raportGeneratorService;
     private final PacientiRepository pacientiRepository;
     private final ScoringService scoringService;
-
+    private final AuditService auditService;
 
     /**
      * Afișează un chestionar pentru completare
      */
     @GetMapping("/completare/{raspunsChestionarId}")
     public String afiseazaPentruCompletare(@PathVariable UUID raspunsChestionarId,
+                                           HttpSession session,
                                            Model model) {
 
-        log.info("START afiseazaPentruCompletare");
-        log.info("Parametru primit: raspunsChestionarId = {}", raspunsChestionarId);
+        log.info("Accesare chestionar pentru completare: {}", raspunsChestionarId);
 
         try {
             RaspunsuriChestionare raspunsChestionar = raspunsuriChestionareRepository
                     .findByIdForCompletare(raspunsChestionarId)
-                    .orElseThrow(() -> {
-                        log.error("NU există RaspunsuriChestionare cu ID: {}", raspunsChestionarId);
-                        return new NotFoundException("Chestionarul nu a fost găsit în baza de date");
-                    });
-
-            log.info("RaspunsChestionar găsit: ID={}, Status={}",
-                    raspunsChestionar.getId(), raspunsChestionar.getStatus());
-
-            if (raspunsChestionar.getChestionar() != null) {
-                log.info("Chestionar: {}", raspunsChestionar.getChestionar().getNume());
-            }
-
-            String sexPacientStr = null;
-            if (raspunsChestionar.getPacient() != null) {
-                log.info("Pacient ID: {}", raspunsChestionar.getPacient().getId());
-
-                if (raspunsChestionar.getPacient().getUser() != null) {
-                    log.info("Pacient User: {} {}",
-                            raspunsChestionar.getPacient().getUser().getNume(),
-                            raspunsChestionar.getPacient().getUser().getPrenume());
-
-                    if (raspunsChestionar.getPacient().getSex() != null) {
-                        sexPacientStr = raspunsChestionar.getPacient().getSex().name();
-                        log.info("Sex pacient identificat: {}", sexPacientStr);
-                    } else {
-                        log.warn("Sexul pacientului nu este completat!");
-                    }
-                } else {
-                    log.warn("Pacientul nu are user asociat!");
-                }
-            }
+                    .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit în baza de date"));
 
             if (raspunsChestionar.getChestionar() == null) {
-                log.error("RaspunsuriChestionare nu are chestionar asociat!");
+                log.error("RaspunsuriChestionare {} nu are chestionar asociat!", raspunsChestionarId);
                 model.addAttribute("error", "Chestionarul nu are date asociate");
                 return "error";
             }
 
-            Chestionare chestionar = raspunsChestionar.getChestionar();
+            Pacienti pacient = raspunsChestionar.getPacient();
+
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.VIZUALIZARE,
+                    AuditLog.TipResursa.CHESTIONAR,
+                    raspunsChestionarId,
+                    pacient != null ? pacient.getId() : null
+            );
 
             if (raspunsChestionar.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
                 log.info("Chestionar deja completat, redirecționez către rezultate");
                 return "redirect:/chestionare/rezultate/" + raspunsChestionarId;
             }
 
+            // Sexul pacientului determină ce categorii sunt afișate
+            String sexPacient = null;
+            if (pacient != null && pacient.getSex() != null) {
+                sexPacient = pacient.getSex().name();
+            }
+
+            Chestionare chestionar = raspunsChestionar.getChestionar();
+
             List<CategoriiChestionare> toateCategoriile = categoriiChestionareRepository
                     .findByChestionarId(chestionar.getId());
 
-            log.info("Găsite {} categorii inițiale", toateCategoriile.size());
+            List<CategoriiChestionare> categoriiFiltrate = filtreazaCategoriiDupaSex(toateCategoriile, sexPacient);
 
-            final String finalSexPacient = sexPacientStr;
+            log.info("Chestionar '{}': {} categorii din {} după filtrarea pe sex",
+                    chestionar.getNume(), categoriiFiltrate.size(), toateCategoriile.size());
 
-            List<CategoriiChestionare> categoriiFiltrate = toateCategoriile.stream()
-                    .filter(categorie -> {
-                        if (categorie.getSexTinta() == null || categorie.getSexTinta().name().equals("AMBELE")) {
-                            return true;
-                        }
-                        if (finalSexPacient == null) {
-                            return true;
-                        }
-                        return categorie.getSexTinta().name().equalsIgnoreCase(finalSexPacient);
-                    })
-                    .sorted(Comparator.comparingInt(c -> c.getOrdine() != null ? c.getOrdine() : 999))
-                    .collect(Collectors.toList());
-
-            log.info("Au rămas {} categorii după filtrarea pe sex", categoriiFiltrate.size());
-
-            Map<UUID, List<Intrebare>> intrebariPeCategorii = new HashMap<>();
-
+            Map<UUID, List<Intrebare>> intrebariPeCategorii = new LinkedHashMap<>();
             for (CategoriiChestionare categorie : categoriiFiltrate) {
-                List<Intrebare> intrebari = intrebariRepository
-                        .findByCategorieId(categorie.getId());
+                List<Intrebare> intrebari = intrebariRepository.findByCategorieId(categorie.getId());
                 intrebariPeCategorii.put(categorie.getId(), intrebari);
-
-                log.info("Categorie '{}': {} întrebări", categorie.getNume(), intrebari.size());
-
-                for (Intrebare intrebare : intrebari) {
-                    log.debug("DEBUG Întrebare: '{}' - Tip: {}",
-                            intrebare.getTextIntrebare(),
-                            intrebare.getTipIntrebare());
-                }
             }
 
             model.addAttribute("chestionar", chestionar);
@@ -149,19 +111,14 @@ public class ChestionarController {
             model.addAttribute("categorii", categoriiFiltrate);
             model.addAttribute("intrebariPeCategorii", intrebariPeCategorii);
 
-            log.info("SUCCESS - Se încarcă template completare");
             return "pacient/completare-chestionar";
 
         } catch (Exception e) {
-            log.error("ERROR în afiseazaPentruCompletare");
-            log.error("Mesaj: {}", e.getMessage());
-            log.error("Stack trace:", e);
-
+            log.error("Eroare la afișarea chestionarului {}: {}", raspunsChestionarId, e.getMessage(), e);
             model.addAttribute("error", "Eroare internă: " + e.getMessage());
             return "error";
         }
     }
-
 
     /**
      * Listează chestionarele disponibile pentru un pacient
@@ -169,31 +126,29 @@ public class ChestionarController {
     @GetMapping("/pacient/{userId}/disponibile")
     public String listeazaDisponibile(@PathVariable UUID userId, Model model) {
 
-        log.info("Afișare chestionare pentru USER: {}", userId);
+        log.info("Afișare chestionare pentru user: {}", userId);
 
         try {
             Pacienti pacient = pacientiRepository.findByUserId(userId)
                     .orElseThrow(() -> new NotFoundException("Pacient not found for user: " + userId));
 
             UUID pacientId = pacient.getId();
-            log.info("Converted user {} to pacient {}", userId, pacientId);
 
             List<RaspunsuriChestionare> toateChestionare = raspunsuriChestionareRepository
                     .findByPacientIdWithRelations(pacientId);
 
-            List<RaspunsuriChestionare> chestionareDisponibile = toateChestionare.stream()
-                    .filter(rc -> rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT)
-                    .collect(Collectors.toList());
+            List<RaspunsuriChestionare> chestionareDisponibile = new ArrayList<>();
+            List<RaspunsuriChestionare> istoricChestionare = new ArrayList<>();
 
-            List<RaspunsuriChestionare> istoricChestionare = toateChestionare.stream()
-                    .filter(rc -> rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT)
-                    .sorted((rc1, rc2) -> {
-                        if (rc1.getCompletatLa() == null && rc2.getCompletatLa() == null) return 0;
-                        if (rc1.getCompletatLa() == null) return 1;
-                        if (rc2.getCompletatLa() == null) return -1;
-                        return rc2.getCompletatLa().compareTo(rc1.getCompletatLa());
-                    })
-                    .collect(Collectors.toList());
+            for (RaspunsuriChestionare rc : toateChestionare) {
+                if (rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT) {
+                    chestionareDisponibile.add(rc);
+                } else if (rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
+                    istoricChestionare.add(rc);
+                }
+            }
+
+            istoricChestionare.sort(comparatorDupaDataCompletare());
 
             model.addAttribute("chestionareDisponibile", chestionareDisponibile);
             model.addAttribute("istoricChestionare", istoricChestionare);
@@ -213,25 +168,21 @@ public class ChestionarController {
      * Istoricul chestionarelor completate de un pacient
      */
     @GetMapping("/pacient/{userId}/istoric")
-    public String afiseazaIstoric(@PathVariable UUID userId,
-                                  Model model) {
+    public String afiseazaIstoric(@PathVariable UUID userId, Model model) {
 
         try {
             Pacienti pacient = pacientiRepository.findByUserId(userId)
                     .orElseThrow(() -> new NotFoundException("Pacient not found for user: " + userId));
 
             UUID pacientId = pacient.getId();
-            log.info("Converted user {} to pacient {}", userId, pacientId);
 
             List<RaspunsuriChestionare> istoric = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatus(pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
+                    .findByPacientIdAndStatus(pacientId, RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
 
-            istoric.sort((rc1, rc2) -> rc2.getCompletatLa().compareTo(rc1.getCompletatLa()));
+            istoric.sort(comparatorDupaDataCompletare());
 
             List<RaspunsuriChestionare> chestionareDisponibile = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatus(pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
+                    .findByPacientIdAndStatus(pacientId, RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
 
             model.addAttribute("istoricChestionare", istoric);
             model.addAttribute("chestionareDisponibile", chestionareDisponibile);
@@ -247,57 +198,69 @@ public class ChestionarController {
         }
     }
 
-    // ========== PENTRU MEDIC
+    // ========== PENTRU MEDIC ==========
 
     /**
-     * Vizualizează răspunsurile unui pacient (pentru medic)
+     * Vizualizează răspunsurile unui pacient (pentru medic).
+     * Rută unică pentru afișarea rezultatelor — folosită atât din profilul
+     * pacientului, cât și din notificarea de chestionar completat.
      */
     @GetMapping("/medic/vizualizare/{raspunsChestionarId}")
     public String vizualizeazaRaspunsuri(@PathVariable UUID raspunsChestionarId,
                                          HttpSession session,
                                          Model model) {
 
-        // findByIdForCompletare face JOIN FETCH pe chestionar, pacient și pacient.user -
-        // necesar fiindcă template-ul accesează chestionar.chestionar.nume și
-        // potențial chestionar.pacient.user.*, deja în afara tranzacției curente
+        // findByIdForCompletare face JOIN FETCH pe chestionar, pacient și pacient.user —
+        // necesar fiindcă template-ul accesează aceste relații în afara tranzacției
         RaspunsuriChestionare raspunsChestionar = raspunsuriChestionareRepository
                 .findByIdForCompletare(raspunsChestionarId)
                 .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit"));
 
-        // Calculează (sau reutilizează, dacă e deja valid) scorul și interpretările pe categorii
+        Pacienti pacient = raspunsChestionar.getPacient();
+
+        auditService.inregistreaza(
+                auditService.utilizatorCurent(session),
+                AuditLog.ActiuneAudit.VIZUALIZARE,
+                AuditLog.TipResursa.CHESTIONAR,
+                raspunsChestionarId,
+                pacient != null ? pacient.getId() : null
+        );
+
+        // Calculează (sau reutilizează, dacă e deja valid) scorul pe categorii
         RezultatScoring rezultat = scoringService.calculeazaSiSalveazaScor(raspunsChestionarId);
 
-        // Obține răspunsurile detaliate (cu fetch eager pe intrebare/categorie)
         List<RaspunsuriIntrebari> raspunsuriDetaliate = raspunsuriIntrebariService
                 .getRaspunsuriDetaliate(raspunsChestionarId);
 
-        // Grupează răspunsurile după NUMELE categoriei (nu UUID), fiindcă
-        // rezultat.scoruriCategorii / culoriCategorii / interpretariCategorii
-        // sunt indexate după numele categoriei, nu după id
-        Map<String, List<RaspunsuriIntrebari>> raspunsuriPeCategorii = raspunsuriDetaliate
-                .stream()
-                .filter(r -> r.getCategorie() != null)
-                .collect(Collectors.groupingBy(r -> r.getCategorie().getNume()));
+        // Grupare după NUMELE categoriei (nu UUID), fiindcă rezultat.scoruriCategorii
+        // și celelalte map-uri din RezultatScoring sunt indexate după nume.
+        // LinkedHashMap păstrează ordinea categoriilor din chestionar.
+        Map<String, List<RaspunsuriIntrebari>> raspunsuriPeCategorii = new LinkedHashMap<>();
+        for (RaspunsuriIntrebari raspuns : raspunsuriDetaliate) {
+            String numeCategorie = (raspuns.getCategorie() != null)
+                    ? raspuns.getCategorie().getNume()
+                    : "Fără Categorie";
 
-        // Construiește un map nume categorie -> entitate CategoriiChestionare,
-        // necesar în template pentru a ști dacă o categorie e evaluabilă (scor)
-        // sau doar informativă (context clinic/stil de viață)
-        Map<String, CategoriiChestionare> categoriiMap = raspunsuriDetaliate.stream()
-                .map(RaspunsuriIntrebari::getCategorie)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(
-                        CategoriiChestionare::getNume,
-                        c -> c,
-                        (c1, c2) -> c1
-                ));
+            raspunsuriPeCategorii
+                    .computeIfAbsent(numeCategorie, k -> new ArrayList<>())
+                    .add(raspuns);
+        }
 
-        String medicId = (String) session.getAttribute("userId");
+        // Map nume categorie -> entitate, necesar în template pentru a distinge
+        // categoriile evaluabile (cu scor) de cele informative
+        Map<String, CategoriiChestionare> categoriiMap = new LinkedHashMap<>();
+        for (RaspunsuriIntrebari raspuns : raspunsuriDetaliate) {
+            CategoriiChestionare categorie = raspuns.getCategorie();
+            if (categorie != null) {
+                categoriiMap.putIfAbsent(categorie.getNume(), categorie);
+            }
+        }
 
         model.addAttribute("chestionar", raspunsChestionar);
         model.addAttribute("rezultat", rezultat);
         model.addAttribute("raspunsuriPeCategorii", raspunsuriPeCategorii);
         model.addAttribute("categoriiMap", categoriiMap);
-        model.addAttribute("medicId", medicId);
+        model.addAttribute("medicId", session.getAttribute("userId"));
 
         return "medic/vizualizare-rezultate";
     }
@@ -307,6 +270,7 @@ public class ChestionarController {
      */
     @GetMapping("/raport/visual/{raspunsChestionarId}")
     public String genereazaRaportVisual(@PathVariable UUID raspunsChestionarId,
+                                        HttpSession session,
                                         Model model,
                                         HttpServletResponse response) {
 
@@ -327,6 +291,14 @@ public class ChestionarController {
                 return "redirect:/chestionare/rezultate/" + raspunsChestionarId;
             }
 
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.EXPORT,
+                    AuditLog.TipResursa.CHESTIONAR,
+                    raspunsChestionarId,
+                    extragePacientId(raspunsChestionarId)
+            );
+
             model.addAllAttributes(raportData);
 
             response.setContentType("application/pdf");
@@ -335,8 +307,7 @@ public class ChestionarController {
             String data = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
             String fileName = "raport-" + pacientNume.replace(" ", "-") + "-" + data + ".pdf";
 
-            response.setHeader("Content-Disposition",
-                    "attachment; filename=\"" + fileName + "\"");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
 
             return "chestionare/raport-visual-pdf";
 
@@ -348,18 +319,21 @@ public class ChestionarController {
     }
 
     /**
-     * Afișează toate tipurile de chestionare disponibile în sistem (pentru medici)
+     * Afișează toate tipurile de chestionare disponibile în sistem (pentru medici).
+     * Nu conține date de pacient, deci nu se auditează.
      */
     @GetMapping("/medic/lista-chestionare")
     public String listaChestionareSistem(Model model) {
         log.info("Medic accesează lista globală de chestionare");
 
-        List<Chestionare> lista = chestionareRepository.findAll();
-
-        model.addAttribute("chestionareSistem", lista);
+        model.addAttribute("chestionareSistem", chestionareRepository.findAll());
         return "medic/chestionare/lista-chestionare";
     }
 
+    /**
+     * Vizualizează structura unui chestionar (șablon, fără date de pacient).
+     * Nu se auditează.
+     */
     @GetMapping("/medic/vizualizare-structura/{id}")
     public String vizualizareStructuraChestionar(@PathVariable UUID id, Model model) {
         log.info("Medic vizualizează structura chestionarului: {}", id);
@@ -367,13 +341,10 @@ public class ChestionarController {
         Chestionare chestionar = chestionareRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit"));
 
-        List<CategoriiChestionare> categorii = categoriiChestionareRepository
-                .findByChestionarId(id)
-                .stream()
-                .sorted(Comparator.comparingInt(c -> c.getOrdine() != null ? c.getOrdine() : 999))
-                .collect(Collectors.toList());
+        List<CategoriiChestionare> categorii = categoriiChestionareRepository.findByChestionarId(id);
+        categorii.sort(comparatorDupaOrdine());
 
-        Map<UUID, List<Intrebare>> intrebariPeCategorii = new HashMap<>();
+        Map<UUID, List<Intrebare>> intrebariPeCategorii = new LinkedHashMap<>();
         for (CategoriiChestionare categorie : categorii) {
             List<Intrebare> intrebari = intrebariRepository.findByCategorieId(categorie.getId());
             intrebariPeCategorii.put(categorie.getId(), intrebari);
@@ -395,6 +366,9 @@ public class ChestionarController {
                                       @RequestParam UUID pacientId,
                                       HttpSession session,
                                       RedirectAttributes redirectAttributes) {
+
+        Object medicId = session.getAttribute("userId");
+
         try {
             RaspunsuriChestionare raspuns = raspunsuriChestionareRepository.findById(raspunsChestionarId)
                     .orElseThrow(() -> new NotFoundException("Răspunsul nu a fost găsit"));
@@ -402,15 +376,69 @@ public class ChestionarController {
             if (raspuns.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
                 raspuns.setStatus(RaspunsuriChestionare.StatusRaspuns.REVIZUIT);
                 raspunsuriChestionareRepository.save(raspuns);
+
+                auditService.inregistreaza(
+                        auditService.utilizatorCurent(session),
+                        AuditLog.ActiuneAudit.MODIFICARE,
+                        AuditLog.TipResursa.CHESTIONAR,
+                        raspunsChestionarId,
+                        pacientId
+                );
+
                 redirectAttributes.addFlashAttribute("success", "Evaluarea a fost marcată ca revizuită.");
             }
 
-            String medicId = (String) session.getAttribute("userId");
-            return "redirect:/medic/" + medicId + "/pacient/" + pacientId;
-
         } catch (Exception e) {
-            String medicId = (String) session.getAttribute("userId");
-            return "redirect:/medic/" + medicId + "/pacient/" + pacientId;
+            log.error("Eroare la marcarea ca revizuit a chestionarului {}: {}",
+                    raspunsChestionarId, e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Nu s-a putut marca evaluarea ca revizuită.");
         }
+
+        return "redirect:/medic/" + medicId + "/pacient/" + pacientId;
+    }
+
+    // ========== METODE HELPER ==========
+
+    /**
+     * Păstrează categoriile potrivite pentru sexul pacientului.
+     * Categoriile fără sex-țintă sau marcate AMBELE se aplică tuturor.
+     */
+    private List<CategoriiChestionare> filtreazaCategoriiDupaSex(List<CategoriiChestionare> categorii,
+                                                                 String sexPacient) {
+        List<CategoriiChestionare> rezultat = new ArrayList<>();
+
+        for (CategoriiChestionare categorie : categorii) {
+            if (categorie.getSexTinta() == null
+                    || "AMBELE".equals(categorie.getSexTinta().name())
+                    || sexPacient == null
+                    || categorie.getSexTinta().name().equalsIgnoreCase(sexPacient)) {
+                rezultat.add(categorie);
+            }
+        }
+
+        rezultat.sort(comparatorDupaOrdine());
+        return rezultat;
+    }
+
+    private Comparator<CategoriiChestionare> comparatorDupaOrdine() {
+        return Comparator.comparingInt(c -> c.getOrdine() != null ? c.getOrdine() : 999);
+    }
+
+    /**
+     * Cel mai recent completat primul; cele fără dată la final.
+     */
+    private Comparator<RaspunsuriChestionare> comparatorDupaDataCompletare() {
+        return (rc1, rc2) -> {
+            if (rc1.getCompletatLa() == null && rc2.getCompletatLa() == null) return 0;
+            if (rc1.getCompletatLa() == null) return 1;
+            if (rc2.getCompletatLa() == null) return -1;
+            return rc2.getCompletatLa().compareTo(rc1.getCompletatLa());
+        };
+    }
+
+    private UUID extragePacientId(UUID raspunsChestionarId) {
+        return raspunsuriChestionareRepository.findById(raspunsChestionarId)
+                .map(rc -> rc.getPacient() != null ? rc.getPacient().getId() : null)
+                .orElse(null);
     }
 }
