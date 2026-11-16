@@ -1,243 +1,98 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <head>
-    <title>Dosar Medical | Therapeutica</title>
+    <title>Dosar medical | Therapeutica</title>
 </head>
-<body class="bg-gray-50">
-<div layout:fragment="content" class="container mx-auto px-4 py-12 max-w-7xl">
+<body>
+<div layout:fragment="content"
+     class="max-w-7xl w-full mx-auto px-4 py-8 space-y-6">
 
-    <!-- Header Secțiune -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-        <div>
-            <h1 class="text-3xl font-bold text-brand-navy tracking-tight">Dosar Medical</h1>
-            <p class="text-gray-500 font-medium mt-2">Gestionează analizele și documentele tale medicale într-un mod centralizat.</p>
-        </div>
-        <!-- Buton Principal Corectat (Teal) -->
-        <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"
-                class="bg-brand-teal hover:bg-brand-teal/90 text-white px-6 py-3.5 rounded-xl shadow-md transition-all duration-200 flex items-center space-x-2 font-bold active:scale-95 uppercase tracking-wider text-xs">
-            <i class="fas fa-plus"></i>
-            <span>Adaugă fișier nou</span>
+    <h1 class="text-3xl font-bold text-brand-navy">Dosar medical</h1>
+
+    <div th:if="${success}" role="status"
+         class="p-4 rounded-xl bg-brand-teal text-white"
+         th:text="${success}"></div>
+
+    <div th:if="${error}" role="alert"
+         class="p-4 rounded-xl bg-red-50 text-red-700"
+         th:text="${error}"></div>
+
+    <form th:action="@{/analize/incarca}"
+          method="post"
+          enctype="multipart/form-data"
+          class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+
+        <input type="hidden" name="pacientId" th:value="${pacientId}">
+
+        <label for="files" class="block font-bold text-brand-navy">
+            Adaugă un document
+        </label>
+
+        <p id="files-help" class="text-sm text-gray-600">
+            Selectează un PDF sau imaginile documentului.
+            Fișierele selectate împreună vor apărea ca un singur document.
+        </p>
+
+        <input id="files"
+               name="files"
+               type="file"
+               multiple
+               required
+               accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+               aria-describedby="files-help"
+               class="block w-full">
+
+        <button type="submit"
+                class="px-5 py-3 bg-brand-teal text-white font-bold rounded-lg">
+            Încarcă documentul
         </button>
-    </div>
+    </form>
 
-    <!-- Mesaje Alerte (Păstrăm semantica verde/roșu dar cu design solid) -->
-    <div th:if="${success}" class="bg-brand-teal text-white px-5 py-4 rounded-xl mb-8 shadow-sm flex items-center font-bold text-sm">
-        <i class="fas fa-check-circle mr-3 text-xl"></i>
-        <span th:text="${success}"></span>
-    </div>
-
-    <div th:if="${error}" class="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl mb-8 shadow-sm flex items-center font-bold text-sm">
-        <i class="fas fa-exclamation-triangle mr-3 text-red-500 text-xl"></i>
-        <span th:text="${error}"></span>
-    </div>
-
-    <!-- Container Tabel -->
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
-        <div class="overflow-x-auto">
-            <table class="min-w-full border-collapse text-left">
-                <thead class="bg-gray-100 border-b border-gray-200">
-                <tr>
-                    <th class="px-8 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest">Document</th>
-                    <th class="px-8 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest">Data Încărcare</th>
-                    <th class="px-8 py-4 text-[10px] font-bold text-brand-navy uppercase tracking-widest">Status</th>
-                    <th class="px-8 py-4 text-right text-[10px] font-bold text-brand-navy uppercase tracking-widest">Acțiuni</th>
-                </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                <tr th:each="doc : ${documente}" class="group hover:bg-gray-50 transition-all duration-200">
-                    <td class="px-8 py-5">
-                        <div class="flex items-center">
-                            <div class="p-2.5 bg-red-50 border border-red-100 rounded-lg mr-4 group-hover:bg-red-100 transition-colors">
-                                <i class="fas fa-file-pdf text-red-500 text-xl"></i>
-                            </div>
-                            <span class="text-sm font-bold text-brand-navy" th:text="${doc.numeFisier}">analize.pdf</span>
-                        </div>
-                    </td>
-                    <td class="px-8 py-5 text-sm text-gray-500 font-medium"
-                        th:text="${#temporals.format(doc.dataIncarcare, 'dd MMM yyyy · HH:mm')}">12 Feb 2026</td>
-
-                    <td class="px-8 py-5">
-                        <!-- Badges Status refăcute -->
-                        <span th:if="${doc.status.name() == 'INCARCAT'}"
-                              class="inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold bg-brand-gold/20 text-brand-navy border border-brand-gold/40 uppercase tracking-widest shadow-sm">
-                            <i class="fas fa-circle-notch fa-spin mr-2 text-brand-navy"></i> Procesare OCR
-                        </span>
-
-                        <span th:if="${doc.status.name() == 'PROCESAT'}"
-                              class="inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold bg-brand-blue text-white shadow-sm uppercase tracking-widest">
-                            <i class="fas fa-magic mr-2"></i> Revizuire necesară
-                        </span>
-
-                        <span th:if="${doc.status.name() == 'VALIDAT' or doc.status.name() == 'STANDARDIZAT'}"
-                              class="inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold bg-brand-teal text-white shadow-sm uppercase tracking-widest">
-                            <i class="fas fa-check-double mr-2"></i> Verificat
-                        </span>
-
-                        <span th:if="${doc.status.name() == 'EROARE'}"
-                              class="inline-flex items-center px-3 py-1.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 uppercase tracking-widest shadow-sm">
-                            <i class="fas fa-exclamation-triangle mr-2"></i> Eroare sistem
-                        </span>
-                    </td>
-
-                    <td class="px-8 py-5 text-right space-x-2 whitespace-nowrap">
-                        <a th:if="${doc.status.name() == 'PROCESAT'}"
-                           th:href="@{/analize/valideaza/{id}(id=${doc.id})}"
-                           class="inline-flex items-center px-4 py-2 bg-brand-blue text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-brand-blue/90 transition-colors shadow-sm">
-                            <i class="fas fa-clipboard-check mr-2"></i> Validează
+    <div class="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+        <table class="w-full text-left">
+            <thead class="bg-gray-100 text-brand-navy">
+            <tr>
+                <th scope="col" class="px-5 py-4">Document</th>
+                <th scope="col" class="px-5 py-4">Data încărcării</th>
+                <th scope="col" class="px-5 py-4">Acțiuni</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+            <tr th:each="doc : ${documente}">
+                <td class="px-5 py-4 font-medium" th:text="${doc.numeFisier}"></td>
+                <td class="px-5 py-4"
+                    th:text="${doc.dataIncarcare != null
+                        ? #temporals.format(doc.dataIncarcare, 'dd.MM.yyyy HH:mm')
+                        : '—'}"></td>
+                <td class="px-5 py-4">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <a th:href="@{/documente/{id}/sursa(id=${doc.id})}"
+                           class="text-brand-blue font-bold underline">
+                            Deschide
                         </a>
 
-                        <th:block th:if="${doc.status.name() == 'VALIDAT' or doc.status.name() == 'STANDARDIZAT' or doc.status.name() == 'INTERPRETAT' }">
-                            <a th:href="@{/analize/vizualizeaza/{id}(id=${doc.id})}"
-                               class="inline-flex items-center px-4 py-2 bg-brand-navy text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-brand-navy/90 transition-colors shadow-sm">
-                                <i class="fas fa-eye mr-2"></i> Vezi
-                            </a>
-                            <a th:href="@{/analize/valideaza/{id}(id=${doc.id})}"
-                               class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 text-brand-navy text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                               title="Editează datele">
-                                <i class="fas fa-pen mr-2 text-brand-gold"></i> Edit
-                            </a>
-                        </th:block>
-
-                        <div class="inline-flex ml-2 border-l border-gray-200 pl-3 space-x-2">
-                            <a th:href="@{'/analize/download/' + ${doc.id}}"
-                               class="p-2 text-gray-400 hover:text-brand-blue transition-colors" title="Download">
-                                <i class="fas fa-download text-lg"></i>
-                            </a>
-                            <form th:action="@{/analize/sterge/{id}(id=${doc.id})}"
-                                  method="post" class="inline m-0"
-                                  onsubmit="return confirm('Ești sigur că vrei să elimini acest document?')">
-                                <button type="submit" class="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                                    <i class="fas fa-trash-alt text-lg"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- Empty State -->
-                <tr th:if="${#lists.isEmpty(documente)}">
-                    <td colspan="4" class="px-8 py-24 text-center bg-gray-50">
-                        <div class="max-w-xs mx-auto">
-                            <div class="w-20 h-20 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center mx-auto mb-5">
-                                <i class="fas fa-folder-open text-brand-blue text-3xl"></i>
-                            </div>
-                            <p class="text-brand-navy font-bold text-lg mb-1">Dosar gol</p>
-                            <p class="text-gray-500 font-medium text-sm">Încarcă prima ta analiză medicală folosind butonul de mai sus.</p>
-                        </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+                        <form th:action="@{/analize/sterge/{id}(id=${doc.id})}"
+                              method="post"
+                              onsubmit="return confirm('Retragi documentul din dosarul accesibil ție și medicului?');">
+                            <button type="submit"
+                                    class="text-red-700 font-medium underline">
+                                Retrage din dosar
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(documente)}">
+                <td colspan="3" class="px-5 py-10 text-center text-gray-600">
+                    Nu ai documente încărcate.
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 
-    <!-- Modal Upload -->
-
-    <div id="uploadModal" class="fixed inset-0 bg-brand-navy/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 transition-all duration-300">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-            <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
-                <h3 class="text-2xl font-black text-brand-navy tracking-tight">Încarcă documente</h3>
-                <button onclick="document.getElementById('uploadModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500 transition-colors p-2 outline-none">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-
-
-            <form id="uploadForm" th:action="@{/analize/incarca}" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="pacientId" th:value="${pacientId}">
-
-                <div class="mb-6">
-                    <label class="block text-[10px] font-bold text-gray-500 mb-3 uppercase tracking-widest">Selectează fișierele (PDF sau imagini)</label>
-                    <div class="relative group">
-
-                        <input id="file-upload" name="files" type="file" multiple required
-                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-
-                        <div class="px-6 py-10 border-2 border-gray-200 border-dashed rounded-2xl group-hover:border-brand-blue group-hover:bg-brand-blue/5 transition-all text-center">
-                            <i class="fas fa-images text-gray-300 group-hover:text-brand-blue text-4xl mb-4 transition-colors"></i>
-                            <p class="text-sm font-bold text-brand-navy transition-colors">Apasă aici sau trage fișierele</p>
-                            <p class="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-widest">Poți selecta mai multe pagini/imagini</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Container pentru lista de fișiere selectate -->
-                <div id="file-preview-container" class="mb-6 hidden">
-                    <p class="text-[10px] font-bold text-brand-blue uppercase tracking-widest mb-2">Fișiere selectate:</p>
-                    <div id="file-list" class="max-h-32 overflow-y-auto space-y-1 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                        <!-- Aici vor apărea fișierele prin JS -->
-                    </div>
-                </div>
-
-                <div class="flex space-x-3">
-                    <button type="button" onclick="document.getElementById('uploadModal').classList.add('hidden')"
-                            class="flex-1 px-4 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors font-bold text-xs uppercase tracking-widest">
-                        Anulează
-                    </button>
-                    <button type="submit" id="submitBtn"
-                            class="flex-1 px-4 py-3 bg-brand-teal text-white rounded-xl hover:bg-brand-teal/90 shadow-md font-bold text-xs uppercase tracking-widest transition-all active:scale-95">
-                        Procesează
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div layout:fragment="scripts">
-    <script th:inline="javascript">
-        const fileUpload = document.getElementById('file-upload');
-        const fileList = document.getElementById('file-list');
-        const previewContainer = document.getElementById('file-preview-container');
-        const uploadForm = document.getElementById('uploadForm');
-
-        // 1. Logica pentru afișarea fișierelor selectate
-        if (fileUpload) {
-            fileUpload.addEventListener('change', function() {
-                fileList.innerHTML = ''; // Resetăm lista
-                const files = Array.from(this.files);
-
-                if (files.length > 0) {
-                    previewContainer.classList.remove('hidden');
-                    files.forEach(file => {
-                        const item = document.createElement('div');
-                        item.className = 'flex items-center text-[11px] text-gray-600 font-medium';
-                        item.innerHTML = `
-                            <i class="fas fa-file-image mr-2 text-brand-blue"></i>
-                            <span class="truncate">${file.name}</span>
-                            <span class="ml-auto text-[9px] text-gray-400">(${(file.size / 1024).toFixed(1)} KB)</span>
-                        `;
-                        fileList.appendChild(item);
-                    });
-                } else {
-                    previewContainer.classList.add('hidden');
-                }
-            });
-        }
-
-        // 2. Feedback la submit
-        if (uploadForm) {
-            uploadForm.addEventListener('submit', function(e) {
-                const btn = document.getElementById('submitBtn');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> SE TRIMITE...';
-            });
-        }
-
-        // 3. Auto-refresh dacă există documente în procesare
-        function verificaStatusProcesare() {
-            const documenteInProcesare = document.querySelectorAll('.fa-spin');
-            if (documenteInProcesare.length > 0) {
-                setTimeout(() => {
-                    window.location.reload();
-                }, 5000);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', verificaStatusProcesare);
-    </script>
 </div>
 </body>
 </html>

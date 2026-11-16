@@ -1,201 +1,49 @@
 package com.therapeutica.therapeutica_app.analize_medicale.ui;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.therapeutica.therapeutica_app.analize_medicale.BuletinAnalizeService;
-import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedical;
-import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedicalRepository;
-import com.therapeutica.therapeutica_app.analize_medicale.dto.BuletinEditabilDTO;
+import com.therapeutica.therapeutica_app.analize_medicale.DocumentMedicalService;
 import com.therapeutica.therapeutica_app.audit.AuditLog;
 import com.therapeutica.therapeutica_app.audit.AuditService;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.security.AccesPacientService;
-import com.therapeutica.therapeutica_app.utilizatori.Utilizatori;
-
+import com.therapeutica.therapeutica_app.util.NotFoundException;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.beans.factory.annotation.Value;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/medic/analize")
 @RequiredArgsConstructor
-@Slf4j
 public class MedicAnalizeController {
 
-    private final BuletinAnalizeService analizeService;
-    private final AuditService auditService;
-    private final DocumentMedicalRepository documentMedicalRepository;
+    private final DocumentMedicalService documentMedicalService;
     private final PacientiRepository pacientiRepository;
-    private final ObjectMapper objectMapper;
     private final AccesPacientService accesPacientService;
-    @Value("${app.features.inference}")
-    private boolean inferenceEnabled;
-
-    @GetMapping("/revizuire/{docId}")
-    public String paginaRevizuire(@PathVariable UUID docId, Model model, HttpSession session) {
-        DocumentMedical doc = documentMedicalRepository.findByIdWithPacientSiUser(docId)
-                .orElseThrow(() -> new RuntimeException("Documentul cu ID-ul " + docId + " nu a fost găsit."));
-
-        boolean isImage = false;
-        try {
-            String contentType = Files.probeContentType(Paths.get(doc.getCaleFisierStocare()));
-            if (contentType != null && contentType.startsWith("image/")) {
-                isImage = true;
-            }
-        } catch (IOException e) {
-            log.warn("Nu s-a putut detecta tipul fișierului: {}", e.getMessage());
-        }
-
-        BuletinEditabilDTO dto = analizeService.mapeazaDinDocumentValidat(doc);
-
-        // MODIFICARE: Accesăm direct entitatea pacient din document
-        Pacienti pacient = doc.getPacient();
-        if (pacient == null) {
-            throw new RuntimeException("Documentul nu are un pacient asociat!");
-        }
-        accesPacientService.verificaAccesMedic(session, pacient.getId());
-
-        model.addAttribute("buletin", dto);
-        model.addAttribute("document", doc);
-        model.addAttribute("isImage", isImage);
-        model.addAttribute("pacientId", pacient.getId());
-
-        auditService.inregistreaza(
-                auditService.utilizatorCurent(session),
-                AuditLog.ActiuneAudit.VIZUALIZARE,
-                AuditLog.TipResursa.DOCUMENT_MEDICAL,
-                docId,
-                pacient.getId()
-        );
-
-        return "medic/analize-pacient/revizuire-clinica";
-    }
-
-    @GetMapping("/view-pdf/{docId}")
-    @ResponseBody
-    public ResponseEntity<Resource> streamPdf(@PathVariable UUID docId, HttpSession session) {
-        DocumentMedical doc = documentMedicalRepository.findById(docId)
-                .orElseThrow(() -> new RuntimeException("Fișierul nu a fost găsit."));
-
-
-        accesPacientService.verificaAccesMedic(session, doc.getPacient().getId());
-
-        try {
-            Path path = Paths.get(doc.getCaleFisierStocare());
-            Resource resource = new UrlResource(path.toUri());
-
-            if (!resource.exists() || !resource.isReadable()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            String contentType = Files.probeContentType(path);
-            if (contentType == null) {
-                contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
-            }
-
-            auditService.inregistreaza(
-                    auditService.utilizatorCurent(session),
-                    AuditLog.ActiuneAudit.VIZUALIZARE,
-                    AuditLog.TipResursa.DOCUMENT_MEDICAL,
-                    docId,
-                    doc.getPacient().getId()
-            );
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getNumeFisier() + "\"")
-                    .body(resource);
-
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @GetMapping("/vizualizeaza/{docId}")
-    public String afiseazaRaportFinal(@PathVariable UUID docId, Model model,
-                                      RedirectAttributes redirectAttributes,
-                                      HttpSession session) {
-        log.info("Accesare raport vizualizare pentru documentul: {}", docId);
-
-        DocumentMedical doc = documentMedicalRepository.findById(docId)
-                .orElseThrow(() -> new RuntimeException("Documentul nu a fost găsit."));
-
-        Pacienti pacient = doc.getPacient();
-
-        accesPacientService.verificaAccesMedic(session, pacient.getId());
-
-        // Gardă: raportul de interpretare există doar când inferența e activă
-        if (!inferenceEnabled) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Raportul de interpretare clinică nu este disponibil.");
-            return "redirect:/medic/analize/dosar/" + pacient.getId();
-        }
-
-        model.addAttribute("realPacientId", pacient.getId());
-        model.addAttribute("document", doc);
-
-        try {
-            List<Map<String, Object>> observations = objectMapper.readValue(
-                    doc.getDateInterpretate(),
-                    new TypeReference<List<Map<String, Object>>>() {}
-            );
-            model.addAttribute("observations", observations);
-
-            boolean hasHpoInLab = observations.stream()
-                    .anyMatch(obs -> obs.containsKey("extension") && !((List<?>) obs.get("extension")).isEmpty());
-            model.addAttribute("hasHpo", hasHpoInLab);
-
-        } catch (Exception e) {
-            log.error("Eroare la parsarea datelor FHIR: {}", e.getMessage());
-            model.addAttribute("error", "Eroare la citirea datelor interpretate.");
-        }
-
-        auditService.inregistreaza(
-                auditService.utilizatorCurent(session),
-                AuditLog.ActiuneAudit.VIZUALIZARE,
-                AuditLog.TipResursa.DOCUMENT_MEDICAL,
-                docId,
-                pacient.getId()
-        );
-
-        return "medic/analize-pacient/raport-hpo";
-    }
+    private final AuditService auditService;
 
     @GetMapping("/dosar/{pacientId}")
-    public String dosarPacientPentruMedic(@PathVariable UUID pacientId, Model model, HttpSession session) {
-        log.info("Medic accesează dosarul pacientului cu ID: {}", pacientId);
+    public String afiseazaDosar(
+            @PathVariable UUID pacientId,
+            HttpSession session,
+            Model model) {
+
         accesPacientService.verificaAccesMedic(session, pacientId);
 
-        Object medicId = session.getAttribute("userId");
-
         Pacienti pacient = pacientiRepository.findByIdWithUser(pacientId)
-                .orElseThrow(() -> new RuntimeException("Eroare: Pacientul nu a fost găsit în baza de date."));
+                .orElseThrow(() ->
+                        new NotFoundException("Pacientul nu a fost găsit."));
 
-        Utilizatori pacientUser = pacient.getUser();
-        List<DocumentMedical> documente = documentMedicalRepository.findByPacient_IdOrderByDataIncarcareDesc(pacientId);
-
-        model.addAttribute("documente", documente);
         model.addAttribute("pacient", pacient);
-        model.addAttribute("pacientUser", pacientUser);
-        model.addAttribute("medicId", medicId);
+        model.addAttribute("pacientUser", pacient.getUser());
+        model.addAttribute("medicId", session.getAttribute("userId"));
+        model.addAttribute(
+                "documente",
+                documentMedicalService.getDocumenteDupaPacientId(pacientId)
+        );
 
         auditService.inregistreaza(
                 auditService.utilizatorCurent(session),
@@ -206,19 +54,5 @@ public class MedicAnalizeController {
         );
 
         return "medic/analize-pacient/dosar-pacient";
-    }
-
-    @GetMapping("/dosar/{pacientId}/status")
-    @ResponseBody
-    public Map<String, String> statusDocumente(@PathVariable UUID pacientId, HttpSession session) {
-        accesPacientService.verificaAccesMedic(session, pacientId);
-        List<DocumentMedical> documente =
-                documentMedicalRepository.findByPacient_IdOrderByDataIncarcareDesc(pacientId);
-
-        Map<String, String> rezultat = new LinkedHashMap<>();
-        for (DocumentMedical doc : documente) {
-            rezultat.put(doc.getId().toString(), doc.getStatus().name());
-        }
-        return rezultat;
     }
 }
