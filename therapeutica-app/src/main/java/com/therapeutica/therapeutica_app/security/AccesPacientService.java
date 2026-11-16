@@ -66,6 +66,23 @@ public class AccesPacientService {
         }
     }
 
+    /**
+     * Verifica faptul ca utilizatorul din sesiune este chiar cel din URL
+     */
+    public void verificaAccesPropriuByUserId(HttpSession session, UUID userIdDinUrl) {
+        UUID userIdSesiune = extrageUserId(session);
+
+        if (userIdSesiune == null) {
+            throw new AccesInterzisException("Sesiune invalida");
+        }
+
+        if (!userIdSesiune.equals(userIdDinUrl)) {
+            log.warn("Acces refuzat: utilizatorul {} a incercat sa acceseze datele utilizatorului {}",
+                    userIdSesiune, userIdDinUrl);
+            throw new AccesInterzisException("Nu aveti acces la aceste date");
+        }
+    }
+
     private UUID extrageUserId(HttpSession session) {
         if (session == null) {
             return null;
