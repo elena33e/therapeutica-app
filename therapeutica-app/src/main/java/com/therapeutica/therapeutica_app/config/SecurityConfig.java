@@ -52,6 +52,12 @@ public class SecurityConfig {
 
                         // Rute rezervate medicului, indiferent de prefixul controllerului
                         .requestMatchers("/medic/**").hasRole("MEDIC")
+                        .requestMatchers(
+                                "/chestionare/rezultate/**",
+                                "/chestionare/raport/**",
+                                "/api/raspunsuri-chestionare",
+                                "/api/raspunsuri-chestionare/**"
+                        ).hasRole("MEDIC")
                         .requestMatchers("/chestionare/medic/**").hasRole("MEDIC")
                         .requestMatchers("/diagnostic/**").hasRole("MEDIC")
 

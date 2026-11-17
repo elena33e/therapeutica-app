@@ -1,0 +1,144 @@
+
+    .report-chart-image {
+        display: none;
+    }
+
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 12mm;
+        }
+
+        html,
+        body {
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Elimină spațiul rezervat meniului și structurii aplicației. */
+        .report-print-ancestor {
+            display: block !important;
+            position: static !important;
+            width: auto !important;
+            max-width: none !important;
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+        }
+
+        /* Păstrează doar ramura paginii care conține raportul. */
+        .report-print-ancestor > :not(.report-print-ancestor):not(#raport-pdf) {
+            display: none !important;
+        }
+
+        #raport-pdf,
+        #raport-pdf > div,
+        #raport-pdf > div > div {
+            display: block !important;
+            width: auto !important;
+            max-width: none !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        #raport-pdf .report-actions,
+        #raport-pdf summary {
+            display: none !important;
+        }
+
+        #raport-pdf * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        #raport-pdf .overflow-hidden {
+            overflow: visible !important;
+        }
+
+        #raport-pdf .report-overview {
+            break-inside: avoid;
+            margin-bottom: 8mm !important;
+        }
+
+        #raport-pdf .report-overview > div {
+            display: flex !important;
+            flex-direction: row !important;
+        }
+
+        #raport-pdf .report-overview > div > :first-child {
+            width: 60% !important;
+            padding: 16px !important;
+        }
+
+        #raport-pdf .report-overview > div > :last-child {
+            width: 40% !important;
+            padding: 16px !important;
+        }
+
+        /* O coloană lasă spațiu pentru întrebări și răspunsuri. */
+        #raport-pdf .report-grid {
+            display: block !important;
+        }
+
+        #raport-pdf .report-grid > div {
+            display: block !important;
+            margin-bottom: 8mm !important;
+            break-inside: auto;
+        }
+
+        #raport-pdf .report-grid > div > :first-child {
+            break-inside: avoid;
+            break-after: avoid;
+        }
+
+        #raport-pdf h2,
+        #raport-pdf h3,
+        #raport-pdf h4 {
+            break-after: avoid;
+        }
+
+        #raport-pdf table {
+            width: 100% !important;
+            table-layout: fixed;
+        }
+
+        #raport-pdf thead {
+            display: table-header-group;
+        }
+
+        #raport-pdf tr {
+            break-inside: avoid;
+        }
+
+        #raport-pdf td,
+        #raport-pdf th {
+            overflow-wrap: anywhere;
+        }
+
+        #raport-pdf.report-print-ready #mainChart,
+        #raport-pdf.report-print-ready .cat-gauge {
+            height: auto !important;
+        }
+
+        #raport-pdf.report-print-ready #mainChart > :not(.report-chart-image),
+        #raport-pdf.report-print-ready .cat-gauge > :not(.report-chart-image) {
+            display: none !important;
+        }
+
+        #raport-pdf.report-print-ready .report-chart-image {
+            display: block !important;
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            break-inside: avoid;
+        }
+
+        #raport-pdf .cat-gauge .report-chart-image {
+            max-height: 200px;
+        }
+    }

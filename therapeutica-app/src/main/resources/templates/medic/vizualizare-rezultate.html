@@ -5,10 +5,11 @@
 <head>
     <title>Analiză Detaliată Chestionar</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/raport-chestionar.css}">
 </head>
 <body class="bg-slate-50">
 
-<div layout:fragment="content">
+<div layout:fragment="content" id="raport-pdf">
     <div class="min-h-screen py-8">
         <div class="max-w-6xl mx-auto px-4">
 
@@ -23,11 +24,12 @@
                     </p>
                 </div>
 
-                <div class="flex flex-wrap gap-3">
-                    <a th:href="@{'/chestionare/raport/visual/' + ${chestionar.id}}"
-                       class="inline-flex items-center px-5 py-2.5 bg-red-50 border border-red-100 rounded-xl shadow-sm text-sm font-bold text-red-600 hover:bg-red-100 transition-all">
-                        <i class="fas fa-file-pdf mr-2"></i> Descarcă PDF
-                    </a>
+                <div class="report-actions flex flex-wrap gap-3">
+                    <button type="button"
+                            id="salveaza-pdf"
+                            class="inline-flex items-center px-5 py-2.5 bg-red-50 border border-red-100 rounded-xl shadow-sm text-sm font-bold text-red-600 hover:bg-red-100 transition-all">
+                        <i class="fas fa-file-pdf mr-2"></i> Salvează PDF
+                    </button>
 
                     <form th:if="${chestionar.status.name() == 'COMPLETAT'}"
                           th:action="@{'/chestionare/medic/marcheaza-revizuit/' + ${chestionar.id}}"
@@ -46,7 +48,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-12">
+            <div class="report-overview bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-12">
                 <div class="flex flex-col lg:flex-row">
                     <div class="lg:w-2/3 p-10">
                         <h5 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center">
@@ -93,7 +95,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="report-grid grid grid-cols-1 md:grid-cols-2 gap-8">
                     <th:block th:each="entry, iter : ${raspunsuriPeCategorii}"
                               th:with="categoriaObj=${categoriiMap.get(entry.key)}">
 
@@ -144,7 +146,7 @@
 
                 <div class="pt-12 border-t border-slate-100">
                     <h3 class="text-xl font-black text-slate-800 mb-8">Context Clinic & Stil de Viață</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="report-grid grid grid-cols-1 md:grid-cols-2 gap-6">
                         <th:block th:each="entry : ${raspunsuriPeCategorii}" th:with="categoriaObj=${categoriiMap.get(entry.key)}">
                             <div th:if="${categoriaObj != null and !categoriaObj.esteEvaluabila}"
                                  class="bg-slate-100/50 p-6 rounded-[2rem] border border-slate-100">
@@ -244,7 +246,10 @@
                     formatter: function (val) { return val === 0 ? '0' : (val === 4 ? '4' : ''); }
                 };
 
-                mainChart.setOption({ series: seriesData });
+                mainChart.setOption({
+                 animation: false,
+                 series: seriesData
+                });
                 window.addEventListener('resize', () => mainChart.resize());
             }
 
@@ -262,7 +267,10 @@
                     formatter: '{value}'
                 };
 
-                chart.setOption({ series: seriesData });
+                chart.setOption({
+    animation: false,
+    series: seriesData
+});
             });
 
             window.addEventListener('resize', function() {
@@ -273,6 +281,127 @@
             });
         });
         /*]]>*/
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const report = document.getElementById('raport-pdf');
+            const button = document.getElementById('salveaza-pdf');
+
+            if (!report || !button) return;
+
+            // Identifică structura care înconjoară raportul.
+            // Stilurile de imprimare ascund celelalte elemente.
+            let ancestor = report.parentElement;
+
+            while (ancestor && ancestor !== document.documentElement) {
+                ancestor.classList.add('report-print-ancestor');
+                ancestor = ancestor.parentElement;
+            }
+
+            const detailsState = new Map();
+            let prepared = false;
+
+            function restoreReport() {
+                report.classList.remove('report-print-ready');
+
+                report.querySelectorAll('.report-chart-image')
+                    .forEach(image => image.remove());
+
+                detailsState.forEach((wasOpen, details) => {
+                    details.open = wasOpen;
+                });
+
+                detailsState.clear();
+                prepared = false;
+            }
+
+            function prepareReport() {
+                if (prepared) return;
+
+                if (!window.echarts) {
+                    throw new Error('Graficele nu s-au încărcat încă.');
+                }
+
+                const containers = Array.from(
+                    report.querySelectorAll('#mainChart, .cat-gauge')
+                );
+
+                // Pregătește toate imaginile înainte de modificarea paginii.
+                const snapshots = containers.map(container => {
+                    const chart = echarts.getInstanceByDom(container);
+
+                    if (!chart) {
+                        throw new Error(
+                            'Un grafic nu este încă pregătit. Reîncearcă după încărcarea paginii.'
+                        );
+                    }
+
+                    return {
+                        container,
+                        url: chart.getDataURL({
+                            type: 'png',
+                            pixelRatio: 3,
+                            backgroundColor: '#ffffff'
+                        })
+                    };
+                });
+
+                report.querySelectorAll('details').forEach(details => {
+                    detailsState.set(details, details.open);
+                    details.open = true;
+                });
+
+                snapshots.forEach(({ container, url }) => {
+                    const image = document.createElement('img');
+
+                    image.className = 'report-chart-image';
+                    image.alt = container.id === 'mainChart'
+                        ? 'Graficul scorului global'
+                        : 'Graficul scorului categoriei';
+                    image.src = url;
+
+                    container.appendChild(image);
+                });
+
+                report.classList.add('report-print-ready');
+                prepared = true;
+            }
+
+            button.addEventListener('click', async function () {
+                button.disabled = true;
+
+                try {
+                    await document.fonts.ready;
+
+                    prepareReport();
+
+                    await Promise.all(
+                        Array.from(
+                            report.querySelectorAll('.report-chart-image')
+                        ).map(image => image.decode())
+                    );
+
+                    window.print();
+                } catch (error) {
+                    restoreReport();
+                    console.error('Pregătirea PDF-ului a eșuat:', error);
+
+                    window.alert(
+                        'Raportul nu a putut fi pregătit pentru PDF. ' +
+                        'Verifică dacă toate graficele sunt afișate și reîncearcă.'
+                    );
+                } finally {
+                    button.disabled = false;
+                }
+            });
+
+            // Pregătește raportul și când medicul folosește Ctrl+P.
+            window.addEventListener('beforeprint', prepareReport);
+
+            // Revine la secțiunile deschise/închise anterior,
+            // inclusiv dacă medicul anulează imprimarea.
+            window.addEventListener('afterprint', restoreReport);
+        });
     </script>
 </th:block>
 </body>

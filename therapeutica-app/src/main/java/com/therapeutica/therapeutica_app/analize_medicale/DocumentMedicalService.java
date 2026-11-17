@@ -3,7 +3,6 @@ package com.therapeutica.therapeutica_app.analize_medicale;
 import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import com.therapeutica.therapeutica_app.pacienti.PacientiRepository;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +20,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class DocumentMedicalService {
 
@@ -32,9 +31,32 @@ public class DocumentMedicalService {
 
     private final PacientiRepository pacientiRepository;
     private final DocumentMedicalRepository documentMedicalRepository;
+    private final Path directorDocumente;
 
-    private final Path directorDocumente =
-            Path.of("upload-dir", "analize").toAbsolutePath().normalize();
+    public DocumentMedicalService(
+            PacientiRepository pacientiRepository,
+            DocumentMedicalRepository documentMedicalRepository,
+            @Value("${app.storage.documents-dir}") String directorDocumente) {
+
+        this.pacientiRepository = pacientiRepository;
+        this.documentMedicalRepository = documentMedicalRepository;
+
+        if (directorDocumente == null || directorDocumente.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Directorul documentelor trebuie configurat."
+            );
+        }
+
+        Path locatie = Path.of(directorDocumente);
+
+        if (!locatie.isAbsolute()) {
+            throw new IllegalArgumentException(
+                    "Directorul documentelor trebuie să fie o cale absolută."
+            );
+        }
+
+        this.directorDocumente = locatie.normalize();
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public DocumentMedical incarcaDocumente(

@@ -9,7 +9,9 @@
 <body class="bg-gray-50">
 
 <div layout:fragment="content">
-    <div class="max-w-7xl mx-auto px-4 py-12" x-data="{ activeTab: 'disponibile' }">
+    <div class="max-w-7xl mx-auto px-4 py-12"
+         th:attr="data-active-tab=${activeTab}"
+         x-data="{ activeTab: $el.dataset.activeTab || 'disponibile' }">
 
         <!-- Header -->
         <div class="mb-10">
@@ -21,6 +23,12 @@
         <div th:if="${success}" class="mb-8 p-4 bg-brand-teal text-white rounded-xl flex items-center shadow-md">
             <i class="fas fa-check-circle mr-3 text-lg"></i>
             <span class="text-sm font-bold" th:text="${success}"></span>
+        </div>
+
+        <div th:if="${error}"
+             role="alert"
+             class="mb-8 p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl">
+            <span th:text="${error}"></span>
         </div>
 
         <!-- Tab-uri de Navigare -->
@@ -104,7 +112,7 @@
                             <th class="px-8 py-4">Evaluare & Medic</th>
                             <th class="px-8 py-4 text-center">Data Completării</th>
                             <th class="px-8 py-4 text-center">Status</th>
-                            <th class="px-8 py-4 text-right">Acțiuni</th>
+
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
@@ -121,17 +129,14 @@
                             </td>
                             <td class="px-8 py-5 text-center">
                                 <!-- Badge Neutral/Navy pentru istoric -->
-                                <span class="px-3 py-1.5 bg-gray-100 border border-gray-200 text-gray-600 text-[9px] font-bold rounded-lg uppercase tracking-widest shadow-sm">
-                                    Finalizat
+                                <span class="px-3 py-1.5 bg-gray-100 border border-gray-200 text-gray-600 text-[9px] font-bold rounded-lg uppercase tracking-widest shadow-sm"
+                                      th:text="${ri.status.name() == 'REVIZUIT'
+                                            ? 'Revizuit de medic'
+                                            : 'Completat'}">
+                                             Completat
                                 </span>
                             </td>
-                            <td class="px-8 py-5 text-right">
-                                <!-- Buton Acțiune secundară -->
-                                <a th:href="@{/chestionare/rezultate/{id}(id=${ri.id})}"
-                                   class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 text-brand-navy text-[10px] font-bold rounded-lg hover:bg-gray-50 transition-colors shadow-sm uppercase tracking-widest">
-                                    Vezi Rezultate <i class="fas fa-arrow-right ml-2 text-[10px] text-brand-blue"></i>
-                                </a>
-                            </td>
+
                         </tr>
                         </tbody>
                     </table>

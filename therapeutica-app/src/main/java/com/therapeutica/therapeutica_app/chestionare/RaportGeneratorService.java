@@ -1,312 +1,281 @@
 package com.therapeutica.therapeutica_app.chestionare;
 
-import com.therapeutica.therapeutica_app.categorii_chestionare.CategoriiChestionare;
-import com.therapeutica.therapeutica_app.categorii_chestionare.CategoriiChestionareRepository;
-import com.therapeutica.therapeutica_app.chestionare.Chestionare;
-import com.therapeutica.therapeutica_app.chestionare.dto.CategorieVisualDTO;
-import com.therapeutica.therapeutica_app.intrebari.Intrebare;
-import com.therapeutica.therapeutica_app.intrebari.IntrebariRepository;
+import com.lowagie.text.Document;
+import com.lowagie.text.Font;
+import com.lowagie.text.HeaderFooter;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import com.therapeutica.therapeutica_app.raport_chestionar.RezultatScoring;
+import com.therapeutica.therapeutica_app.raport_chestionar.ScoringService;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebari;
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebariService;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.Period;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class RaportGeneratorService {
 
-    private final RaspunsuriIntrebariService raspunsuriIntrebariService;
+    private static final DateTimeFormatter FORMAT_DATA =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
     private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
-    private final CategoriiChestionareRepository categoriiChestionareRepository;
-    private final IntrebariRepository intrebariRepository;
+    private final RaspunsuriIntrebariService raspunsuriIntrebariService;
+    private final ScoringService scoringService;
 
-    /**
-     * Generează date pentru raport cu vizualizarea barelor colorate
-     */
-    public Map<String, Object> genereazaDateRaportVisual(UUID raspunsChestionarId) {
-        log.info("🎨 Generare date raport vizual pentru chestionar: {}", raspunsChestionarId);
+    @Transactional(readOnly = true)
+    public byte[] genereazaPdf(UUID raspunsChestionarId) throws IOException {
 
-        Map<String, Object> raportData = new HashMap<>();
+        RaspunsuriChestionare chestionar = raspunsuriChestionareRepository
+                .findByIdForCompletare(raspunsChestionarId)
+                .orElseThrow(() ->
+                        new NotFoundException("Chestionarul nu a fost găsit."));
+
+        boolean finalizat =
+                chestionar.getStatus()
+                        == RaspunsuriChestionare.StatusRaspuns.COMPLETAT
+                        || chestionar.getStatus()
+                        == RaspunsuriChestionare.StatusRaspuns.REVIZUIT;
+
+        if (!finalizat) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Raportul este disponibil după completarea chestionarului."
+            );
+        }
+
+        if (chestionar.getPacient() == null
+                || chestionar.getPacient().getUser() == null
+                || chestionar.getChestionar() == null) {
+            throw new NotFoundException(
+                    "Datele necesare raportului sunt incomplete."
+            );
+        }
+
+        RezultatScoring rezultat = scoringService
+                .getScoruriCalculate(raspunsChestionarId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Deschide raportul în aplicație pentru calcularea scorurilor."
+                ));
+
+        if (Boolean.TRUE.equals(rezultat.getNecesitaRecalculare())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Redeschide raportul în aplicație pentru actualizarea scorurilor."
+            );
+        }
+
+        List<RaspunsuriIntrebari> raspunsuri =
+                raspunsuriIntrebariService
+                        .getRaspunsuriDetaliate(raspunsChestionarId);
+
+        Font normal = creeazaFont("LiberationSans-Regular.ttf", 10);
+        Font bold = creeazaFont("LiberationSans-Bold.ttf", 10);
+        Font titlu = creeazaFont("LiberationSans-Bold.ttf", 18);
+        Font subtitlu = creeazaFont("LiberationSans-Bold.ttf", 12);
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document pdf = new Document(PageSize.A4, 40, 40, 40, 45);
 
         try {
-            // Obține înregistrarea principală
-            RaspunsuriChestionare raspunsChestionar = raspunsuriChestionareRepository
-                    .findById(raspunsChestionarId)
-                    .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit"));
+            PdfWriter.getInstance(pdf, output);
+            pdf.addTitle("Raport chestionar");
+            pdf.addCreator("Therapeutica");
+            pdf.setFooter(new HeaderFooter(new Phrase("Pagina ", normal), true));
+            pdf.open();
 
-            // Obține analiza
-            Map<String, Object> analiza = raspunsuriIntrebariService
-                    .analizeazaRaspunsuri(raspunsChestionarId);
+            adaugaParagraf(pdf, "Raport chestionar", titlu);
+            adaugaParagraf(
+                    pdf,
+                    chestionar.getChestionar().getNume(),
+                    subtitlu
+            );
 
-            // Obține detalii chestionar
-            Chestionare chestionar = raspunsChestionar.getChestionar();
-            List<CategoriiChestionare> categorii = categoriiChestionareRepository
-                    .findByChestionarId(chestionar.getId());
+            var pacientUser = chestionar.getPacient().getUser();
 
-            // Obține răspunsurile
-            List<RaspunsuriIntrebari> raspunsuri = raspunsuriIntrebariService
-                    .getRaspunsuriDetaliate(raspunsChestionarId);
+            adaugaParagraf(
+                    pdf,
+                    "Pacient: " + pacientUser.getNume()
+                            + " " + pacientUser.getPrenume(),
+                    normal
+            );
 
-            // Generează vizualizarea pentru categorii (bare colorate)
-            List<CategorieVisualDTO> categoriiVisual = genereazaVizualizareCategorii(
-                    categorii, raspunsuri, analiza);
+            adaugaParagraf(
+                    pdf,
+                    "Completat la: " + formateazaData(chestionar.getCompletatLa()),
+                    normal
+            );
 
-            // Grupează pentru layout (2 coloane)
-            Map<String, List<CategorieVisualDTO>> categoriiPeColoane =
-                    grupeazaPeColoane(categoriiVisual);
+            String status = chestionar.getStatus()
+                    == RaspunsuriChestionare.StatusRaspuns.REVIZUIT
+                    ? "Revizuit de medic"
+                    : "Completat";
 
-            // Calculează statistici
-            Map<String, Object> statistici = calculeazaStatisticiVizuale(
-                    categoriiVisual, raspunsuri);
+            adaugaParagraf(pdf, "Status: " + status, normal);
+            adaugaParagraf(pdf, "Identificator: " + chestionar.getId(), normal);
 
-            // Generează paleta de culori pentru scoruri
-            Map<Integer, String> paletaCulori = genereazaPaletaCulori();
+            adaugaParagraf(
+                    pdf,
+                    "Scor total: " + text(rezultat.getScorTotal()),
+                    subtitlu
+            );
 
-            // Adaugă datele în map
-            raportData.put("chestionar", chestionar);
-            raportData.put("raspunsChestionar", raspunsChestionar);
-            raportData.put("categoriiVisual", categoriiVisual);
-            raportData.put("categoriiPeColoane", categoriiPeColoane);
-            raportData.put("paletaCulori", paletaCulori);
-            raportData.put("statistici", statistici);
-            raportData.put("dataGenerare", LocalDateTime.now());
-            raportData.put("titluRaport", "REZULTATE CHESTIONAR: " + chestionar.getNume());
+            adaugaParagraf(
+                    pdf,
+                    "Interpretare: " + text(rezultat.getInterpretareTotal()),
+                    normal
+            );
 
-            // Informații pacient
-            if (raspunsChestionar.getPacient() != null) {
-                raportData.put("pacientNumeComplet",
-                        formatNumeComplet(raspunsChestionar.getPacient()));
-//                raportData.put("pacientVarsta",
-//                        calculeazaVarsta(raspunsChestionar.getPacient().getDataNasterii()));
-//                raportData.put("pacientGen",
-//                        raspunsChestionar.getPacient().getGen());
+            adaugaParagraf(
+                    pdf,
+                    "Scor calculat la: " + formateazaData(rezultat.getCalculatLa()),
+                    normal
+            );
+
+            adaugaParagraf(pdf, "Scoruri pe categorii", subtitlu);
+
+            PdfPTable scoruri = creeazaTabel(
+                    new float[]{3, 1, 3},
+                    bold,
+                    "Categorie", "Scor", "Interpretare"
+            );
+
+            var scoruriCategorii = rezultat.getScoruriCategorii();
+
+            if (scoruriCategorii != null) {
+                for (var entry : new TreeMap<>(scoruriCategorii).entrySet()) {
+                    scoruri.addCell(celula(entry.getKey(), normal));
+                    scoruri.addCell(celula(text(entry.getValue()), normal));
+                    scoruri.addCell(celula(
+                            interpretareCategorie(rezultat, entry.getKey()),
+                            normal
+                    ));
+                }
             }
 
-            // Informații medic
-            if (raspunsChestionar.getMedic() != null) {
-                raportData.put("medicNumeComplet",
-                        formatNumeComplet(raspunsChestionar.getMedic()));
-                raportData.put("medicSpecialitate",
-                        raspunsChestionar.getMedic().getSpecializare());
+            pdf.add(scoruri);
+
+            adaugaParagraf(pdf, "Răspunsurile pacientului", subtitlu);
+
+            PdfPTable detalii = creeazaTabel(
+                    new float[]{2, 4, 3, 1},
+                    bold,
+                    "Categorie", "Întrebare", "Răspuns", "Scor"
+            );
+
+            for (RaspunsuriIntrebari raspuns : raspunsuri) {
+                String categorie = raspuns.getCategorie() != null
+                        ? raspuns.getCategorie().getNume()
+                        : "Fără categorie";
+
+                detalii.addCell(celula(categorie, normal));
+                detalii.addCell(celula(
+                        raspuns.getIntrebare().getTextIntrebare(),
+                        normal
+                ));
+                detalii.addCell(celula(formateazaRaspuns(raspuns), normal));
+                detalii.addCell(celula(text(raspuns.getScor()), normal));
             }
 
-            log.info("✅ Date raport vizual generate: {} categorii", categoriiVisual.size());
-
-        } catch (Exception e) {
-            log.error("❌ Eroare la generarea raportului vizual: {}", e.getMessage(), e);
-            raportData.put("error", "Eroare la generarea raportului: " + e.getMessage());
+            pdf.add(detalii);
+        } finally {
+            pdf.close();
         }
 
-        return raportData;
+        return output.toByteArray();
     }
 
-    /**
-     * Generează vizualizarea cu bare colorate pentru categorii
-     */
-    private List<CategorieVisualDTO> genereazaVizualizareCategorii(
-            List<CategoriiChestionare> categorii,
-            List<RaspunsuriIntrebari> raspunsuri,
-            Map<String, Object> analiza) {
+    private Font creeazaFont(String fisier, int dimensiune) throws IOException {
+        BaseFont baseFont = BaseFont.createFont(
+                "liberation/" + fisier,
+                BaseFont.IDENTITY_H,
+                BaseFont.EMBEDDED
+        );
 
-        List<CategorieVisualDTO> categoriiVisual = new ArrayList<>();
+        return new Font(baseFont, dimensiune);
+    }
 
-        // Grupează răspunsurile pe categorii
-        Map<UUID, List<RaspunsuriIntrebari>> raspunsuriPeCategorii = raspunsuri.stream()
-                .filter(r -> r.getCategorie() != null)
-                .collect(Collectors.groupingBy(r -> r.getCategorie().getId()));
+    private PdfPTable creeazaTabel(
+            float[] latimi,
+            Font fontAntet,
+            String... antete) {
 
-        // Extrage scorurile din analiză
-        @SuppressWarnings("unchecked")
-        Map<String, Double> scoruriCategorii = (Map<String, Double>) analiza.get("scoruriCategorii");
+        PdfPTable tabel = new PdfPTable(latimi);
+        tabel.setWidthPercentage(100);
+        tabel.setSpacingBefore(6);
+        tabel.setSpacingAfter(14);
+        tabel.setSplitLate(false);
 
-        @SuppressWarnings("unchecked")
-        Map<String, String> interpretariCategorii = (Map<String, String>) analiza.get("interpretariCategorii");
-
-        for (CategoriiChestionare categorie : categorii) {
-            // Obține scorul pentru această categorie
-            Double scorMediu = scoruriCategorii.getOrDefault(categorie.getNume(), 0.0);
-            String interpretare = interpretariCategorii.getOrDefault(categorie.getNume(), "Normal");
-
-            // Calculează procentajul (0-100) pentru bara
-            // Presupunem că scorul maxim este 5 (ajustabil)
-            int scorMaxim = 5;
-            int procentaj = (int) Math.round((scorMediu / scorMaxim) * 100);
-
-            // Determină culoarea în funcție de scor
-            String culoare = determinaCuloare(scorMediu);
-
-            // Numără întrebările din această categorie
-            int numarIntrebari = raspunsuriPeCategorii.getOrDefault(categorie.getId(),
-                    Collections.emptyList()).size();
-
-            // Creează DTO-ul vizual
-            CategorieVisualDTO dto = new CategorieVisualDTO();
-            dto.setId(categorie.getId());
-            dto.setNume(categorie.getNume());
-            dto.setScorMediu(scorMediu);
-            dto.setScorMaxim(scorMaxim);
-            dto.setProcentaj(procentaj);
-            dto.setCuloare(culoare);
-            dto.setInterpretare(interpretare);
-            dto.setNumarIntrebari(numarIntrebari);
-
-            categoriiVisual.add(dto);
+        for (String antet : antete) {
+            tabel.addCell(celula(antet, fontAntet));
         }
 
-        // Sortează după scor (cele mai mari scoruri primele)
-        categoriiVisual.sort((c1, c2) -> Double.compare(c2.getScorMediu(), c1.getScorMediu()));
-
-        return categoriiVisual;
+        tabel.setHeaderRows(1);
+        return tabel;
     }
 
-    /**
-     * Determină culoarea în funcție de scor
-     */
-    private String determinaCuloare(Double scor) {
-        if (scor >= 4.0) return "#FF6B6B"; // Roșu - sever
-        else if (scor >= 3.0) return "#FFA726"; // Portocaliu - ridicat
-        else if (scor >= 2.0) return "#FFD166"; // Galben - moderat
-        else if (scor >= 1.0) return "#06D6A0"; // Verde deschis - ușor
-        else return "#118AB2"; // Albastru - normal
+    private PdfPCell celula(String continut, Font font) {
+        PdfPCell celula = new PdfPCell(new Phrase(text(continut), font));
+        celula.setPadding(6);
+        return celula;
     }
 
-    /**
-     * Grupează categoriile pe 2 coloane pentru layout
-     */
-    private Map<String, List<CategorieVisualDTO>> grupeazaPeColoane(
-            List<CategorieVisualDTO> categorii) {
-
-        Map<String, List<CategorieVisualDTO>> coloane = new HashMap<>();
-
-        int mijloc = (int) Math.ceil(categorii.size() / 2.0);
-
-        coloane.put("coloanaStanga", categorii.subList(0, mijloc));
-        coloane.put("coloanaDreapta", categorii.subList(mijloc, categorii.size()));
-
-        return coloane;
+    private void adaugaParagraf(Document pdf, String continut, Font font) {
+        Paragraph paragraf = new Paragraph(text(continut), font);
+        paragraf.setSpacingAfter(8);
+        pdf.add(paragraf);
     }
 
-    /**
-     * Generează paleta de culori pentru scoruri
-     */
-    private Map<Integer, String> genereazaPaletaCulori() {
-        Map<Integer, String> paleta = new HashMap<>();
+    private String interpretareCategorie(
+            RezultatScoring rezultat,
+            String categorie) {
 
-        // Culori pentru diferite scoruri (0-5)
-        paleta.put(0, "#118AB2"); // Albastru - normal
-        paleta.put(1, "#06D6A0"); // Verde - ușor
-        paleta.put(2, "#FFD166"); // Galben - moderat
-        paleta.put(3, "#FFA726"); // Portocaliu - ridicat
-        paleta.put(4, "#FF6B6B"); // Roșu - sever
-        paleta.put(5, "#EF476F"); // Roșu închis - foarte sever
-
-        return paleta;
+        Map<String, String> interpretari = rezultat.getInterpretariCategorii();
+        return interpretari == null ? "—" : text(interpretari.get(categorie));
     }
 
-    public boolean poateGeneraRaport(UUID raspunsChestionarId) {
-        try {
-            RaspunsuriChestionare raspunsChestionar = raspunsuriChestionareRepository
-                    .findById(raspunsChestionarId)
-                    .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit"));
-
-            // Verifică dacă chestionarul este completat
-            boolean esteCompletat = raspunsChestionar.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT;
-
-            // Verifică dacă există răspunsuri
-            List<RaspunsuriIntrebari> raspunsuri = raspunsuriIntrebariService
-                    .getRaspunsuriDetaliate(raspunsChestionarId);
-            boolean areRaspunsuri = !raspunsuri.isEmpty();
-
-            // Verifică dacă există categorii
-            Chestionare chestionar = raspunsChestionar.getChestionar();
-            List<CategoriiChestionare> categorii = categoriiChestionareRepository
-                    .findByChestionarId(chestionar.getId());
-            boolean areCategorii = !categorii.isEmpty();
-
-            return esteCompletat && areRaspunsuri && areCategorii;
-
-        } catch (Exception e) {
-            log.error("❌ Eroare la verificarea capacității de generare raport: {}", e.getMessage());
-            return false;
+    private String formateazaRaspuns(RaspunsuriIntrebari raspuns) {
+        if (raspuns.getRaspunsText() != null) {
+            return raspuns.getRaspunsText();
         }
+        if (raspuns.getRaspunsNumeric() != null) {
+            return raspuns.getRaspunsNumeric().toPlainString();
+        }
+        if (raspuns.getRaspunsData() != null) {
+            return formateazaData(raspuns.getRaspunsData());
+        }
+        if (raspuns.getRaspunsJson() != null) {
+            return raspuns.getRaspunsJson();
+        }
+        return text(raspuns.getScor());
     }
 
-    /**
-     * Calculează statistici pentru vizualizare
-     */
-    private Map<String, Object> calculeazaStatisticiVizuale(
-            List<CategorieVisualDTO> categoriiVisual,
-            List<RaspunsuriIntrebari> raspunsuri) {
-
-        Map<String, Object> statistici = new HashMap<>();
-
-        // Scorul mediu general
-        double scorMediuGeneral = categoriiVisual.stream()
-                .mapToDouble(CategorieVisualDTO::getScorMediu)
-                .average()
-                .orElse(0.0);
-
-        // Categoria cu cel mai mare scor
-        CategorieVisualDTO categorieMax = categoriiVisual.stream()
-                .max(Comparator.comparingDouble(CategorieVisualDTO::getScorMediu))
-                .orElse(null);
-
-        // Categoria cu cel mai mic scor
-        CategorieVisualDTO categorieMin = categoriiVisual.stream()
-                .min(Comparator.comparingDouble(CategorieVisualDTO::getScorMediu))
-                .orElse(null);
-
-        // Număr de categorii cu scor ridicat (>3)
-        long categoriiRidicat = categoriiVisual.stream()
-                .filter(c -> c.getScorMediu() >= 3.0)
-                .count();
-
-        // Număr de categorii cu scor moderat (2-3)
-        long categoriiModerat = categoriiVisual.stream()
-                .filter(c -> c.getScorMediu() >= 2.0 && c.getScorMediu() < 3.0)
-                .count();
-
-        statistici.put("scorMediuGeneral", Math.round(scorMediuGeneral * 100.0) / 100.0);
-        statistici.put("categorieMax", categorieMax);
-        statistici.put("categorieMin", categorieMin);
-        statistici.put("categoriiRidicat", categoriiRidicat);
-        statistici.put("categoriiModerat", categoriiModerat);
-        statistici.put("totalCategorii", categoriiVisual.size());
-        statistici.put("totalIntrebari", raspunsuri.size());
-
-        return statistici;
+    private String formateazaData(LocalDateTime data) {
+        return data == null ? "—" : data.format(FORMAT_DATA);
     }
 
-    /**
-     * Calculează vârsta
-     */
-    private Integer calculeazaVarsta(LocalDate dataNasterii) {
-        if (dataNasterii == null) return null;
-        return Period.between(dataNasterii, LocalDate.now()).getYears();
+    private String text(Object valoare) {
+        return valoare == null ? "—" : valoare.toString();
     }
-
-    /**
-     * Formatează nume complet
-     */
-    private String formatNumeComplet(Object persoana) {
-        // Implementare specifică în funcție de structura ta
-        return "Nume Persoană";
-    }
-
-
-
-
 }

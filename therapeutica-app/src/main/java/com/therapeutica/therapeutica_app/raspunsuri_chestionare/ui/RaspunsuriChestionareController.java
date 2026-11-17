@@ -25,110 +25,15 @@ public class RaspunsuriChestionareController {
     private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
     private final PacientiRepository pacientiRepository;
 
-    /**
-     * Listează chestionarele disponibile pentru un pacient
-     */
     @GetMapping("/pacient/{userId}/disponibile")
-    public String listeazaDisponibile(@PathVariable UUID userId, Model model) {
-
-        log.info("[RaspunsuriChestionare] Afișare chestionare pentru USER: {}", userId);
-
-        try {
-            Optional<Pacienti> pacientOpt = pacientiRepository.findByUserId(userId);
-
-            if (pacientOpt.isEmpty()) {
-                log.warn("Pacient not found for user: {}", userId);
-                return setupEmptyModel(model, userId, "disponibile",
-                        "Nu s-a găsit profil de pacient pentru contul tău.");
-            }
-
-            Pacienti pacient = pacientOpt.get();
-            UUID pacientId = pacient.getId();
-            log.info("Converted user {} to pacient {}", userId, pacientId);
-
-            // Folosește metoda cu toate relațiile pentru chestionarele NECOMPLETAT
-            List<RaspunsuriChestionare> chestionareDisponibile = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatusFullRelations(pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
-
-            // Pentru istoric (COMPLETAT)
-            List<RaspunsuriChestionare> istoricChestionare = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatusFullRelations(pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
-
-            log.info("Found {} chestionare disponibile, {} în istoric",
-                    chestionareDisponibile.size(), istoricChestionare.size());
-
-            // DEBUG: Verifică datele încărcate
-            debugLogChestionare("Disponibile", chestionareDisponibile);
-            debugLogChestionare("Istoric", istoricChestionare);
-
-            model.addAttribute("chestionareDisponibile", chestionareDisponibile);
-            model.addAttribute("istoricChestionare", istoricChestionare);
-            model.addAttribute("pacientId", pacientId);
-            model.addAttribute("userId", userId);
-            model.addAttribute("activeTab", "disponibile");
-
-            return "pacient/chestionare";
-
-        } catch (Exception e) {
-            log.error("Eroare la încărcarea chestionarelor: {}", e.getMessage(), e);
-            return setupEmptyModel(model, userId, "disponibile",
-                    "Eroare la încărcarea datelor: " + e.getMessage());
-        }
+    public String listeazaDisponibile(@PathVariable UUID userId) {
+        return "redirect:/chestionare/pacient/" + userId + "/disponibile";
     }
 
-    /**
-     * Istoricul chestionarelor completate de un pacient
-     */
     @GetMapping("/pacient/{userId}/istoric")
-    public String afiseazaIstoric(@PathVariable UUID userId, Model model) {
-
-        log.info("[RaspunsuriChestionare] Afișare istoric pentru USER: {}", userId);
-
-        try {
-            Optional<Pacienti> pacientOpt = pacientiRepository.findByUserId(userId);
-
-            if (pacientOpt.isEmpty()) {
-                log.warn("Pacient not found for user: {}", userId);
-                return setupEmptyModel(model, userId, "istoric",
-                        "Nu s-a găsit profil de pacient pentru contul tău.");
-            }
-
-            Pacienti pacient = pacientOpt.get();
-            UUID pacientId = pacient.getId();
-
-            // Folosește metoda cu toate relațiile pentru chestionarele COMPLETAT
-            List<RaspunsuriChestionare> istoric = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatusFullRelations(pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
-
-            // Chestionare disponibile pentru tab-uri
-            List<RaspunsuriChestionare> chestionareDisponibile = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatusFullRelations(pacientId,
-                            RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
-
-            log.info("Found {} chestionare in istoric, {} disponibile",
-                    istoric.size(), chestionareDisponibile.size());
-
-            // DEBUG
-            debugLogChestionare("Istoric", istoric);
-
-            model.addAttribute("istoricChestionare", istoric);
-            model.addAttribute("chestionareDisponibile", chestionareDisponibile);
-            model.addAttribute("pacientId", pacientId);
-            model.addAttribute("userId", userId);  // ← IMPORTANT pentru template!
-            model.addAttribute("activeTab", "istoric");
-
-            return "pacient/chestionare";
-
-        } catch (Exception e) {
-            log.error("❌ Eroare la încărcarea istoricului: {}", e.getMessage(), e);
-            return setupEmptyModel(model, userId, "istoric",
-                    "Eroare la încărcarea istoricului: " + e.getMessage());
-        }
+    public String afiseazaIstoric(@PathVariable UUID userId) {
+        return "redirect:/chestionare/pacient/" + userId + "/istoric";
     }
-
     /**
      * Helper method pentru debugging
      */

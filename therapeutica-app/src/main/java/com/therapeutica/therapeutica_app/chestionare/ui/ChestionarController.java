@@ -31,6 +31,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.therapeutica.therapeutica_app.security.AccesPacientService;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+import java.io.IOException;
 
 @Controller
 @RequestMapping("/chestionare")
@@ -47,6 +55,7 @@ public class ChestionarController {
     private final PacientiRepository pacientiRepository;
     private final ScoringService scoringService;
     private final AuditService auditService;
+    private final AccesPacientService accesPacientService;
 
     /**
      * Afișează un chestionar pentru completare
@@ -79,9 +88,14 @@ public class ChestionarController {
                     pacient != null ? pacient.getId() : null
             );
 
-            if (raspunsChestionar.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
-                log.info("Chestionar deja completat, redirecționez către rezultate");
-                return "redirect:/chestionare/rezultate/" + raspunsChestionarId;
+            if (raspunsChestionar.getStatus()
+                    == RaspunsuriChestionare.StatusRaspuns.COMPLETAT
+                    || raspunsChestionar.getStatus()
+                    == RaspunsuriChestionare.StatusRaspuns.REVIZUIT) {
+
+                return "redirect:/chestionare/pacient/"
+                        + session.getAttribute("userId")
+                        + "/istoric";
             }
 
             // Sexul pacientului determină ce categorii sunt afișate
@@ -120,84 +134,61 @@ public class ChestionarController {
         }
     }
 
-    /**
-     * Listează chestionarele disponibile pentru un pacient
-     */
     @GetMapping("/pacient/{userId}/disponibile")
-    public String listeazaDisponibile(@PathVariable UUID userId, Model model) {
+    public String listeazaDisponibile(
+            @PathVariable UUID userId,
+            HttpSession session,
+            Model model) {
 
-        log.info("Afișare chestionare pentru user: {}", userId);
-
-        try {
-            Pacienti pacient = pacientiRepository.findByUserId(userId)
-                    .orElseThrow(() -> new NotFoundException("Pacient not found for user: " + userId));
-
-            UUID pacientId = pacient.getId();
-
-            List<RaspunsuriChestionare> toateChestionare = raspunsuriChestionareRepository
-                    .findByPacientIdWithRelations(pacientId);
-
-            List<RaspunsuriChestionare> chestionareDisponibile = new ArrayList<>();
-            List<RaspunsuriChestionare> istoricChestionare = new ArrayList<>();
-
-            for (RaspunsuriChestionare rc : toateChestionare) {
-                if (rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT) {
-                    chestionareDisponibile.add(rc);
-                } else if (rc.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
-                    istoricChestionare.add(rc);
-                }
-            }
-
-            istoricChestionare.sort(comparatorDupaDataCompletare());
-
-            model.addAttribute("chestionareDisponibile", chestionareDisponibile);
-            model.addAttribute("istoricChestionare", istoricChestionare);
-            model.addAttribute("pacientId", pacientId);
-            model.addAttribute("activeTab", "disponibile");
-
-            return "pacient/chestionare";
-
-        } catch (Exception e) {
-            log.error("Eroare la încărcarea chestionarelor: {}", e.getMessage(), e);
-            model.addAttribute("error", "Eroare la încărcarea chestionarelor");
-            return "pacient/chestionare";
-        }
+        return pregatesteListaPacient(userId, session, model, "disponibile");
     }
 
-    /**
-     * Istoricul chestionarelor completate de un pacient
-     */
     @GetMapping("/pacient/{userId}/istoric")
-    public String afiseazaIstoric(@PathVariable UUID userId, Model model) {
+    public String afiseazaIstoric(
+            @PathVariable UUID userId,
+            HttpSession session,
+            Model model) {
 
-        try {
-            Pacienti pacient = pacientiRepository.findByUserId(userId)
-                    .orElseThrow(() -> new NotFoundException("Pacient not found for user: " + userId));
-
-            UUID pacientId = pacient.getId();
-
-            List<RaspunsuriChestionare> istoric = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatus(pacientId, RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
-
-            istoric.sort(comparatorDupaDataCompletare());
-
-            List<RaspunsuriChestionare> chestionareDisponibile = raspunsuriChestionareRepository
-                    .findByPacientIdAndStatus(pacientId, RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT);
-
-            model.addAttribute("istoricChestionare", istoric);
-            model.addAttribute("chestionareDisponibile", chestionareDisponibile);
-            model.addAttribute("pacientId", pacientId);
-            model.addAttribute("activeTab", "istoric");
-
-            return "pacient/chestionare";
-
-        } catch (Exception e) {
-            log.error("Eroare la încărcarea istoricului: {}", e.getMessage(), e);
-            model.addAttribute("error", "Eroare la încărcarea istoricului");
-            return "pacient/chestionare";
-        }
+        return pregatesteListaPacient(userId, session, model, "istoric");
     }
 
+    private String pregatesteListaPacient(
+            UUID userId,
+            HttpSession session,
+            Model model,
+            String activeTab) {
+
+        accesPacientService.verificaAccesPropriuByUserId(session, userId);
+
+        Pacienti pacient = pacientiRepository.findByUserId(userId)
+                .orElseThrow(() ->
+                        new NotFoundException("Profilul pacientului nu există."));
+
+        List<RaspunsuriChestionare> disponibile =
+                raspunsuriChestionareRepository
+                        .findByPacientIdAndStatusFullRelations(
+                                pacient.getId(),
+                                RaspunsuriChestionare.StatusRaspuns.NECOMPLETAT
+                        );
+
+        List<RaspunsuriChestionare> istoric =
+                raspunsuriChestionareRepository
+                        .findByPacientIdAndStatusInFullRelations(
+                                pacient.getId(),
+                                List.of(
+                                        RaspunsuriChestionare.StatusRaspuns.COMPLETAT,
+                                        RaspunsuriChestionare.StatusRaspuns.REVIZUIT
+                                )
+                        );
+
+        model.addAttribute("chestionareDisponibile", disponibile);
+        model.addAttribute("istoricChestionare", istoric);
+        model.addAttribute("pacientId", pacient.getId());
+        model.addAttribute("userId", userId);
+        model.addAttribute("activeTab", activeTab);
+
+        return "pacient/chestionare";
+    }
     // ========== PENTRU MEDIC ==========
 
     /**
@@ -217,6 +208,12 @@ public class ChestionarController {
                 .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit"));
 
         Pacienti pacient = raspunsChestionar.getPacient();
+
+        if (pacient == null) {
+            throw new NotFoundException("Pacientul asociat nu a fost găsit.");
+        }
+
+        accesPacientService.verificaAccesMedic(session, pacient.getId());
 
         auditService.inregistreaza(
                 auditService.utilizatorCurent(session),
@@ -269,55 +266,48 @@ public class ChestionarController {
      * Generează raport PDF cu vizualizare
      */
     @GetMapping("/raport/visual/{raspunsChestionarId}")
-    public String genereazaRaportVisual(@PathVariable UUID raspunsChestionarId,
-                                        HttpSession session,
-                                        Model model,
-                                        HttpServletResponse response) {
+    public ResponseEntity<byte[]> genereazaRaportVisual(
+            @PathVariable UUID raspunsChestionarId,
+            HttpSession session) throws IOException {
 
-        log.info("Generare raport vizual pentru chestionar: {}", raspunsChestionarId);
+        RaspunsuriChestionare raspunsChestionar =
+                raspunsuriChestionareRepository
+                        .findByIdForCompletare(raspunsChestionarId)
+                        .orElseThrow(() ->
+                                new NotFoundException("Chestionarul nu a fost găsit."));
 
-        if (!raportGeneratorService.poateGeneraRaport(raspunsChestionarId)) {
-            model.addAttribute("error",
-                    "Nu se poate genera raportul. Chestionarul nu este completat sau nu are date suficiente.");
-            return "redirect:/chestionare/rezultate/" + raspunsChestionarId;
+        if (raspunsChestionar.getPacient() == null) {
+            throw new NotFoundException("Pacientul asociat nu a fost găsit.");
         }
 
-        try {
-            Map<String, Object> raportData = raportGeneratorService
-                    .genereazaDateRaportVisual(raspunsChestionarId);
+        UUID pacientId = raspunsChestionar.getPacient().getId();
 
-            if (raportData.containsKey("error")) {
-                model.addAttribute("error", raportData.get("error"));
-                return "redirect:/chestionare/rezultate/" + raspunsChestionarId;
-            }
+        accesPacientService.verificaAccesMedic(session, pacientId);
 
-            auditService.inregistreaza(
-                    auditService.utilizatorCurent(session),
-                    AuditLog.ActiuneAudit.EXPORT,
-                    AuditLog.TipResursa.CHESTIONAR,
-                    raspunsChestionarId,
-                    extragePacientId(raspunsChestionarId)
-            );
+        byte[] pdf = raportGeneratorService.genereazaPdf(raspunsChestionarId);
 
-            model.addAllAttributes(raportData);
+        auditService.inregistreaza(
+                auditService.utilizatorCurent(session),
+                AuditLog.ActiuneAudit.EXPORT,
+                AuditLog.TipResursa.CHESTIONAR,
+                raspunsChestionarId,
+                pacientId
+        );
 
-            response.setContentType("application/pdf");
+        String numeFisier = "raport-chestionar-" + raspunsChestionarId + ".pdf";
 
-            String pacientNume = (String) raportData.getOrDefault("pacientNumeComplet", "anonim");
-            String data = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            String fileName = "raport-" + pacientNume.replace(" ", "-") + "-" + data + ".pdf";
-
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-
-            return "chestionare/raport-visual-pdf";
-
-        } catch (Exception e) {
-            log.error("Eroare la generarea raportului vizual: {}", e.getMessage(), e);
-            model.addAttribute("error", "Eroare la generarea raportului vizual: " + e.getMessage());
-            return "redirect:/chestionare/rezultate/" + raspunsChestionarId;
-        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .cacheControl(CacheControl.noStore())
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(numeFisier)
+                                .build()
+                                .toString()
+                )
+                .body(pdf);
     }
-
     /**
      * Afișează toate tipurile de chestionare disponibile în sistem (pentru medici).
      * Nu conține date de pacient, deci nu se auditează.
