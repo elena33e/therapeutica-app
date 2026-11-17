@@ -9,6 +9,7 @@ import com.therapeutica.therapeutica_app.raport_chestionar.ScoringService;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionareRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebariService;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
+import com.therapeutica.therapeutica_app.security.AccesChestionarService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ public class RaspunsuriIntrebariController {
     private final PacientiRepository pacientiRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AuditService auditService;
+    private final AccesChestionarService accesChestionarService;
 
     /**
      * Pacientul salvează răspunsurile completate la un chestionar.
@@ -46,6 +48,11 @@ public class RaspunsuriIntrebariController {
                                      RedirectAttributes redirectAttributes) {
 
         log.info("Salvare răspunsuri pentru chestionarul: {}", raspunsChestionarId);
+
+        accesChestionarService.verificaModificare(
+                session,
+                raspunsChestionarId
+        );
 
         try {
             raspunsuriIntrebariService.proceseazaRaspunsuri(raspunsChestionarId, raspunsuri);
@@ -97,14 +104,21 @@ public class RaspunsuriIntrebariController {
      */
     @PostMapping("/sterge/{raspunsIntrebareId}")
     @ResponseBody
-    public String stergeRaspuns(@PathVariable UUID raspunsIntrebareId) {
-        try {
-            raspunsuriIntrebariService.stergeRaspuns(raspunsIntrebareId);
-            return "{\"status\": \"success\", \"message\": \"Răspuns șters cu succes\"}";
-        } catch (Exception e) {
-            log.error("Eroare la ștergerea răspunsului {}: {}", raspunsIntrebareId, e.getMessage());
-            return "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}";
-        }
+    public Map<String, String> stergeRaspuns(
+            @PathVariable UUID raspunsIntrebareId,
+            HttpSession session) {
+
+        accesChestionarService.verificaStergereRaspuns(
+                session,
+                raspunsIntrebareId
+        );
+
+        raspunsuriIntrebariService.stergeRaspuns(raspunsIntrebareId);
+
+        return Map.of(
+                "status", "success",
+                "message", "Răspuns șters cu succes."
+        );
     }
 
     // ========== METODE HELPER ==========

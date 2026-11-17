@@ -18,6 +18,8 @@ import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChesti
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebari;
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebariService;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
+import com.therapeutica.therapeutica_app.security.AccesChestionarService;
+import com.therapeutica.therapeutica_app.chestionare.RevizuireChestionarService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,8 @@ public class ChestionarController {
     private final ScoringService scoringService;
     private final AuditService auditService;
     private final AccesPacientService accesPacientService;
+    private final AccesChestionarService accesChestionarService;
+    private final RevizuireChestionarService revizuireChestionarService;
 
     /**
      * Afișează un chestionar pentru completare
@@ -67,11 +71,13 @@ public class ChestionarController {
 
         log.info("Accesare chestionar pentru completare: {}", raspunsChestionarId);
 
-        try {
-            RaspunsuriChestionare raspunsChestionar = raspunsuriChestionareRepository
-                    .findByIdForCompletare(raspunsChestionarId)
-                    .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit în baza de date"));
+        RaspunsuriChestionare raspunsChestionar =
+                accesChestionarService.incarcaPentruPacient(
+                        session,
+                        raspunsChestionarId
+                );
 
+        try {
             if (raspunsChestionar.getChestionar() == null) {
                 log.error("RaspunsuriChestionare {} nu are chestionar asociat!", raspunsChestionarId);
                 model.addAttribute("error", "Chestionarul nu are date asociate");
@@ -352,41 +358,42 @@ public class ChestionarController {
      * Marchează un chestionar ca fiind revizuit de către medic
      */
     @PostMapping("/medic/marcheaza-revizuit/{raspunsChestionarId}")
-    public String marcheazaCaRevizuit(@PathVariable UUID raspunsChestionarId,
-                                      @RequestParam UUID pacientId,
-                                      HttpSession session,
-                                      RedirectAttributes redirectAttributes) {
+    public String marcheazaCaRevizuit(
+            @PathVariable UUID raspunsChestionarId,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
 
-        Object medicId = session.getAttribute("userId");
-
-        try {
-            RaspunsuriChestionare raspuns = raspunsuriChestionareRepository.findById(raspunsChestionarId)
-                    .orElseThrow(() -> new NotFoundException("Răspunsul nu a fost găsit"));
-
-            if (raspuns.getStatus() == RaspunsuriChestionare.StatusRaspuns.COMPLETAT) {
-                raspuns.setStatus(RaspunsuriChestionare.StatusRaspuns.REVIZUIT);
-                raspunsuriChestionareRepository.save(raspuns);
-
-                auditService.inregistreaza(
-                        auditService.utilizatorCurent(session),
-                        AuditLog.ActiuneAudit.MODIFICARE,
-                        AuditLog.TipResursa.CHESTIONAR,
+        RevizuireChestionarService.RezultatRevizuire rezultat =
+                revizuireChestionarService.marcheazaCaRevizuit(
                         raspunsChestionarId,
-                        pacientId
+                        session
                 );
 
-                redirectAttributes.addFlashAttribute("success", "Evaluarea a fost marcată ca revizuită.");
-            }
+        if (rezultat.modificat()) {
+            auditService.inregistreaza(
+                    auditService.utilizatorCurent(session),
+                    AuditLog.ActiuneAudit.MODIFICARE,
+                    AuditLog.TipResursa.CHESTIONAR,
+                    raspunsChestionarId,
+                    rezultat.pacientId()
+            );
 
-        } catch (Exception e) {
-            log.error("Eroare la marcarea ca revizuit a chestionarului {}: {}",
-                    raspunsChestionarId, e.getMessage());
-            redirectAttributes.addFlashAttribute("error", "Nu s-a putut marca evaluarea ca revizuită.");
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Evaluarea a fost marcată ca revizuită."
+            );
+        } else {
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Evaluarea era deja marcată ca revizuită."
+            );
         }
 
-        return "redirect:/medic/" + medicId + "/pacient/" + pacientId;
+        return "redirect:/medic/"
+                + session.getAttribute("userId")
+                + "/pacient/"
+                + rezultat.pacientId();
     }
-
     // ========== METODE HELPER ==========
 
     /**

@@ -34,7 +34,6 @@
                     <form th:if="${chestionar.status.name() == 'COMPLETAT'}"
                           th:action="@{'/chestionare/medic/marcheaza-revizuit/' + ${chestionar.id}}"
                           method="post" class="inline">
-                        <input type="hidden" name="pacientId" th:value="${chestionar.pacient.id}" />
                         <button type="submit"
                                 class="inline-flex items-center px-5 py-2.5 bg-emerald-600 rounded-xl shadow-md shadow-emerald-100 text-sm font-bold text-white hover:bg-emerald-700 transition-all">
                             <i class="fas fa-check-double mr-2"></i> Finalizează Revizuirea

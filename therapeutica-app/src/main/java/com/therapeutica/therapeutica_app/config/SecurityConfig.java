@@ -62,6 +62,10 @@ public class SecurityConfig {
                         .requestMatchers("/diagnostic/**").hasRole("MEDIC")
 
                         .requestMatchers("/pacient/**").hasRole("PACIENT")
+                        .requestMatchers(
+                                "/chestionare/completare/**",
+                                "/raspunsuri/**"
+                        ).hasRole("PACIENT")
 
                         // Rute mixte (medic si pacient) — verificarea la nivel de pacient
                         // se face in cod, prin AccesPacientService
