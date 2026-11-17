@@ -1,0 +1,44 @@
+name: CI productie
+
+on:
+  push:
+    branches:
+      - versiune-productie
+  pull_request:
+    branches:
+      - versiune-productie
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build si teste
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: therapeutica-app
+
+    steps:
+      - name: Descarca sursele
+        uses: actions/checkout@v5
+
+      - name: Configureaza Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: therapeutica-app/pom.xml
+
+      - name: Verifica Docker
+        run: docker info
+
+      - name: Compileaza si ruleaza testele
+        run: bash mvnw --batch-mode --no-transfer-progress verify
