@@ -1,6 +1,5 @@
 package com.therapeutica.therapeutica_app.raspunsuri_intrebari;
 
-import com.therapeutica.therapeutica_app.categorii_chestionare.CategoriiChestionare;
 import com.therapeutica.therapeutica_app.intrebari.Intrebare;
 import com.therapeutica.therapeutica_app.intrebari.IntrebariRepository;
 import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChestionare;
@@ -10,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,6 +29,7 @@ public class RaspunsuriIntrebariService {
     private final RaspunsuriIntrebariRepository raspunsuriIntrebariRepository;
     private final IntrebariRepository intrebariRepository;
     private final RaspunsuriChestionareRepository raspunsuriChestionareRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * Procesează răspunsurile primite de la formular
@@ -154,8 +157,19 @@ public class RaspunsuriIntrebariService {
                 break;
 
             case MULTIPLE_CHOICE:
-                // Salvează ca JSON
-                raspuns.setRaspunsText(valoare);
+                try {
+                    List<String> selectate = objectMapper.readValue(
+                            valoare,
+                            new TypeReference<List<String>>() {}
+                    );
+
+                    raspuns.setRaspunsJson(valoare);
+                    raspuns.setRaspunsText(String.join("; ", selectate));
+                } catch (JsonProcessingException e) {
+                    throw new IllegalArgumentException(
+                            "Opțiunile selectate nu au putut fi prelucrate.", e
+                    );
+                }
                 break;
         }
     }

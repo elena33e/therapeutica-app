@@ -39,6 +39,27 @@
         </div>
     </div>
 
+    <div th:if="${eroriValidare != null}"
+         role="alert"
+         class="mb-6 rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
+
+        <p class="font-bold mb-2">
+            Verifică răspunsurile de mai jos. Chestionarul nu a fost finalizat.
+        </p>
+
+        <ul class="list-disc pl-5 space-y-1">
+            <li th:each="mesaj : ${eroriValidare.values()}"
+                th:text="${mesaj}">
+            </li>
+        </ul>
+    </div>
+
+    <div th:if="${error != null}"
+         role="alert"
+         class="mb-6 rounded-xl border border-red-200 bg-red-50 p-5 text-red-800"
+         th:text="${error}">
+    </div>
+
     <form th:action="@{/raspunsuri/completare/{id}/salveaza(id=${raspunsChestionar.id})}"
           method="post"
           id="chestionarForm">
@@ -49,163 +70,294 @@
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-6 border-b border-gray-100 gap-4">
                     <div>
-                        <h2 class="text-xl font-bold text-brand-navy mb-1" th:text="'Secțiunea ' + ${catIter.count}">Secțiunea X</h2>
+                        <h2 class="text-xl font-bold text-brand-navy mb-1"
+                            th:text="'Secțiunea ' + ${catIter.count}">
+                            Secțiunea X
+                        </h2>
 
-                        <p class="text-gray-500 text-sm font-medium">Vă rugăm să citiți cu atenție și să răspundeți la următoarele întrebări.</p>
+                        <p class="text-gray-500 text-sm font-medium">
+                            Vă rugăm să citiți cu atenție și să răspundeți la următoarele întrebări.
+                        </p>
                     </div>
+
                     <div class="bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg text-[10px] font-bold text-gray-500 uppercase tracking-widest shadow-sm flex-shrink-0">
                         <i class="fas fa-list-ol mr-1.5 text-brand-blue"></i>
-                        <span th:text="${intrebariPeCategorii[categorie.id].size()}">0</span> întrebări
+
+                        <span th:text="${intrebariPeCategorii[categorie.id].size()}">
+                        0
+                    </span>
+                        întrebări
                     </div>
                 </div>
 
                 <div class="space-y-6">
-                    <div th:each="intrebare, iter : ${intrebariPeCategorii[categorie.id]}" class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+
+                    <div th:each="intrebare, iter : ${intrebariPeCategorii[categorie.id]}"
+                         th:with="
+                        valori=${raspunsuriFormular != null
+                            ? raspunsuriFormular.get('intrebare_' + intrebare.id)
+                            : null},
+                        valoare=${valori != null and !valori.isEmpty()
+                            ? valori.get(0)
+                            : ''}"
+                         class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+
                         <div class="flex items-start gap-4">
+
                             <div class="flex-shrink-0 w-8 h-8 bg-brand-blue text-white rounded-lg flex items-center justify-center font-black shadow-sm mt-0.5">
                                 <span th:text="${iter.index + 1}">1</span>
                             </div>
-                            <div class="flex-grow">
+
+                            <div class="flex-grow min-w-0">
+
                                 <div class="flex items-center gap-2 mb-4">
-                                    <h3 class="font-bold text-brand-navy leading-snug" th:text="${intrebare.textIntrebare}">Text întrebare</h3>
-                                    <span th:if="${intrebare.obligatorie}" class="text-red-500 font-bold" title="Obligatoriu">*</span>
+                                    <h3 class="font-bold text-brand-navy leading-snug"
+                                        th:text="${intrebare.textIntrebare}">
+                                        Text întrebare
+                                    </h3>
+
+                                    <span th:if="${intrebare.obligatorie}"
+                                          class="text-red-500 font-bold"
+                                          title="Obligatoriu">
+                                    *
+                                </span>
                                 </div>
 
-                                <div th:switch="${intrebare.tipIntrebare.name()}" class="mt-2">
+                                <div th:switch="${intrebare.tipIntrebare.name()}"
+                                     class="mt-2">
 
+                                    <!-- Scor între 0 și 3 -->
                                     <div th:case="'SCOR_0_3'">
+
                                         <div class="flex flex-wrap gap-3 mb-3">
-                                            <div th:each="i : ${#numbers.sequence(0, 3)}" class="flex flex-col items-center gap-2">
-                                                <label class="text-xs font-bold text-gray-400" th:text="${i}">0</label>
+                                            <div th:each="i : ${#numbers.sequence(0, 3)}"
+                                                 class="flex flex-col items-center gap-2">
+
+                                                <label th:for="'intrebare_' + ${intrebare.id} + '_' + ${i}"
+                                                       class="text-xs font-bold text-gray-400"
+                                                       th:text="${i}">
+                                                    0
+                                                </label>
+
                                                 <div class="relative w-12 h-12">
                                                     <input type="radio"
                                                            th:id="'intrebare_' + ${intrebare.id} + '_' + ${i}"
                                                            th:name="'intrebare_' + ${intrebare.id}"
                                                            th:value="${i}"
+                                                           th:checked="${valori != null and valori.contains('' + i)}"
                                                            th:required="${intrebare.obligatorie}"
                                                            class="peer absolute opacity-0 w-full h-full cursor-pointer z-10">
+
                                                     <div class="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-brand-navy shadow-sm peer-hover:border-brand-blue peer-hover:bg-blue-50 peer-checked:bg-brand-teal peer-checked:border-brand-teal peer-checked:text-white transition-all duration-200">
-                                                        <span class="font-black text-lg" th:text="${i}">0</span>
+                                                    <span class="font-black text-lg"
+                                                          th:text="${i}">
+                                                        0
+                                                    </span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
+
                                         <div class="flex justify-between w-full max-w-[230px] text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">
                                             <span>Deloc</span>
                                             <span>Foarte Mult</span>
                                         </div>
                                     </div>
 
+                                    <!-- Scor între 1 și 5 -->
                                     <div th:case="'SCOR_1_5'">
+
                                         <div class="flex flex-wrap gap-3 mb-3">
-                                            <div th:each="i : ${#numbers.sequence(1, 5)}" class="flex flex-col items-center gap-2">
-                                                <label class="text-xs font-bold text-gray-400" th:text="${i}">1</label>
+                                            <div th:each="i : ${#numbers.sequence(1, 5)}"
+                                                 class="flex flex-col items-center gap-2">
+
+                                                <label th:for="'intrebare_' + ${intrebare.id} + '_' + ${i}"
+                                                       class="text-xs font-bold text-gray-400"
+                                                       th:text="${i}">
+                                                    1
+                                                </label>
+
                                                 <div class="relative w-12 h-12">
                                                     <input type="radio"
                                                            th:id="'intrebare_' + ${intrebare.id} + '_' + ${i}"
                                                            th:name="'intrebare_' + ${intrebare.id}"
                                                            th:value="${i}"
+                                                           th:checked="${valori != null and valori.contains('' + i)}"
                                                            th:required="${intrebare.obligatorie}"
                                                            class="peer absolute opacity-0 w-full h-full cursor-pointer z-10">
+
                                                     <div class="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-brand-navy shadow-sm peer-hover:border-brand-blue peer-hover:bg-blue-50 peer-checked:bg-brand-teal peer-checked:border-brand-teal peer-checked:text-white transition-all duration-200">
-                                                        <span class="font-black text-lg" th:text="${i}">1</span>
+                                                    <span class="font-black text-lg"
+                                                          th:text="${i}">
+                                                        1
+                                                    </span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
+
                                         <div class="flex justify-between w-full max-w-[290px] text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">
                                             <span>Dezacord Total</span>
                                             <span>Acord Total</span>
                                         </div>
                                     </div>
 
+                                    <!-- Da sau Nu -->
                                     <div th:case="'DA_NU'">
                                         <div class="flex gap-4">
-                                            <div class="relative w-20 h-12">
-                                                <input type="radio" th:name="'intrebare_' + ${intrebare.id}" th:value="true" th:required="${intrebare.obligatorie}" class="peer absolute opacity-0 w-full h-full cursor-pointer z-10">
-                                                <div class="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-brand-navy shadow-sm peer-hover:border-brand-blue peer-hover:bg-blue-50 peer-checked:bg-brand-teal peer-checked:border-brand-teal peer-checked:text-white transition-all duration-200">
-                                                    <span class="font-black text-sm uppercase tracking-wider">DA</span>
-                                                </div>
-                                            </div>
-                                            <div class="relative w-20 h-12">
-                                                <input type="radio" th:name="'intrebare_' + ${intrebare.id}" th:value="false" th:required="${intrebare.obligatorie}" class="peer absolute opacity-0 w-full h-full cursor-pointer z-10">
-                                                <div class="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-brand-navy shadow-sm peer-hover:border-brand-blue peer-hover:bg-blue-50 peer-checked:bg-brand-teal peer-checked:border-brand-teal peer-checked:text-white transition-all duration-200">
-                                                    <span class="font-black text-sm uppercase tracking-wider">NU</span>
-                                                </div>
-                                            </div>
+
+                                            <label class="relative block w-20 h-12">
+                                                <input type="radio"
+                                                       th:name="'intrebare_' + ${intrebare.id}"
+                                                       value="true"
+                                                       th:checked="${valoare == 'true'}"
+                                                       th:required="${intrebare.obligatorie}"
+                                                       class="peer absolute opacity-0 w-full h-full cursor-pointer z-10">
+
+                                                <span class="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-brand-navy shadow-sm peer-hover:border-brand-blue peer-hover:bg-blue-50 peer-checked:bg-brand-teal peer-checked:border-brand-teal peer-checked:text-white transition-all duration-200">
+                                                <span class="font-black text-sm uppercase tracking-wider">
+                                                    DA
+                                                </span>
+                                            </span>
+                                            </label>
+
+                                            <label class="relative block w-20 h-12">
+                                                <input type="radio"
+                                                       th:name="'intrebare_' + ${intrebare.id}"
+                                                       value="false"
+                                                       th:checked="${valoare == 'false'}"
+                                                       th:required="${intrebare.obligatorie}"
+                                                       class="peer absolute opacity-0 w-full h-full cursor-pointer z-10">
+
+                                                <span class="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-brand-navy shadow-sm peer-hover:border-brand-blue peer-hover:bg-blue-50 peer-checked:bg-brand-teal peer-checked:border-brand-teal peer-checked:text-white transition-all duration-200">
+                                                <span class="font-black text-sm uppercase tracking-wider">
+                                                    NU
+                                                </span>
+                                            </span>
+                                            </label>
+
                                         </div>
                                     </div>
 
+                                    <!-- Text liber -->
                                     <div th:case="'TEXT_LIBER'">
-                                        <textarea th:name="'intrebare_' + ${intrebare.id}"
-                                                  class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-medium resize-y"
-                                                  rows="3"
-                                                  th:required="${intrebare.obligatorie}"
-                                                  placeholder="Introduceți detaliile aici..."></textarea>
+                                    <textarea th:name="'intrebare_' + ${intrebare.id}"
+                                              th:text="${valoare}"
+                                              th:required="${intrebare.obligatorie}"
+                                              maxlength="10000"
+                                              rows="3"
+                                              class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-medium resize-y"
+                                              placeholder="Introduceți detaliile aici..."></textarea>
                                     </div>
 
+                                    <!-- Text scurt -->
                                     <div th:case="'TEXT_SCURT'">
-                                        <input type="text" th:name="'intrebare_' + ${intrebare.id}"
-                                               class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-bold"
+                                        <input type="text"
+                                               th:name="'intrebare_' + ${intrebare.id}"
+                                               th:value="${valoare}"
                                                th:required="${intrebare.obligatorie}"
+                                               maxlength="255"
+                                               class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-bold"
                                                placeholder="Răspuns scurt...">
                                     </div>
 
+                                    <!-- Număr -->
                                     <div th:case="'NUMERIC'">
-                                        <input type="number" th:name="'intrebare_' + ${intrebare.id}"
-                                               class="w-32 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-black text-center"
+                                        <input type="number"
+                                               th:name="'intrebare_' + ${intrebare.id}"
+                                               th:value="${valoare}"
                                                th:required="${intrebare.obligatorie}"
-                                               placeholder="0" step="0.01">
+                                               min="-99999999.99"
+                                               max="99999999.99"
+                                               step="0.01"
+                                               class="w-48 max-w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-black text-center"
+                                               placeholder="0">
                                     </div>
 
+                                    <!-- Dată -->
                                     <div th:case="'DATA'">
-                                        <input type="date" th:name="'intrebare_' + ${intrebare.id}"
+                                        <input type="date"
+                                               th:name="'intrebare_' + ${intrebare.id}"
+                                               th:value="${valoare}"
                                                th:required="${intrebare.obligatorie}"
-                                               class="px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-bold">
+                                               min="0001-01-01"
+                                               max="9999-12-31"
+                                               class="max-w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-bold">
                                     </div>
 
+                                    <!-- Email -->
                                     <div th:case="'EMAIL'">
-                                        <input type="email" th:name="'intrebare_' + ${intrebare.id}"
+                                        <input type="email"
+                                               th:name="'intrebare_' + ${intrebare.id}"
+                                               th:value="${valoare}"
                                                th:required="${intrebare.obligatorie}"
+                                               maxlength="254"
                                                class="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-medium"
                                                placeholder="adresa@email.com">
                                     </div>
 
+                                    <!-- Telefon -->
                                     <div th:case="'TELEFON'">
-                                        <input type="tel" th:name="'intrebare_' + ${intrebare.id}"
+                                        <input type="tel"
+                                               th:name="'intrebare_' + ${intrebare.id}"
+                                               th:value="${valoare}"
                                                th:required="${intrebare.obligatorie}"
+                                               maxlength="40"
                                                class="w-full max-w-sm px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-all text-brand-navy font-medium"
                                                placeholder="Ex: 0722 123 456">
                                     </div>
 
-                                    <div th:case="'MULTIPLE_CHOICE'" class="space-y-2 bg-white p-4 rounded-xl border border-gray-200">
-                                        <div th:each="optiune : ${#strings.arraySplit(intrebare.optiuni, ';')}">
+                                    <!-- Opțiuni multiple -->
+                                    <div th:case="'MULTIPLE_CHOICE'"
+                                         class="space-y-2 bg-white p-4 rounded-xl border border-gray-200">
+
+                                        <div th:each="optiune : ${optiuniPeIntrebare.get(intrebare.id)}">
                                             <label class="flex items-center cursor-pointer group">
-                                                <input type="checkbox" th:name="'intrebare_' + ${intrebare.id}" th:value="${optiune}"
+
+                                                <input type="checkbox"
+                                                       th:name="'intrebare_' + ${intrebare.id}"
+                                                       th:value="${optiune}"
+                                                       th:checked="${valori != null and valori.contains(optiune)}"
                                                        class="w-5 h-5 text-brand-teal bg-gray-50 border-gray-300 rounded focus:ring-brand-teal focus:ring-2 cursor-pointer transition-colors">
-                                                <span class="ml-3 text-sm font-bold text-gray-700 group-hover:text-brand-navy transition-colors" th:text="${optiune}">Opțiune</span>
+
+                                                <span class="ml-3 text-sm font-bold text-gray-700 group-hover:text-brand-navy transition-colors"
+                                                      th:text="${optiune}">
+                                                Opțiune
+                                            </span>
+
                                             </label>
                                         </div>
+
+                                        <p th:if="${intrebare.obligatorie}"
+                                           class="text-sm text-gray-500">
+                                            Selectează cel puțin o opțiune.
+                                        </p>
                                     </div>
+
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
 
         <div class="sticky bottom-4 z-50 bg-white/80 backdrop-blur-md border border-gray-200 p-4 rounded-2xl shadow-lg flex flex-col sm:flex-row justify-between items-center gap-4 mt-10">
+
             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden md:flex items-center">
-                <i class="fas fa-shield-alt mr-2 text-brand-gold text-lg"></i>
-                Datele medicale sunt securizate.
+                Completează toate întrebările obligatorii.
             </div>
+
             <div class="flex w-full sm:w-auto gap-3">
                 <button type="submit"
                         class="flex-1 sm:flex-none px-8 py-3.5 bg-brand-teal text-white rounded-xl hover:bg-brand-teal/90 transition-all shadow-md font-bold text-xs uppercase tracking-widest outline-none active:scale-95 flex items-center justify-center">
-                    Trimite Evaluarea <i class="fas fa-paper-plane ml-2"></i>
+
+                    Trimite Evaluarea
+                    <i class="fas fa-paper-plane ml-2"></i>
                 </button>
             </div>
+
         </div>
     </form>
 </div>

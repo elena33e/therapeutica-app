@@ -20,7 +20,7 @@ import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebar
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import com.therapeutica.therapeutica_app.security.AccesChestionarService;
 import com.therapeutica.therapeutica_app.chestionare.RevizuireChestionarService;
-import jakarta.servlet.http.HttpServletResponse;
+import com.therapeutica.therapeutica_app.raspunsuri_intrebari.ValidareRaspunsuriService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +60,7 @@ public class ChestionarController {
     private final AccesPacientService accesPacientService;
     private final AccesChestionarService accesChestionarService;
     private final RevizuireChestionarService revizuireChestionarService;
+    private final ValidareRaspunsuriService validareRaspunsuriService;
 
     /**
      * Afișează un chestionar pentru completare
@@ -130,6 +131,27 @@ public class ChestionarController {
             model.addAttribute("raspunsChestionar", raspunsChestionar);
             model.addAttribute("categorii", categoriiFiltrate);
             model.addAttribute("intrebariPeCategorii", intrebariPeCategorii);
+
+            Map<UUID, List<String>> optiuniPeIntrebare = new LinkedHashMap<>();
+
+            for (List<Intrebare> intrebari : intrebariPeCategorii.values()) {
+                for (Intrebare intrebare : intrebari) {
+                    if (intrebare.getTipIntrebare()
+                            == Intrebare.TipIntrebare.MULTIPLE_CHOICE) {
+
+                        optiuniPeIntrebare.put(
+                                intrebare.getId(),
+                                validareRaspunsuriService.citesteOptiuni(intrebare)
+                        );
+                    }
+                }
+            }
+
+            model.addAttribute("optiuniPeIntrebare", optiuniPeIntrebare);
+
+            if (!model.containsAttribute("raspunsuriFormular")) {
+                model.addAttribute("raspunsuriFormular", Map.of());
+            }
 
             return "pacient/completare-chestionar";
 
@@ -405,10 +427,9 @@ public class ChestionarController {
         List<CategoriiChestionare> rezultat = new ArrayList<>();
 
         for (CategoriiChestionare categorie : categorii) {
-            if (categorie.getSexTinta() == null
-                    || "AMBELE".equals(categorie.getSexTinta().name())
-                    || sexPacient == null
-                    || categorie.getSexTinta().name().equalsIgnoreCase(sexPacient)) {
+            if (validareRaspunsuriService.esteCategorieAplicabila(
+                    categorie,
+                    sexPacient)) {
                 rezultat.add(categorie);
             }
         }

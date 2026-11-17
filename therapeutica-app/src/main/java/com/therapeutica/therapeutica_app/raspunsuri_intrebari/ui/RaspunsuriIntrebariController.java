@@ -10,6 +10,11 @@ import com.therapeutica.therapeutica_app.raspunsuri_chestionare.RaspunsuriChesti
 import com.therapeutica.therapeutica_app.raspunsuri_intrebari.RaspunsuriIntrebariService;
 import com.therapeutica.therapeutica_app.util.NotFoundException;
 import com.therapeutica.therapeutica_app.security.AccesChestionarService;
+import com.therapeutica.therapeutica_app.raspunsuri_intrebari.ValidareRaspunsuriService;
+import org.springframework.util.MultiValueMap;
+
+import java.util.LinkedHashMap;
+import java.util.List;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +42,14 @@ public class RaspunsuriIntrebariController {
     private final ApplicationEventPublisher eventPublisher;
     private final AuditService auditService;
     private final AccesChestionarService accesChestionarService;
+    private final ValidareRaspunsuriService validareRaspunsuriService;
 
     /**
      * Pacientul salvează răspunsurile completate la un chestionar.
      */
     @PostMapping("/completare/{raspunsChestionarId}/salveaza")
     public String salveazaRaspunsuri(@PathVariable UUID raspunsChestionarId,
-                                     @RequestParam Map<String, String> raspunsuri,
+                                     @RequestParam MultiValueMap<String, String> raspunsuri,
                                      HttpSession session,
                                      RedirectAttributes redirectAttributes) {
 
@@ -54,8 +60,38 @@ public class RaspunsuriIntrebariController {
                 raspunsChestionarId
         );
 
+        var validare = validareRaspunsuriService.valideaza(
+                raspunsChestionarId,
+                raspunsuri
+        );
+
+        if (!validare.erori().isEmpty()) {
+            Map<String, List<String>> raspunsuriFormular = new LinkedHashMap<>();
+
+            raspunsuri.forEach((cheie, valori) -> {
+                if (cheie.startsWith("intrebare_")) {
+                    raspunsuriFormular.put(cheie, List.copyOf(valori));
+                }
+            });
+
+            redirectAttributes.addFlashAttribute(
+                    "eroriValidare",
+                    validare.erori()
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "raspunsuriFormular",
+                    raspunsuriFormular
+            );
+
+            return "redirect:/chestionare/completare/" + raspunsChestionarId;
+        }
+
         try {
-            raspunsuriIntrebariService.proceseazaRaspunsuri(raspunsChestionarId, raspunsuri);
+            raspunsuriIntrebariService.proceseazaRaspunsuri(
+                    raspunsChestionarId,
+                    validare.raspunsuri()
+            );
             scoringService.calculeazaSiSalveazaScor(raspunsChestionarId);
 
             UUID userIdPacient = raspunsuriChestionareRepository
