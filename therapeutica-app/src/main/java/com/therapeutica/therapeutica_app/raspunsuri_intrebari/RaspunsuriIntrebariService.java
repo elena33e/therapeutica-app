@@ -119,7 +119,6 @@ public class RaspunsuriIntrebariService {
 
         switch (tip) {
             case SCOR_0_3:
-            case SCOR_1_5:
                 raspuns.setScor(Integer.parseInt(valoare));
                 break;
 

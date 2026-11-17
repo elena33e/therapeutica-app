@@ -115,7 +115,7 @@ class ValidareRaspunsuriServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"-1", "4", "100", "1.5", "abc"})
+    @ValueSource(strings = {"-1", "4", "5", "100", "1.5", "abc"})
     void respingeScorurileNepermise(String valoare) {
         var date = new LinkedMultiValueMap<String, String>();
         date.add(cheieIntrebare, valoare);

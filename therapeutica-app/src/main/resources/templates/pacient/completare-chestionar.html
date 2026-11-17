@@ -164,44 +164,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Scor între 1 și 5 -->
-                                    <div th:case="'SCOR_1_5'">
-
-                                        <div class="flex flex-wrap gap-3 mb-3">
-                                            <div th:each="i : ${#numbers.sequence(1, 5)}"
-                                                 class="flex flex-col items-center gap-2">
-
-                                                <label th:for="'intrebare_' + ${intrebare.id} + '_' + ${i}"
-                                                       class="text-xs font-bold text-gray-400"
-                                                       th:text="${i}">
-                                                    1
-                                                </label>
-
-                                                <div class="relative w-12 h-12">
-                                                    <input type="radio"
-                                                           th:id="'intrebare_' + ${intrebare.id} + '_' + ${i}"
-                                                           th:name="'intrebare_' + ${intrebare.id}"
-                                                           th:value="${i}"
-                                                           th:checked="${valori != null and valori.contains('' + i)}"
-                                                           th:required="${intrebare.obligatorie}"
-                                                           class="peer absolute opacity-0 w-full h-full cursor-pointer z-10">
-
-                                                    <div class="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-brand-navy shadow-sm peer-hover:border-brand-blue peer-hover:bg-blue-50 peer-checked:bg-brand-teal peer-checked:border-brand-teal peer-checked:text-white transition-all duration-200">
-                                                    <span class="font-black text-lg"
-                                                          th:text="${i}">
-                                                        1
-                                                    </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex justify-between w-full max-w-[290px] text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">
-                                            <span>Dezacord Total</span>
-                                            <span>Acord Total</span>
-                                        </div>
-                                    </div>
-
                                     <!-- Da sau Nu -->
                                     <div th:case="'DA_NU'">
                                         <div class="flex gap-4">
