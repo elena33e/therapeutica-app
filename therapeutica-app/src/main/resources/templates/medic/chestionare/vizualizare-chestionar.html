@@ -59,13 +59,6 @@
                                     </div>
                                 </div>
 
-                                <div th:case="'SCOR_1_5'" class="flex gap-2.5 flex-wrap">
-                                    <div th:each="i : ${#numbers.sequence(1, 5)}"
-                                         class="w-10 h-10 rounded-full border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-semibold text-sm">
-                                        <span th:text="${i}"></span>
-                                    </div>
-                                </div>
-
                                 <div th:case="'DA_NU'" class="flex gap-4">
                                     <div class="w-16 h-10 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">DA</div>
                                     <div class="w-16 h-10 rounded-lg border-2 border-slate-200 bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">NU</div>

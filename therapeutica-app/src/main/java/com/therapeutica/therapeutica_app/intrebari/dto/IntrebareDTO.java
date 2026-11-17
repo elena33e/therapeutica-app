@@ -17,8 +17,6 @@ public class IntrebareDTO {
     private Boolean obligatorie;
     private List<String> optiuni; // Pentru MULTIPLE_CHOICE
     private String optiuniJson;
-    private String hpoCode;
-    private String hpoTerm;
 
     public static IntrebareDTO fromEntity(Intrebare intrebare) {
         IntrebareDTO dto = new IntrebareDTO();
@@ -28,8 +26,6 @@ public class IntrebareDTO {
         dto.setOrdine(intrebare.getOrdine());
         dto.setObligatorie(intrebare.getObligatorie());
         dto.setOptiuniJson(intrebare.getOptiuniJson());
-        dto.setHpoCode(intrebare.getHpoCode());
-        dto.setHpoTerm(intrebare.getHpoTerm());
 
         if (intrebare.getCategorie() != null) {
             dto.setCategorieId(intrebare.getCategorie().getId());

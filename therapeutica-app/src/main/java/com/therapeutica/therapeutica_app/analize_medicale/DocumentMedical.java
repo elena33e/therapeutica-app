@@ -4,8 +4,6 @@ import com.therapeutica.therapeutica_app.pacienti.Pacienti;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
@@ -37,38 +35,12 @@ public class DocumentMedical implements Persistable<UUID> {
     @Column(name = "cale_fisier_stocare", nullable = false)
     private String caleFisierStocare;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "date_brute", columnDefinition = "jsonb")
-    private String dateBrute;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "date_validate", columnDefinition = "jsonb")
-    private String dateValidate;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "date_standardizate_loinc", columnDefinition = "jsonb")
-    private String dateStandardizate;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "candidati_loinc", columnDefinition = "jsonb")
-    private String candidatiLoinc;
-
     @Column(name = "data_incarcare")
     private LocalDateTime dataIncarcare = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private StatusDocument status = StatusDocument.INCARCAT;
-
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "date_fhir_standard", columnDefinition = "jsonb")
-    private String dateFhir;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "date_interpretate_fhir", columnDefinition = "jsonb")
-    private String dateInterpretate;
-
 
     @Override
     public boolean isNew() {
@@ -87,6 +59,13 @@ public class DocumentMedical implements Persistable<UUID> {
     }
 
     public enum StatusDocument {
-        INCARCAT, VALIDAT, PROCESAT, STANDARDIZAT, INTERPRETAT, FHIR_GENERAT, EROARE, STERS_DE_PACIENT
+        INCARCAT,
+        VALIDAT,
+        PROCESAT,
+        STANDARDIZAT,
+        INTERPRETAT,
+        FHIR_GENERAT,
+        EROARE,
+        STERS_DE_PACIENT
     }
 }

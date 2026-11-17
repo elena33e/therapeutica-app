@@ -45,21 +45,9 @@ public class Intrebare {
     @Column(name = "optiuni_json", columnDefinition = "jsonb")
     private String optiuniJson;
 
-    @Column(name = "hpo_code", length = 50)
-    private String hpoCode;
-
-    @Column(name = "hpo_term", length = 255)
-    private String hpoTerm;
-
-    @Column(name = "hpo_trigger_code")
-    private String hpoTriggerCode;
-
-    @Column(name = "hpo_trigger_term")
-    private String hpoTriggerTerm;
 
     public enum TipIntrebare {
         SCOR_0_3,      // Scor 0,1,2,3
-        SCOR_1_5,      // Scor 1-5
         DA_NU,         // Da/Nu
         MULTIPLE_CHOICE, // Alege din opțiuni
         TEXT_SCURT,    // Răspuns scurt text

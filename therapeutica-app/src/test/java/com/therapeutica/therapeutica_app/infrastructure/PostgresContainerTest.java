@@ -15,7 +15,7 @@ class PostgresContainerTest {
 
     @Container
     static final PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16-alpine")
+            new PostgreSQLContainer<>("postgres:18.1")
                     .withDatabaseName("therapeutica_test")
                     .withUsername("test_user")
                     .withPassword("test_password");

@@ -172,13 +172,6 @@ public class ValidareRaspunsuriService {
                 );
             }
 
-            case SCOR_1_5 -> {
-                verifica(
-                        valoare.matches("[1-5]"),
-                        "alege un scor între 1 și 5."
-                );
-            }
-
             case DA_NU -> {
                 verifica(
                         valoare.equals("true") || valoare.equals("false"),
