@@ -34,49 +34,66 @@ public class RaspunsuriIntrebariService {
     /**
      * Procesează răspunsurile primite de la formular
      */
-    public void proceseazaRaspunsuri(UUID raspunsChestionarId,
-                                     Map<String, String> raspunsuriRaw) {
+    public void proceseazaRaspunsuri(
+            UUID raspunsChestionarId,
+            Map<String, String> raspunsuriRaw) {
 
-        log.info("Procesare răspunsuri pentru chestionar: {}", raspunsChestionarId);
+        log.info(
+                "Procesare răspunsuri pentru chestionar: {}",
+                raspunsChestionarId
+        );
 
-        RaspunsuriChestionare raspunsChestionar = raspunsuriChestionareRepository
-                .findById(raspunsChestionarId)
-                .orElseThrow(() -> new NotFoundException("Chestionarul nu a fost găsit"));
+        RaspunsuriChestionare raspunsChestionar =
+                raspunsuriChestionareRepository
+                        .findById(raspunsChestionarId)
+                        .orElseThrow(() ->
+                                new NotFoundException(
+                                        "Chestionarul nu a fost găsit"
+                                )
+                        );
 
         int raspunsuriSalvate = 0;
-        int raspunsuriErate = 0;
 
         for (Map.Entry<String, String> entry : raspunsuriRaw.entrySet()) {
-            String key = entry.getKey();
+            String cheie = entry.getKey();
             String valoare = entry.getValue();
 
-            if (key.startsWith("intrebare_") && valoare != null && !valoare.trim().isEmpty()) {
-                try {
-                    String intrebareIdStr = key.substring(10);
-                    UUID intrebareId = UUID.fromString(intrebareIdStr);
+            if (cheie.startsWith("intrebare_")
+                    && valoare != null
+                    && !valoare.trim().isEmpty()) {
 
-                    salveazaRaspuns(raspunsChestionar, intrebareId, valoare);
-                    raspunsuriSalvate++;
+                UUID intrebareId = UUID.fromString(
+                        cheie.substring("intrebare_".length())
+                );
 
-                } catch (Exception e) {
-                    log.error("Eroare la procesarea răspunsului {}: {}", key, e.getMessage());
-                    raspunsuriErate++;
-                }
+                // Orice eroare se propagă și provoacă anularea tranzacției.
+                salveazaRaspuns(
+                        raspunsChestionar,
+                        intrebareId,
+                        valoare
+                );
+
+                raspunsuriSalvate++;
             }
         }
 
-        log.info("{} răspunsuri salvate, {} erori pentru chestionar {}",
-                raspunsuriSalvate, raspunsuriErate, raspunsChestionarId);
-
-        // Marchează chestionarul ca completat
-        raspunsChestionar.setStatus(RaspunsuriChestionare.StatusRaspuns.COMPLETAT);
+        raspunsChestionar.setStatus(
+                RaspunsuriChestionare.StatusRaspuns.COMPLETAT
+        );
         raspunsChestionar.setCompletatLa(LocalDateTime.now());
 
-        // Calculează scorul total
         Double scorTotal = calculeazaScorTotal(raspunsChestionarId);
-        raspunsChestionar.setScorTotalGeneral(BigDecimal.valueOf(scorTotal));
+        raspunsChestionar.setScorTotalGeneral(
+                BigDecimal.valueOf(scorTotal)
+        );
 
         raspunsuriChestionareRepository.save(raspunsChestionar);
+
+        log.info(
+                "{} răspunsuri procesate pentru chestionarul {}",
+                raspunsuriSalvate,
+                raspunsChestionarId
+        );
     }
 
     /**
